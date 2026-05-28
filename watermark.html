@@ -99,13 +99,21 @@
   .seg{
     display:flex;background:var(--bg);border-radius:14px;padding:4px;gap:4px;
     border:1px solid var(--line);
+    overflow-x:auto;scrollbar-width:none;
   }
+  .seg::-webkit-scrollbar{display:none;}
   .seg button{
-    flex:1;border:none;background:transparent;padding:11px 0;border-radius:11px;
+    flex:1 0 auto;border:none;background:transparent;padding:11px 14px;border-radius:11px;
     font-family:var(--font);font-size:14.5px;font-weight:500;color:var(--ink-soft);
-    cursor:pointer;transition:all .18s ease;
+    cursor:pointer;transition:all .18s ease;white-space:nowrap;min-width:54px;
+    position:relative;
   }
   .seg button.on{background:var(--surface);color:var(--ink);box-shadow:var(--shadow-sm);}
+  /* small orange dot in top-right corner indicates a user-defined custom template */
+  .seg button.custom-tpl::after{
+    content:'';position:absolute;top:5px;right:7px;
+    width:5px;height:5px;border-radius:50%;background:var(--accent);
+  }
 
   .field{margin-top:16px;}
   .field.hidden{display:none;}
@@ -267,13 +275,7 @@
     </div>
 
     <div class="panel">
-      <div class="seg" id="styleSeg">
-        <button data-style="classic" class="on">经典</button>
-        <button data-style="polaroid">拍立得</button>
-        <button data-style="leica">徕卡</button>
-        <button data-style="magazine">杂志</button>
-        <button data-style="polaroidPlus">宝丽来</button>
-      </div>
+      <div class="seg" id="styleSeg"><!-- buttons rendered by renderStyleSeg() --></div>
       <div class="seg" id="seg" style="margin-top:10px;">
         <button data-mode="manual">手动输入</button>
         <button data-mode="auto">自动读取</button>
@@ -663,15 +665,47 @@
   }
 
   // ================= style switching =================
-  Array.prototype.forEach.call(styleSeg.querySelectorAll("button"), function(b){
-    b.addEventListener("click", function(){ setStyle(b.getAttribute("data-style")); });
-  });
+  // 5 presets always shown in the seg; user customs appended after them.
+  var SEG_PRESETS = ['classic', 'polaroid', 'leica', 'magazine', 'polaroidPlus'];
+
+  function presetById(id){
+    for(var i=0;i<TEMPLATES.length;i++) if(TEMPLATES[i].id===id) return TEMPLATES[i];
+    return null;
+  }
+
+  function renderStyleSeg(){
+    var html = '';
+    SEG_PRESETS.forEach(function(id){
+      var t = presetById(id);
+      if(!t) return;
+      var cls = (state.style === id) ? 'on' : '';
+      html += '<button data-style="'+id+'"'+(cls?' class="'+cls+'"':'')+'>'+escapeHtml(t.name)+'</button>';
+    });
+    customTemplates.forEach(function(c){
+      var cls = 'custom-tpl' + (state.style === c.id ? ' on' : '');
+      html += '<button data-style="'+c.id+'" class="'+cls+'" title="我的模板">'+escapeHtml(c.name)+'</button>';
+    });
+    styleSeg.innerHTML = html;
+    Array.prototype.forEach.call(styleSeg.querySelectorAll("button"), function(b){
+      b.addEventListener("click", function(){ setStyle(b.getAttribute("data-style")); });
+    });
+  }
 
   function setStyle(style){
     state.style = style;
+    var found = null;
     Array.prototype.forEach.call(styleSeg.querySelectorAll("button"), function(b){
-      b.classList.toggle("on", b.getAttribute("data-style")===style);
+      var on = b.getAttribute("data-style")===style;
+      b.classList.toggle("on", on);
+      if(on) found = b;
     });
+    // Auto-scroll active button into the seg's visible area (horizontal only).
+    if(found){
+      var bL = found.offsetLeft, bW = found.offsetWidth;
+      var sW = styleSeg.clientWidth, sS = styleSeg.scrollLeft;
+      if(bL < sS + 6) styleSeg.scrollLeft = Math.max(0, bL - 6);
+      else if(bL + bW > sS + sW - 6) styleSeg.scrollLeft = bL + bW - sW + 6;
+    }
     draw();
   }
 
@@ -1507,6 +1541,7 @@
     customTemplates = customTemplates.filter(function(c){ return c.id !== id; });
     persistCustomTemplates();
     if(state.style === id){ setStyle("classic"); }
+    renderStyleSeg();      // rebuild seg (deleted button disappears)
     renderSearchResults(searchInput.value);
     toast("已删除");
   }
@@ -1588,12 +1623,14 @@
     }
     persistCustomTemplates();
     closeCustomEditor();
+    renderStyleSeg();      // rebuild seg so the new/edited custom button appears
     setStyle(tpl.id);
-    toast(editingCustomId ? "已更新" : "已保存,可在搜索里找到");
+    toast(editingCustomId ? "已更新" : "已保存,主界面顶部已加上你的按钮");
   });
 
-  // load customs on startup
+  // load customs on startup, then build the style seg (presets + customs)
   loadCustomTemplates();
+  renderStyleSeg();
 
   // ================= PWA: register service worker for offline =================
   if('serviceWorker' in navigator){
