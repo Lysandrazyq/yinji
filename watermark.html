@@ -1,0 +1,1608 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="印迹">
+<meta name="theme-color" content="#EFEAE0">
+<title>印迹 · 照片水印</title>
+<!-- PWA: enables "Install" / "Add to Home Screen" on Chrome / Edge / Safari / Android -->
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/svg+xml" href="icons/icon.svg">
+<link rel="apple-touch-icon" href="icons/icon.svg">
+<style>
+  :root{
+    --bg:#EFEAE0;
+    --surface:#FFFFFF;
+    --ink:#1C1814;
+    --ink-soft:#7A7065;
+    --line:#E2DACC;
+    --accent:#C2632D;
+    --accent-soft:#F4E6D8;
+    --radius:22px;
+    --shadow:0 10px 34px rgba(54,40,24,.10);
+    --shadow-sm:0 4px 14px rgba(54,40,24,.07);
+    --font:-apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Segoe UI",Roboto,sans-serif;
+    --display:ui-serif,Georgia,"Songti SC","Times New Roman",serif;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  html,body{margin:0;padding:0;}
+  body{
+    font-family:var(--font);
+    color:var(--ink);
+    background-color:var(--bg);
+    background-image:
+      radial-gradient(130% 90% at 50% -10%, rgba(255,255,255,.6), transparent 55%),
+      radial-gradient(100% 60% at 50% 112%, rgba(194,99,45,.05), transparent 60%);
+    min-height:100vh;
+    padding:0 0 calc(env(safe-area-inset-bottom) + 30px);
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:480px;margin:0 auto;padding:0 18px;}
+
+  /* Header */
+  header{
+    display:flex;align-items:center;justify-content:space-between;
+    padding:calc(env(safe-area-inset-top) + 20px) 0 16px;
+  }
+  .brand{display:flex;flex-direction:column;line-height:1;}
+  .brand .name{font-size:27px;font-weight:600;letter-spacing:.04em;}
+  .brand .tag{
+    font-family:var(--display);font-size:11px;letter-spacing:.28em;
+    text-transform:uppercase;color:var(--accent);margin-top:7px;font-weight:500;
+  }
+  .icon-btn{
+    width:44px;height:44px;border-radius:14px;border:1px solid var(--line);
+    background:var(--surface);display:flex;align-items:center;justify-content:center;
+    cursor:pointer;box-shadow:var(--shadow-sm);transition:transform .15s ease;
+  }
+  .icon-btn:active{transform:scale(.92);}
+  .icon-btn svg{width:21px;height:21px;stroke:var(--ink);}
+
+  /* Empty drop zone */
+  .drop{
+    display:flex;flex-direction:column;align-items:center;justify-content:center;
+    gap:14px;text-align:center;
+    border:1.5px dashed #CFC4B2;border-radius:var(--radius);
+    background:rgba(255,255,255,.5);
+    padding:60px 26px;margin-top:6px;cursor:pointer;
+    transition:border-color .2s, background .2s, transform .12s;
+  }
+  .drop:active{transform:scale(.99);}
+  .drop .ring{
+    width:72px;height:72px;border-radius:50%;background:var(--accent-soft);
+    display:flex;align-items:center;justify-content:center;
+  }
+  .drop .ring svg{width:32px;height:32px;stroke:var(--accent);}
+  .drop h2{margin:0;font-size:18px;font-weight:600;}
+  .drop p{margin:0;font-size:13.5px;color:var(--ink-soft);line-height:1.6;max-width:230px;}
+  input[type=file]{display:none;}
+
+  /* Editor */
+  .editor{display:none;}
+  .canvas-stage{
+    background:var(--bg);border-radius:var(--radius);padding:18px;
+    box-shadow:var(--shadow);margin-top:6px;
+    background-image:
+      radial-gradient(120% 80% at 50% 0%, rgba(255,255,255,.5), transparent 70%);
+    border:1px solid var(--line);
+  }
+  canvas{display:block;width:100%;height:auto;border-radius:8px;
+    box-shadow:0 4px 16px rgba(54,40,24,.14);}
+
+  .panel{
+    background:var(--surface);border-radius:var(--radius);
+    box-shadow:var(--shadow);margin-top:16px;padding:18px;
+  }
+  .seg{
+    display:flex;background:var(--bg);border-radius:14px;padding:4px;gap:4px;
+    border:1px solid var(--line);
+  }
+  .seg button{
+    flex:1;border:none;background:transparent;padding:11px 0;border-radius:11px;
+    font-family:var(--font);font-size:14.5px;font-weight:500;color:var(--ink-soft);
+    cursor:pointer;transition:all .18s ease;
+  }
+  .seg button.on{background:var(--surface);color:var(--ink);box-shadow:var(--shadow-sm);}
+
+  .field{margin-top:16px;}
+  .field.hidden{display:none;}
+  label.lbl{display:block;font-size:12.5px;color:var(--ink-soft);margin:0 0 8px 2px;letter-spacing:.02em;}
+  input[type=text]{
+    width:100%;border:1px solid var(--line);border-radius:13px;padding:13px 15px;
+    font-family:var(--font);font-size:16px;color:var(--ink);background:var(--bg);
+    outline:none;transition:border-color .18s, background .18s;
+  }
+  input[type=text]:focus{border-color:var(--accent);background:var(--surface);}
+
+  .info-grid{display:flex;flex-wrap:wrap;gap:8px;}
+  .chip{
+    background:var(--bg);border:1px solid var(--line);border-radius:11px;
+    padding:9px 13px;font-size:13.5px;color:var(--ink);
+  }
+  .chip b{color:var(--ink-soft);font-weight:500;margin-right:6px;font-size:12px;}
+  .nodata{
+    font-size:13.5px;color:var(--ink-soft);line-height:1.6;
+    background:var(--accent-soft);border-radius:13px;padding:13px 15px;
+  }
+
+  .actions{display:flex;gap:10px;margin-top:20px;}
+  .btn{
+    border:none;border-radius:14px;padding:15px 0;font-family:var(--font);
+    font-size:15.5px;font-weight:600;cursor:pointer;transition:transform .12s, opacity .15s;
+  }
+  .btn:active{transform:scale(.97);}
+  .btn-primary{flex:2;background:var(--accent);color:#fff;box-shadow:0 6px 18px rgba(194,99,45,.32);}
+  .btn-ghost{flex:1;background:var(--bg);color:var(--ink);border:1px solid var(--line);}
+
+  .hint{
+    text-align:center;font-size:12.5px;color:var(--ink-soft);
+    margin:22px auto 0;max-width:300px;line-height:1.6;
+  }
+  .hint b{color:var(--accent);font-weight:600;}
+
+  /* Result overlay */
+  .overlay{
+    position:fixed;inset:0;background:rgba(28,24,20,.62);
+    display:none;align-items:flex-end;justify-content:center;z-index:50;
+    -webkit-backdrop-filter:blur(3px);backdrop-filter:blur(3px);
+  }
+  .overlay.show{display:flex;}
+  .sheet{
+    background:var(--bg);width:100%;max-width:480px;border-radius:26px 26px 0 0;
+    padding:22px 18px calc(env(safe-area-inset-bottom) + 24px);
+    box-shadow:0 -10px 40px rgba(0,0,0,.25);
+    animation:rise .32s cubic-bezier(.2,.8,.2,1);
+  }
+  @keyframes rise{from{transform:translateY(100%);}to{transform:translateY(0);}}
+  .sheet h3{margin:0 0 4px;font-size:18px;font-weight:600;text-align:center;}
+  .sheet .sub{margin:0 0 16px;font-size:13px;color:var(--ink-soft);text-align:center;line-height:1.5;}
+  .sheet img{width:100%;border-radius:14px;box-shadow:var(--shadow);display:block;}
+  .sheet .row{display:flex;gap:10px;margin-top:18px;}
+  .sheet a.btn,.sheet button.btn{flex:1;text-decoration:none;text-align:center;display:block;}
+
+  /* Search sheet */
+  .search-input{
+    width:100%;border:1px solid var(--line);border-radius:13px;
+    padding:13px 15px;margin-top:4px;
+    font-family:var(--font);font-size:16px;color:var(--ink);
+    background:var(--surface);outline:none;
+    transition:border-color .18s;
+  }
+  .search-input:focus{border-color:var(--accent);}
+  .search-results{margin-top:14px;max-height:48vh;overflow-y:auto;}
+  .template-item{
+    background:var(--surface);border:1px solid var(--line);border-radius:14px;
+    padding:13px 15px;margin-bottom:9px;cursor:pointer;
+    transition:transform .12s, background .15s, border-color .15s;
+  }
+  .template-item:active{transform:scale(.98);}
+  .template-item.current{border-color:var(--accent);background:var(--accent-soft);}
+  .template-item .name{font-size:15.5px;font-weight:600;color:var(--ink);}
+  .template-item .name .badge{
+    font-size:11px;color:var(--accent);font-weight:600;margin-left:8px;
+    letter-spacing:.04em;
+  }
+  .template-item .desc{font-size:13px;color:var(--ink-soft);margin-top:4px;line-height:1.5;}
+  .template-empty{text-align:center;color:var(--ink-soft);padding:24px 0;font-size:14px;}
+  .template-item .del{
+    float:right;font-size:12px;color:var(--accent);padding:2px 8px;border:1px solid var(--accent);
+    border-radius:8px;background:transparent;cursor:pointer;margin-left:8px;
+  }
+  .template-item .del:active{background:var(--accent-soft);}
+  .template-item .tag-custom{
+    display:inline-block;font-size:11px;background:var(--accent);color:#fff;
+    padding:2px 7px;border-radius:8px;margin-left:8px;letter-spacing:.04em;
+  }
+
+  .btn-new-tpl{
+    width:100%;margin-top:10px;background:var(--accent-soft);color:var(--accent);
+    border:1px dashed var(--accent);border-radius:13px;padding:11px 0;
+    font-family:var(--font);font-size:14.5px;font-weight:600;cursor:pointer;
+    transition:transform .12s, background .15s;
+  }
+  .btn-new-tpl:active{transform:scale(.98);background:#EFD8C0;}
+
+  /* Custom editor */
+  .custom-row{
+    display:flex;align-items:center;justify-content:space-between;
+    background:var(--surface);border:1px solid var(--line);border-radius:13px;
+    padding:11px 14px;margin-top:10px;
+  }
+  .custom-row .lbl{margin:0;font-size:14px;color:var(--ink);font-weight:500;}
+  .custom-row input[type=color]{
+    -webkit-appearance:none;appearance:none;border:1px solid var(--line);
+    width:46px;height:34px;border-radius:9px;background:transparent;cursor:pointer;padding:0;
+  }
+  .custom-row input[type=color]::-webkit-color-swatch-wrapper{padding:2px;}
+  .custom-row input[type=color]::-webkit-color-swatch{border:none;border-radius:6px;}
+  .custom-row .row-right{display:flex;align-items:center;gap:12px;}
+  .custom-row .cb{display:flex;align-items:center;gap:6px;font-size:13px;color:var(--ink-soft);cursor:pointer;}
+  .custom-row .cb input{margin:0;}
+
+  /* Toast */
+  .toast{
+    position:fixed;left:50%;bottom:46px;transform:translateX(-50%) translateY(20px);
+    background:var(--ink);color:#fff;padding:13px 20px;border-radius:14px;
+    font-size:14px;opacity:0;pointer-events:none;transition:all .3s ease;z-index:90;
+    box-shadow:0 8px 24px rgba(0,0,0,.3);max-width:86%;text-align:center;
+  }
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="brand">
+      <span class="name">印迹</span>
+      <span class="tag">Photo&nbsp;Watermark</span>
+    </div>
+    <button class="icon-btn" id="searchBtn" aria-label="搜索">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="11" cy="11" r="7"></circle><line x1="21" y1="21" x2="16.5" y2="16.5"></line>
+      </svg>
+    </button>
+  </header>
+
+  <!-- Empty state -->
+  <label class="drop" id="drop" for="fileInput">
+    <span class="ring">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="3" y="5" width="18" height="15" rx="3"></rect>
+        <circle cx="12" cy="12.5" r="3.2"></circle>
+        <path d="M8 5l1.4-2h5.2L16 5"></path>
+      </svg>
+    </span>
+    <h2>选择照片 · 拍照</h2>
+    <p>点这里从相册选一张，或直接拍一张，给它加上白框黑字水印</p>
+  </label>
+  <input type="file" id="fileInput" accept="image/*">
+
+  <!-- Editor -->
+  <div class="editor" id="editor">
+    <div class="canvas-stage">
+      <canvas id="canvas"></canvas>
+    </div>
+
+    <div class="panel">
+      <div class="seg" id="styleSeg">
+        <button data-style="classic" class="on">经典</button>
+        <button data-style="polaroid">拍立得</button>
+        <button data-style="leica">徕卡</button>
+        <button data-style="magazine">杂志</button>
+        <button data-style="polaroidPlus">宝丽来</button>
+      </div>
+      <div class="seg" id="seg" style="margin-top:10px;">
+        <button data-mode="manual">手动输入</button>
+        <button data-mode="auto">自动读取</button>
+      </div>
+
+      <div class="field" id="manualField">
+        <label class="lbl">水印文字</label>
+        <input type="text" id="textInput" placeholder="输入想显示的文字" maxlength="40">
+      </div>
+
+      <div class="field hidden" id="autoField">
+        <label class="lbl">从照片读取到的拍摄信息</label>
+        <div id="autoBody"></div>
+      </div>
+
+      <div class="actions">
+        <button class="btn btn-primary" id="saveBtn">保存图片</button>
+        <button class="btn btn-ghost" id="resetBtn">换一张</button>
+      </div>
+    </div>
+
+    <p class="hint">想当成 App 用？在 Safari 点 <b>分享</b> → <b>添加到主屏幕</b></p>
+  </div>
+</div>
+
+<!-- Result sheet -->
+<div class="overlay" id="overlay">
+  <div class="sheet">
+    <h3>水印完成 ✦</h3>
+    <p class="sub">长按下方图片 →「存储到照片」即可保存到相册</p>
+    <img id="resultImg" alt="带水印的照片">
+    <div class="row">
+      <a class="btn btn-primary" id="downloadLink" download="印迹-水印照片.jpg">下载图片</a>
+      <button class="btn btn-ghost" id="closeSheet">关闭</button>
+    </div>
+  </div>
+</div>
+
+<!-- Search sheet -->
+<div class="overlay" id="searchOverlay">
+  <div class="sheet search-sheet">
+    <h3>选模板</h3>
+    <p class="sub">输入关键词,如「红」「复古」「杂志」「夜」「电影」</p>
+    <input type="text" id="searchInput" class="search-input" placeholder="搜模板名 / 风格 / 标签" maxlength="20">
+    <button class="btn btn-new-tpl" id="newCustomBtn">+ 新建我的模板</button>
+    <div id="searchResults" class="search-results"></div>
+    <div class="row">
+      <button class="btn btn-ghost" id="closeSearch">关闭</button>
+    </div>
+  </div>
+</div>
+
+<!-- Custom template editor sheet -->
+<div class="overlay" id="customOverlay">
+  <div class="sheet">
+    <h3 id="customTitle">新建模板</h3>
+    <p class="sub">挑一个布局,选颜色,起个名,保存到本机</p>
+
+    <label class="lbl">布局</label>
+    <div class="seg" id="customLayoutSeg">
+      <button data-layout="bar"     class="on">底栏</button>
+      <button data-layout="frame">四周白边</button>
+      <button data-layout="overlay">满版渐变</button>
+    </div>
+
+    <div class="custom-row">
+      <label class="lbl">底色</label>
+      <input type="color" id="customBg" value="#FFFFFF">
+    </div>
+    <div class="custom-row">
+      <label class="lbl">文字色</label>
+      <input type="color" id="customText" value="#1C1814">
+    </div>
+    <div class="custom-row">
+      <label class="lbl">强调色</label>
+      <span class="row-right">
+        <input type="color" id="customAccent" value="#E2001A">
+        <label class="cb"><input type="checkbox" id="customAccentOn"> 启用</label>
+      </span>
+    </div>
+
+    <label class="lbl" style="margin-top:14px;">模板名字</label>
+    <input type="text" id="customName" class="search-input" placeholder="例:我的徕卡黑" maxlength="14">
+
+    <div class="row">
+      <button class="btn btn-primary" id="customSave">保存</button>
+      <button class="btn btn-ghost" id="customCancel">取消</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+(function(){
+  "use strict";
+
+  // ---------- state ----------
+  var state = { bitmap:null, exif:null, mode:"manual", style:"classic" };
+  var FONT = '-apple-system,"PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif';
+  var SERIF = 'ui-serif,Georgia,"Songti SC","STSong","Times New Roman",serif';
+
+  // ---------- theme palette (used across templates so colors are consistent + tweakable) ----------
+  var COLORS = {
+    paperWhite:        "#FFFFFF",
+    paperCream:        "#FAF6EE",
+    paperFilm:         "#F0E8D8",
+    ink:               "#1C1814",
+    inkSoft:           "#8A8076",
+    darkBg:            "#1A1A1A",
+    darkInk:           "#FFFFFF",
+    darkInkSoft:       "#A8A8A8",
+    leicaRed:          "#E2001A",
+    festivalRed:       "#A40E0E",
+    festivalGold:      "#F5D078",
+    hasselbladDark:    "#252320",
+    hasselbladOrange:  "#E8A050",
+    cinemaBlack:       "#000000"
+  };
+
+  // ---------- platform interface ----------
+  // Native wrappers (Tauri / Capacitor / etc.) can replace these implementations
+  // to use real file system / photo gallery APIs. Web fallback uses overlay sheet.
+  window.Yinji = window.Yinji || {};
+  window.Yinji.platform = window.Yinji.platform || {
+    name: "web",
+    // saveDataUrl(dataUrl, suggestedName): persist a JPEG. Return Promise.
+    //   null = use default in-browser flow (overlay + download link).
+    saveDataUrl: null,
+    // pickPhoto(): trigger file picker. Return Promise<File>.
+    //   null = use default <input type=file> flow.
+    pickPhoto: null,
+    // getStorage(): key-value store. Default = window.localStorage.
+    getStorage: function(){
+      try{ return window.localStorage; }catch(e){ return null; }
+    }
+  };
+  var PLATFORM = window.Yinji.platform;
+
+  // ---------- elements ----------
+  var $ = function(id){ return document.getElementById(id); };
+  var fileInput=$("fileInput"), drop=$("drop"), editor=$("editor");
+  var canvas=$("canvas"), ctx=canvas.getContext("2d");
+  var seg=$("seg"), styleSeg=$("styleSeg"), manualField=$("manualField"), autoField=$("autoField"), autoBody=$("autoBody");
+  var textInput=$("textInput"), saveBtn=$("saveBtn"), resetBtn=$("resetBtn");
+  var overlay=$("overlay"), resultImg=$("resultImg"), downloadLink=$("downloadLink"), closeSheet=$("closeSheet");
+  var searchBtn=$("searchBtn"), toastEl=$("toast");
+  var searchOverlay=$("searchOverlay"), searchInput=$("searchInput"), searchResults=$("searchResults"), closeSearch=$("closeSearch");
+
+  // ---------- template registry (15 presets + user-defined customs at runtime) ----------
+  var TEMPLATES = [
+    {id:"classic",       name:"经典",         desc:"白底栏黑字,最克制简洁。", tags:["简洁","默认","白","黑字","底栏","clean"]},
+    {id:"polaroid",      name:"拍立得",       desc:"照片四周白边,底部更厚。复古文艺。", tags:["白边","复古","文艺","拍立得","白框"]},
+    {id:"leica",         name:"徕卡",         desc:"底栏顶部一道徕卡红横条,强标志感。", tags:["红","徕卡","相机","红条","leica"]},
+    {id:"magazine",      name:"杂志封面",     desc:"照片满版 + 渐变 + 白色大标题,时尚杂志风。", tags:["大字","杂志","时尚","封面","暗调","magazine","酷"]},
+    {id:"polaroidPlus",  name:"宝丽来完全款", desc:"加厚白边 + 米黄底 + 暖色调,加强版拍立得。", tags:["复古","拍立得","做旧","宝丽来","米黄","暖","polaroid"]},
+    {id:"darkBar",       name:"黑底白字",     desc:"底栏改成深黑色 + 白字,夜景 / 深色照片更搭。", tags:["黑","暗","夜","深色","白字","dark","night"]},
+    {id:"minimalCorner", name:"极简右下角",   desc:"不加底栏,右下角一行小字带阴影,最克制。", tags:["极简","角","小字","clean","minimal","简"]},
+    {id:"cinema",        name:"电影黑边",     desc:"上下加黑色横条,16:9 电影感,白字。", tags:["电影","黑边","letterbox","cinema","16:9"]},
+    {id:"filmStrip",     name:"复古胶片",     desc:"左右两侧加胶片齿孔,米黄底,做旧胶卷感。", tags:["胶片","齿孔","复古","film","胶卷","旧"]},
+    {id:"festivalRed",   name:"节日红",       desc:"红色边框 + 金色文字,过年 / 节庆专用。", tags:["红","金","节日","过年","春节","festival","喜庆"]},
+    {id:"checkIn",       name:"签到打卡",     desc:"底栏带一个红色定位图标 + 文字,旅行打卡风。", tags:["签到","打卡","定位","旅行","check","地点"]},
+    {id:"bigDate",       name:"大字日期",     desc:"照片上压一个巨大的年份数字,大字报感。", tags:["大字","年份","日期","big","数字","醒目"]},
+    {id:"hasselblad",    name:"哈苏风",       desc:"深色底栏 + 橙色细条 + 橙字,致敬哈苏。", tags:["哈苏","橙","暗","hasselblad","深色"]},
+    {id:"minimalFrame",  name:"极简框",       desc:"照片加一圈细白边 + 下方小字,几乎隐形。", tags:["极简","细框","clean","简","边框","纤细"]},
+    {id:"magazineLight", name:"杂志浅版",     desc:"杂志封面的白底版本:白色面板 + 黑字大标题。", tags:["杂志","浅","白底","magazine","light","干净"]}
+  ];
+
+  // ---------- custom templates (user-defined, stored in localStorage) ----------
+  var CUSTOM_STORAGE_KEY = "yinji.customTemplates.v1";
+  var customTemplates = [];  // populated from storage on init
+
+  function loadCustomTemplates(){
+    var s = PLATFORM.getStorage();
+    if(!s) return;
+    try{
+      var raw = s.getItem(CUSTOM_STORAGE_KEY);
+      customTemplates = raw ? JSON.parse(raw) : [];
+      if(!Array.isArray(customTemplates)) customTemplates = [];
+    }catch(e){ customTemplates = []; }
+  }
+  function persistCustomTemplates(){
+    var s = PLATFORM.getStorage();
+    if(!s) return;
+    try{ s.setItem(CUSTOM_STORAGE_KEY, JSON.stringify(customTemplates)); }catch(e){}
+  }
+  function findCustomTemplate(id){
+    for(var i=0;i<customTemplates.length;i++){
+      if(customTemplates[i].id===id) return customTemplates[i];
+    }
+    return null;
+  }
+  function allTemplates(){
+    // presets followed by user customs
+    return TEMPLATES.concat(customTemplates.map(function(c){
+      return { id:c.id, name:c.name, desc:c.desc||("基于「"+(presetName(c.base)||"经典")+"」的自定义款"), tags:(c.tags||[]).concat(["自定义","custom","我的"]), _custom:true };
+    }));
+  }
+  function presetName(id){
+    for(var i=0;i<TEMPLATES.length;i++) if(TEMPLATES[i].id===id) return TEMPLATES[i].name;
+    return null;
+  }
+
+  // default manual text = today's date
+  (function(){
+    var d=new Date();
+    var p=function(n){return (n<10?"0":"")+n;};
+    textInput.value = d.getFullYear()+"."+p(d.getMonth()+1)+"."+p(d.getDate());
+  })();
+
+  // ---------- toast ----------
+  var toastTimer=null;
+  function toast(msg){
+    toastEl.textContent=msg; toastEl.classList.add("show");
+    clearTimeout(toastTimer);
+    toastTimer=setTimeout(function(){toastEl.classList.remove("show");},2400);
+  }
+
+  // ================= EXIF parsing =================
+  function parseExif(buffer){
+    try{
+      var view=new DataView(buffer);
+      if(view.getUint16(0)!==0xFFD8) return null; // not JPEG
+      var len=view.byteLength, off=2;
+      while(off+4<len){
+        var marker=view.getUint16(off);
+        if(marker===0xFFE1){ // APP1
+          // "Exif" = 0x45786966
+          if(view.getUint32(off+4)===0x45786966){
+            return readTiff(view, off+10); // skip "Exif\0\0"
+          }
+        }
+        if((marker & 0xFF00)!==0xFF00) break;
+        var m=marker & 0xFF;
+        if(m===0xD8 || m===0xD9 || (m>=0xD0 && m<=0xD7)){ off+=2; continue; }
+        var segLen=view.getUint16(off+2);
+        if(segLen<2) break;
+        off += 2 + segLen;
+      }
+    }catch(e){}
+    return null;
+  }
+
+  function readTiff(view, tiff){
+    try{
+      var bo=view.getUint16(tiff), little;
+      if(bo===0x4949) little=true;
+      else if(bo===0x4D4D) little=false;
+      else return null;
+      if(view.getUint16(tiff+2, little)!==0x002A) return null;
+      var ifd0 = tiff + view.getUint32(tiff+4, little);
+      var tags={};
+      readIFD(view, tiff, ifd0, little, tags);
+      if(tags.__exif){ readIFD(view, tiff, tiff+tags.__exif, little, tags); }
+      delete tags.__exif;
+      // keep only if something useful exists
+      if(tags.model||tags.make||tags.date||tags.fnumber||tags.exposure||tags.iso||tags.focal) return tags;
+      return null;
+    }catch(e){ return null; }
+  }
+
+  function readIFD(view, tiff, ifd, little, out){
+    var get16=function(o){return view.getUint16(o,little);};
+    var get32=function(o){return view.getUint32(o,little);};
+    var count=get16(ifd);
+    for(var i=0;i<count;i++){
+      var e=ifd+2+i*12;
+      var tag=get16(e), type=get16(e+2), num=get32(e+4), vo=e+8;
+      switch(tag){
+        case 0x010F: out.make = ascii(view,tiff,vo,num,little); break;
+        case 0x0110: out.model = ascii(view,tiff,vo,num,little); break;
+        case 0x8769: out.__exif = get32(vo); break;       // Exif IFD pointer
+        case 0x9003: out.date = ascii(view,tiff,vo,num,little); break;  // DateTimeOriginal
+        case 0x0132: if(!out.date) out.date = ascii(view,tiff,vo,num,little); break; // fallback
+        case 0x829D: out.fnumber = rational(view,tiff,vo,little); break;
+        case 0x829A: out.exposure = rational(view,tiff,vo,little); break;
+        case 0x8827: out.iso = (type===3)? get16(vo) : get32(vo); break;
+        case 0x920A: out.focal = rational(view,tiff,vo,little); break;
+      }
+    }
+  }
+
+  function ascii(view,tiff,vo,num,little){
+    try{
+      var off = num<=4 ? vo : tiff+view.getUint32(vo,little);
+      var s="";
+      for(var j=0;j<num;j++){
+        var c=view.getUint8(off+j);
+        if(c===0) break;
+        s+=String.fromCharCode(c);
+      }
+      return s.trim();
+    }catch(e){ return ""; }
+  }
+  function rational(view,tiff,vo,little){
+    try{
+      var off=tiff+view.getUint32(vo,little);
+      var n=view.getUint32(off,little), d=view.getUint32(off+4,little);
+      return d? n/d : 0;
+    }catch(e){ return 0; }
+  }
+
+  // ---------- format exif into display fields ----------
+  function buildInfo(ex){
+    var device = ex.model || ex.make || "";
+    var date = formatDate(ex.date);
+    var parts=[];
+    if(ex.fnumber) parts.push("f/"+ trimNum(ex.fnumber));
+    if(ex.exposure) parts.push(ex.exposure<1 ? ("1/"+Math.round(1/ex.exposure)+"s") : (trimNum(ex.exposure)+"s"));
+    if(ex.iso) parts.push("ISO"+ex.iso);
+    if(ex.focal) parts.push(Math.round(ex.focal)+"mm");
+    return { device:device, date:date, params:parts.join("  ·  ") };
+  }
+  function trimNum(n){ return (n%1===0)? String(n) : n.toFixed(1); }
+  function formatDate(s){
+    if(!s) return "";
+    var sp=s.split(" ");
+    var d=(sp[0]||"").replace(/:/g,".");
+    var t=sp[1]? sp[1].slice(0,5):"";
+    return t? (d+"  "+t) : d;
+  }
+
+  // ================= load photo =================
+  fileInput.addEventListener("change", function(ev){
+    var file=ev.target.files && ev.target.files[0];
+    if(!file){ setDropMsg("没选到照片","再试一次，或点这里重新选"); return; }
+    setDropMsg("正在读取照片…","已选择，请稍候");
+    loadFile(file).catch(function(err){
+      var m=(err&&err.message)?err.message:"未知问题";
+      setDropMsg("打不开这张照片","原因："+m+" · 点这里重新选");
+    }).then(function(){
+      try{ fileInput.value=""; }catch(e){}
+    });
+  });
+
+  function setDropMsg(title, sub){
+    var h=drop.querySelector("h2"), p=drop.querySelector("p");
+    if(h) h.textContent=title;
+    if(p) p.textContent=sub;
+  }
+
+  function loadFile(file){
+    return Promise.resolve().then(function(){
+      return file.arrayBuffer ? file.arrayBuffer() : readBufFallback(file);
+    }).then(function(buf){
+      try{ state.exif=parseExif(buf); }catch(e){ state.exif=null; }
+    }, function(){ state.exif=null; })
+    .then(function(){ return loadBitmap(file); })
+    .then(function(bmp){
+      if(!bmp || !((bmp.width||bmp.naturalWidth) && (bmp.height||bmp.naturalHeight))){
+        throw new Error("照片解码失败");
+      }
+      state.bitmap=bmp;
+      setMode(state.exif ? "auto" : "manual", true);
+      drop.style.display="none";
+      editor.style.display="block";
+      renderAutoPanel();
+      draw();
+    });
+  }
+
+  function readBufFallback(file){
+    return new Promise(function(res,rej){
+      var fr=new FileReader();
+      fr.onload=function(){res(fr.result);};
+      fr.onerror=function(){rej();};
+      fr.readAsArrayBuffer(file);
+    });
+  }
+
+  function loadBitmap(file){
+    if(window.createImageBitmap){
+      return createImageBitmap(file, {imageOrientation:"from-image"})
+        .catch(function(){ return createImageBitmap(file); })
+        .catch(function(){ return loadImgEl(file); });
+    }
+    return loadImgEl(file);
+  }
+  function loadImgEl(file){
+    return new Promise(function(res,rej){
+      var url=URL.createObjectURL(file);
+      var img=new Image();
+      img.onload=function(){ res(img); };
+      img.onerror=function(){ rej(); };
+      img.src=url;
+    });
+  }
+
+  // ================= style switching =================
+  Array.prototype.forEach.call(styleSeg.querySelectorAll("button"), function(b){
+    b.addEventListener("click", function(){ setStyle(b.getAttribute("data-style")); });
+  });
+
+  function setStyle(style){
+    state.style = style;
+    Array.prototype.forEach.call(styleSeg.querySelectorAll("button"), function(b){
+      b.classList.toggle("on", b.getAttribute("data-style")===style);
+    });
+    draw();
+  }
+
+  // ================= mode switching =================
+  Array.prototype.forEach.call(seg.querySelectorAll("button"), function(b){
+    b.addEventListener("click", function(){ setMode(b.getAttribute("data-mode")); });
+  });
+
+  function setMode(mode, silent){
+    if(mode==="auto" && !state.exif){
+      if(!silent) toast("这张照片没有拍摄信息，已切回手动输入");
+      mode="manual";
+    }
+    state.mode=mode;
+    Array.prototype.forEach.call(seg.querySelectorAll("button"), function(b){
+      b.classList.toggle("on", b.getAttribute("data-mode")===mode);
+    });
+    manualField.classList.toggle("hidden", mode!=="manual");
+    autoField.classList.toggle("hidden", mode!=="auto");
+    draw();
+  }
+
+  function renderAutoPanel(){
+    if(!state.exif){
+      autoBody.innerHTML='<div class="nodata">没读到这张照片的拍摄信息（截图或转发过的照片常会丢失这些数据）。可以改用「手动输入」。</div>';
+      return;
+    }
+    var info=buildInfo(state.exif), html="", chips=[];
+    if(info.device) chips.push(['设备',info.device]);
+    if(info.date) chips.push(['时间',info.date]);
+    if(info.params) chips.push(['参数',info.params]);
+    html='<div class="info-grid">';
+    chips.forEach(function(c){ html+='<span class="chip"><b>'+c[0]+'</b>'+escapeHtml(c[1])+'</span>'; });
+    html+='</div>';
+    autoBody.innerHTML=html;
+  }
+  function escapeHtml(s){ return String(s).replace(/[&<>"]/g,function(m){return({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[m]);}); }
+
+  textInput.addEventListener("input", function(){ if(state.mode==="manual") draw(); });
+
+  // ================= draw watermark =================
+  function getSize(){
+    var bmp=state.bitmap;
+    if(!bmp) return null;
+    var iw=bmp.width||bmp.naturalWidth, ih=bmp.height||bmp.naturalHeight;
+    if(!iw||!ih) return null;
+    var MAX=2200, scale=Math.min(1, MAX/Math.max(iw,ih));
+    return { bmp:bmp, w:Math.round(iw*scale), h:Math.round(ih*scale) };
+  }
+
+  // Dispatch table: state.style -> draw function
+  var DRAW_DISPATCH = {
+    classic:        drawClassic,
+    polaroid:       drawPolaroid,
+    leica:          drawLeica,
+    magazine:       drawMagazine,
+    polaroidPlus:   drawPolaroidPlus,
+    darkBar:        drawDarkBar,
+    minimalCorner:  drawMinimalCorner,
+    cinema:         drawCinema,
+    filmStrip:      drawFilmStrip,
+    festivalRed:    drawFestivalRed,
+    checkIn:        drawCheckIn,
+    bigDate:        drawBigDate,
+    hasselblad:     drawHasselblad,
+    minimalFrame:   drawMinimalFrame,
+    magazineLight:  drawMagazineLight
+  };
+
+  function draw(){
+    if(!state.bitmap) return;
+    // Custom template? Render by recipe (see drawCustom).
+    var custom = findCustomTemplate(state.style);
+    if(custom){ drawCustom(custom); return; }
+    var fn = DRAW_DISPATCH[state.style] || drawClassic;
+    fn();
+  }
+
+  function drawClassic(){
+    var s=getSize(); if(!s) return;
+    var w=s.w, h=s.h;
+    var barH=Math.max(64, Math.round(w*0.12));
+    canvas.width=w; canvas.height=h+barH;
+
+    ctx.fillStyle="#FFFFFF";
+    ctx.fillRect(0,0,canvas.width,canvas.height);
+    ctx.drawImage(s.bmp,0,0,w,h);
+
+    // thin separator line above the bar
+    ctx.strokeStyle="rgba(0,0,0,.06)";
+    ctx.lineWidth=Math.max(1,w*0.001);
+    ctx.beginPath(); ctx.moveTo(0,h+0.5); ctx.lineTo(w,h+0.5); ctx.stroke();
+
+    drawText(0, h, w, barH);
+  }
+
+  function drawLeica(){
+    var s=getSize(); if(!s) return;
+    var w=s.w, h=s.h;
+    var barH=Math.max(72, Math.round(w*0.14));
+    canvas.width=w; canvas.height=h+barH;
+
+    ctx.fillStyle="#FFFFFF";
+    ctx.fillRect(0,0,canvas.width,canvas.height);
+    ctx.drawImage(s.bmp,0,0,w,h);
+
+    // Leica red strip at top of bar (thick + obvious, the iconic Leica cue)
+    var redH=Math.max(6, Math.round(barH*0.14));
+    ctx.fillStyle=COLORS.leicaRed;
+    ctx.fillRect(0, h, w, redH);
+
+    drawText(0, h+redH, w, barH-redH, {
+      autoDivider: "rgba(226,0,26,.8)",
+      autoDividerW: 0.003
+    });
+  }
+
+  function drawPolaroid(){
+    var s=getSize(); if(!s) return;
+    var w=s.w, h=s.h;
+    var side=Math.max(40, Math.round(w*0.08));
+    var bottom=Math.max(150, Math.round(w*0.26));
+    var cw=w+side*2, ch=h+side+bottom;
+    canvas.width=cw; canvas.height=ch;
+
+    ctx.fillStyle="#FFFFFF";
+    ctx.fillRect(0,0,cw,ch);
+
+    // subtle soft shadow under the photo
+    ctx.shadowColor="rgba(0,0,0,.18)";
+    ctx.shadowBlur=Math.max(6, Math.round(w*0.012));
+    ctx.shadowOffsetY=Math.max(2, Math.round(w*0.004));
+    ctx.drawImage(s.bmp, side, side, w, h);
+    ctx.shadowColor="transparent"; ctx.shadowBlur=0; ctx.shadowOffsetY=0;
+
+    // crisp hairline around the photo
+    ctx.strokeStyle="rgba(0,0,0,.08)";
+    ctx.lineWidth=Math.max(1,w*0.001);
+    ctx.strokeRect(side+0.5, side+0.5, w-1, h-1);
+
+    // text band sits centered in the lower white area, slightly above midline
+    var effectiveBarH=Math.max(64, Math.round(bottom*0.55));
+    var textOy=side+h+Math.round((bottom-effectiveBarH)*0.45);
+    drawText(side, textOy, w, effectiveBarH);
+  }
+
+  function drawMagazine(){
+    var s=getSize(); if(!s) return;
+    var w=s.w, h=s.h;
+    canvas.width=w; canvas.height=h;
+    ctx.drawImage(s.bmp,0,0,w,h);
+
+    // top subtle dark gradient
+    var topH=Math.round(h*0.16);
+    var topG=ctx.createLinearGradient(0,0,0,topH);
+    topG.addColorStop(0,"rgba(0,0,0,.42)");
+    topG.addColorStop(1,"rgba(0,0,0,0)");
+    ctx.fillStyle=topG;
+    ctx.fillRect(0,0,w,topH);
+
+    // bottom dark gradient for title + caption
+    var botStart=Math.round(h*0.5);
+    var botG=ctx.createLinearGradient(0,botStart,0,h);
+    botG.addColorStop(0,"rgba(0,0,0,0)");
+    botG.addColorStop(0.55,"rgba(0,0,0,.4)");
+    botG.addColorStop(1,"rgba(0,0,0,.82)");
+    ctx.fillStyle=botG;
+    ctx.fillRect(0,botStart,w,h-botStart);
+
+    var pad=Math.round(w*0.055);
+
+    // top brand tag
+    var tagPx=Math.max(13, Math.round(w*0.024));
+    ctx.font="500 "+tagPx+'px '+FONT;
+    ctx.fillStyle="rgba(255,255,255,.9)";
+    ctx.textAlign="left"; ctx.textBaseline="top";
+    ctx.fillText("印迹  ·  PHOTO", pad, Math.round(pad*0.7));
+
+    // gather title + caption based on mode
+    var title, caption;
+    if(state.mode==="manual"){
+      title = ((textInput.value||"").trim() || "MOMENT").toUpperCase();
+      caption = "";
+    } else {
+      var info=buildInfo(state.exif);
+      title = (info.device || "MOMENT").toUpperCase();
+      var parts=[];
+      if(info.date) parts.push(info.date);
+      if(info.params) parts.push(info.params);
+      caption = parts.join("  ·  ");
+    }
+
+    var capPx0 = caption ? Math.max(14, Math.round(w*0.025)) : 0;
+    var spacing = caption ? Math.round(w*0.014) : 0;
+    var titlePx = fitFont(title, w-pad*2, Math.round(w*0.088), "700");
+
+    ctx.font="700 "+titlePx+'px '+FONT;
+    ctx.fillStyle="#FFFFFF";
+    ctx.textAlign="left"; ctx.textBaseline="bottom";
+    ctx.fillText(title, pad, h - pad - capPx0 - spacing);
+
+    if(caption){
+      var capPx = fitFont(caption, w-pad*2, capPx0, "500");
+      ctx.font="500 "+capPx+'px '+FONT;
+      ctx.fillStyle="rgba(255,255,255,.85)";
+      ctx.textBaseline="bottom";
+      ctx.fillText(caption, pad, h-pad);
+    }
+  }
+
+  function drawPolaroidPlus(){
+    var s=getSize(); if(!s) return;
+    var w=s.w, h=s.h;
+    var side=Math.max(50, Math.round(w*0.10));
+    var bottom=Math.max(180, Math.round(w*0.32));
+    var cw=w+side*2, ch=h+side+bottom;
+    canvas.width=cw; canvas.height=ch;
+
+    // cream paper background
+    ctx.fillStyle="#FAF6EE";
+    ctx.fillRect(0,0,cw,ch);
+
+    // photo with soft drop shadow
+    ctx.shadowColor="rgba(0,0,0,.22)";
+    ctx.shadowBlur=Math.max(10, Math.round(w*0.016));
+    ctx.shadowOffsetY=Math.max(3, Math.round(w*0.006));
+    ctx.drawImage(s.bmp, side, side, w, h);
+    ctx.shadowColor="transparent"; ctx.shadowBlur=0; ctx.shadowOffsetY=0;
+
+    // warm vintage tint over the photo
+    ctx.fillStyle="rgba(194,99,45,.09)";
+    ctx.fillRect(side, side, w, h);
+
+    // hairline border
+    ctx.strokeStyle="rgba(0,0,0,.12)";
+    ctx.lineWidth=Math.max(1, w*0.0012);
+    ctx.strokeRect(side+0.5, side+0.5, w-1, h-1);
+
+    // centered text band
+    var effectiveBarH=Math.max(64, Math.round(bottom*0.5));
+    var textOy=side+h+Math.round((bottom-effectiveBarH)*0.4);
+    drawText(side, textOy, w, effectiveBarH);
+
+    // italic serif annotation at lower-right corner of frame
+    var hwPx=Math.max(15, Math.round(w*0.025));
+    ctx.font="italic 500 "+hwPx+'px '+SERIF;
+    ctx.fillStyle="rgba(28,24,20,.55)";
+    ctx.textAlign="right"; ctx.textBaseline="bottom";
+    ctx.fillText("印迹", cw - Math.round(side*0.6), ch - Math.round(side*0.4));
+  }
+
+  // ========== 10 additional preset styles ==========
+
+  function drawDarkBar(){
+    var s=getSize(); if(!s) return;
+    var w=s.w, h=s.h;
+    var barH=Math.max(64, Math.round(w*0.12));
+    canvas.width=w; canvas.height=h+barH;
+    ctx.fillStyle=COLORS.darkBg;
+    ctx.fillRect(0,0,canvas.width,canvas.height);
+    ctx.drawImage(s.bmp,0,0,w,h);
+    drawText(0, h, w, barH, {
+      text: COLORS.darkInk,
+      textSoft: COLORS.darkInkSoft,
+      autoDivider: "rgba(255,255,255,.18)"
+    });
+  }
+
+  function drawMinimalCorner(){
+    var s=getSize(); if(!s) return;
+    var w=s.w, h=s.h;
+    canvas.width=w; canvas.height=h;
+    ctx.drawImage(s.bmp,0,0,w,h);
+
+    var text;
+    if(state.mode==="manual"){
+      text=(textInput.value||"").trim() || "2026.05.28";
+    } else {
+      var info=buildInfo(state.exif);
+      text = info.date || "无拍摄信息";
+    }
+    var pad=Math.round(w*0.035);
+    var px=Math.max(14, Math.round(w*0.022));
+    ctx.font="500 "+px+'px '+FONT;
+    ctx.fillStyle="rgba(255,255,255,.95)";
+    ctx.shadowColor="rgba(0,0,0,.6)";
+    ctx.shadowBlur=Math.max(4, Math.round(w*0.008));
+    ctx.shadowOffsetY=1;
+    ctx.textAlign="right"; ctx.textBaseline="bottom";
+    ctx.fillText(text, w-pad, h-pad);
+    ctx.shadowColor="transparent"; ctx.shadowBlur=0; ctx.shadowOffsetY=0;
+  }
+
+  function drawCinema(){
+    var s=getSize(); if(!s) return;
+    var w=s.w, h=s.h;
+    var topBar=Math.round(h*0.10);
+    var botBar=Math.round(h*0.14);
+    canvas.width=w; canvas.height=h+topBar+botBar;
+    ctx.fillStyle=COLORS.cinemaBlack;
+    ctx.fillRect(0,0,canvas.width,canvas.height);
+    ctx.drawImage(s.bmp, 0, topBar, w, h);
+    drawText(0, h+topBar, w, botBar, {
+      text: "#EAEAEA",
+      textSoft: "#888888",
+      autoDivider: "rgba(255,255,255,.22)"
+    });
+  }
+
+  function drawFilmStrip(){
+    var s=getSize(); if(!s) return;
+    var w=s.w, h=s.h;
+    var stripW=Math.max(40, Math.round(w*0.06));
+    var bot=Math.max(80, Math.round(w*0.11));
+    canvas.width=w+stripW*2; canvas.height=h+bot;
+
+    // film body color (dark warm brown)
+    ctx.fillStyle="#1F1B16";
+    ctx.fillRect(0,0,canvas.width,canvas.height);
+
+    // photo
+    ctx.drawImage(s.bmp, stripW, 0, w, h);
+
+    // perforations on both vertical strips
+    var pw=Math.round(stripW*0.55);
+    var ph=Math.round(pw*0.65);
+    var spacing=Math.round(ph*2.2);
+    var startY=Math.round(spacing*0.4);
+    ctx.fillStyle=COLORS.paperFilm;
+    for(var y=startY; y+ph<h; y+=spacing){
+      ctx.fillRect(stripW/2 - pw/2, y, pw, ph);
+      ctx.fillRect(canvas.width - stripW/2 - pw/2, y, pw, ph);
+    }
+    drawText(0, h, canvas.width, bot, {
+      text: COLORS.paperFilm,
+      textSoft: "#A89878",
+      autoDivider: "rgba(240,232,216,.4)"
+    });
+  }
+
+  function drawFestivalRed(){
+    var s=getSize(); if(!s) return;
+    var w=s.w, h=s.h;
+    var bw=Math.max(20, Math.round(w*0.028));
+    var bot=Math.max(90, Math.round(w*0.14));
+    canvas.width=w+bw*2; canvas.height=h+bw+bot;
+
+    ctx.fillStyle=COLORS.festivalRed;
+    ctx.fillRect(0,0,canvas.width,canvas.height);
+    ctx.drawImage(s.bmp, bw, bw, w, h);
+
+    // gold inner border around photo
+    ctx.strokeStyle=COLORS.festivalGold;
+    ctx.lineWidth=Math.max(2, w*0.0035);
+    ctx.strokeRect(bw+0.5, bw+0.5, w-1, h-1);
+
+    drawText(bw, h+bw, w, bot, {
+      text: COLORS.festivalGold,
+      textSoft: "rgba(245,208,120,.7)",
+      autoDivider: "rgba(245,208,120,.55)",
+      weight: "600"
+    });
+  }
+
+  function drawCheckIn(){
+    var s=getSize(); if(!s) return;
+    var w=s.w, h=s.h;
+    var barH=Math.max(80, Math.round(w*0.13));
+    canvas.width=w; canvas.height=h+barH;
+    ctx.fillStyle=COLORS.paperWhite;
+    ctx.fillRect(0,0,canvas.width,canvas.height);
+    ctx.drawImage(s.bmp, 0, 0, w, h);
+
+    // soft gradient on bar
+    var g=ctx.createLinearGradient(0,h,0,h+barH);
+    g.addColorStop(0, "#F4E6D8");
+    g.addColorStop(1, "#FFFFFF");
+    ctx.fillStyle=g;
+    ctx.fillRect(0, h, w, barH);
+
+    // location pin icon (left side)
+    var pad=Math.round(w*0.05);
+    var iconSize=Math.round(barH*0.5);
+    var iconX=pad + iconSize/2;
+    var iconY=h + barH/2;
+    drawPinIcon(iconX, iconY, iconSize, COLORS.leicaRed);
+
+    // text right of icon (left-aligned, single line)
+    var text;
+    if(state.mode==="manual"){
+      text=(textInput.value||"").trim() || "我的足迹";
+    } else {
+      var info=buildInfo(state.exif);
+      var parts=[];
+      if(info.device) parts.push(info.device);
+      if(info.date) parts.push(info.date);
+      text = parts.join("  ·  ") || "足迹";
+    }
+    var textOx = iconX + iconSize*0.7;
+    var maxW = w - textOx - pad;
+    var px=fitFont(text, maxW, Math.round(barH*0.32), "600");
+    ctx.font="600 "+px+'px '+FONT;
+    ctx.fillStyle=COLORS.ink;
+    ctx.textAlign="left"; ctx.textBaseline="middle";
+    ctx.fillText(text, textOx, iconY);
+  }
+
+  function drawPinIcon(cx, cy, size, color){
+    ctx.save();
+    ctx.fillStyle = color;
+    // teardrop shape
+    ctx.beginPath();
+    ctx.arc(cx, cy - size*0.18, size*0.38, Math.PI, 0, false);
+    ctx.lineTo(cx + size*0.08, cy + size*0.42);
+    ctx.quadraticCurveTo(cx, cy + size*0.5, cx - size*0.08, cy + size*0.42);
+    ctx.closePath();
+    ctx.fill();
+    // white inner dot
+    ctx.fillStyle = "#FFFFFF";
+    ctx.beginPath();
+    ctx.arc(cx, cy - size*0.18, size*0.13, 0, Math.PI*2);
+    ctx.fill();
+    ctx.restore();
+  }
+
+  function drawBigDate(){
+    var s=getSize(); if(!s) return;
+    var w=s.w, h=s.h;
+    canvas.width=w; canvas.height=h;
+    ctx.drawImage(s.bmp,0,0,w,h);
+
+    // bottom dark gradient for readability
+    var gradH=Math.round(h*0.45);
+    var grad=ctx.createLinearGradient(0,h-gradH,0,h);
+    grad.addColorStop(0,"rgba(0,0,0,0)");
+    grad.addColorStop(1,"rgba(0,0,0,.65)");
+    ctx.fillStyle=grad;
+    ctx.fillRect(0,h-gradH,w,gradH);
+
+    var year, fullDate;
+    if(state.mode==="manual"){
+      var t = (textInput.value||"").trim();
+      var ym = t.match(/(\d{4})/);
+      year = ym ? ym[1] : String(new Date().getFullYear());
+      fullDate = t || year;
+    } else {
+      var info=buildInfo(state.exif);
+      var dm = (info.date||"").match(/(\d{4})/);
+      year = dm ? dm[1] : String(new Date().getFullYear());
+      fullDate = info.date || year;
+    }
+
+    var pad=Math.round(w*0.05);
+    var yearPx=Math.round(w*0.22);
+    ctx.font="800 "+yearPx+'px '+FONT;
+    ctx.fillStyle="rgba(255,255,255,.92)";
+    ctx.textAlign="left"; ctx.textBaseline="bottom";
+    ctx.fillText(year, pad, h-pad-Math.round(yearPx*0.32));
+
+    if(fullDate && fullDate !== year){
+      var smallPx=Math.max(14, Math.round(w*0.028));
+      ctx.font="500 "+smallPx+'px '+FONT;
+      ctx.fillStyle="rgba(255,255,255,.85)";
+      ctx.fillText(fullDate, pad, h-pad);
+    }
+  }
+
+  function drawHasselblad(){
+    var s=getSize(); if(!s) return;
+    var w=s.w, h=s.h;
+    var barH=Math.max(72, Math.round(w*0.13));
+    canvas.width=w; canvas.height=h+barH;
+    ctx.fillStyle=COLORS.hasselbladDark;
+    ctx.fillRect(0,0,canvas.width,canvas.height);
+    ctx.drawImage(s.bmp,0,0,w,h);
+
+    // orange accent strip at top of bar (Hasselblad signature)
+    var accentH=Math.max(4, Math.round(barH*0.07));
+    ctx.fillStyle=COLORS.hasselbladOrange;
+    ctx.fillRect(0, h, w, accentH);
+
+    drawText(0, h+accentH, w, barH-accentH, {
+      text: COLORS.hasselbladOrange,
+      textSoft: "#A88060",
+      autoDivider: "rgba(232,160,80,.5)"
+    });
+  }
+
+  function drawMinimalFrame(){
+    var s=getSize(); if(!s) return;
+    var w=s.w, h=s.h;
+    var side=Math.max(14, Math.round(w*0.018));
+    var bot=Math.max(60, Math.round(w*0.08));
+    canvas.width=w+side*2; canvas.height=h+side+bot;
+    ctx.fillStyle=COLORS.paperWhite;
+    ctx.fillRect(0,0,canvas.width,canvas.height);
+    ctx.drawImage(s.bmp, side, side, w, h);
+
+    // hairline border around the photo
+    ctx.strokeStyle="rgba(0,0,0,.22)";
+    ctx.lineWidth=Math.max(1, w*0.0014);
+    ctx.strokeRect(side+0.5, side+0.5, w-1, h-1);
+
+    // small caption below, right-aligned
+    var text;
+    if(state.mode==="manual"){
+      text=(textInput.value||"").trim() || "2026.05.28";
+    } else {
+      var info=buildInfo(state.exif);
+      text = info.date || info.device || "";
+    }
+    var px=Math.max(13, Math.round(w*0.022));
+    ctx.font="500 "+px+'px '+FONT;
+    ctx.fillStyle=COLORS.inkSoft;
+    ctx.textAlign="right"; ctx.textBaseline="middle";
+    ctx.fillText(text, canvas.width - side - Math.round(w*0.012), side + h + bot/2);
+  }
+
+  function drawMagazineLight(){
+    var s=getSize(); if(!s) return;
+    var w=s.w, h=s.h;
+    var panelH = Math.max(120, Math.round(w*0.18));
+    canvas.width=w; canvas.height=h+panelH;
+    ctx.fillStyle=COLORS.paperWhite;
+    ctx.fillRect(0,0,canvas.width,canvas.height);
+    ctx.drawImage(s.bmp,0,0,w,h);
+
+    // small brand tag at top of panel
+    var pad = Math.round(w*0.055);
+    var tagPx = Math.max(11, Math.round(w*0.02));
+    ctx.font="500 "+tagPx+'px '+FONT;
+    ctx.fillStyle=COLORS.inkSoft;
+    ctx.textAlign="left"; ctx.textBaseline="top";
+    ctx.fillText("印迹  ·  PHOTO", pad, h + Math.round(pad*0.45));
+
+    // title + caption
+    var title, caption;
+    if(state.mode==="manual"){
+      title = ((textInput.value||"").trim() || "MOMENT").toUpperCase();
+      caption = "";
+    } else {
+      var info=buildInfo(state.exif);
+      title = (info.device || "MOMENT").toUpperCase();
+      var parts=[];
+      if(info.date) parts.push(info.date);
+      if(info.params) parts.push(info.params);
+      caption = parts.join("  ·  ");
+    }
+    var capPx0 = caption ? Math.max(13, Math.round(w*0.022)) : 0;
+    var spacing = caption ? Math.round(w*0.012) : 0;
+    var titlePx = fitFont(title, w-pad*2, Math.round(w*0.062), "700");
+    ctx.font="700 "+titlePx+'px '+FONT;
+    ctx.fillStyle=COLORS.ink;
+    ctx.textAlign="left"; ctx.textBaseline="bottom";
+    ctx.fillText(title, pad, canvas.height - pad - capPx0 - spacing);
+
+    if(caption){
+      var capPx = fitFont(caption, w-pad*2, capPx0, "500");
+      ctx.font="500 "+capPx+'px '+FONT;
+      ctx.fillStyle=COLORS.inkSoft;
+      ctx.fillText(caption, pad, canvas.height-pad);
+    }
+  }
+
+  // ========== custom (user-defined) template renderer ==========
+
+  function drawCustom(tpl){
+    var layout = tpl.layout || "bar";
+    if(layout === "frame") drawCustomFrame(tpl);
+    else if(layout === "overlay") drawCustomOverlay(tpl);
+    else drawCustomBar(tpl);
+  }
+
+  function drawCustomBar(tpl){
+    var s=getSize(); if(!s) return;
+    var w=s.w, h=s.h;
+    var barH = Math.max(64, Math.round(w * (tpl.barRatio || 0.12)));
+    canvas.width=w; canvas.height=h+barH;
+    ctx.fillStyle = tpl.bg || COLORS.paperWhite;
+    ctx.fillRect(0,0,canvas.width,canvas.height);
+    ctx.drawImage(s.bmp,0,0,w,h);
+
+    var textOy = h, textBarH = barH;
+    if(tpl.accent){
+      var accentH = Math.max(4, Math.round(barH * (tpl.accentRatio || 0.10)));
+      ctx.fillStyle = tpl.accent;
+      ctx.fillRect(0, h, w, accentH);
+      textOy = h + accentH;
+      textBarH = barH - accentH;
+    }
+    drawText(0, textOy, w, textBarH, {
+      text: tpl.text || COLORS.ink,
+      textSoft: tpl.textSoft || mixSoft(tpl.text || COLORS.ink, tpl.bg || COLORS.paperWhite),
+      autoDivider: tpl.accent ? (tpl.accent + "AA") : "rgba(0,0,0,.18)"
+    });
+  }
+
+  function drawCustomFrame(tpl){
+    var s=getSize(); if(!s) return;
+    var w=s.w, h=s.h;
+    var side = Math.max(20, Math.round(w * (tpl.sideRatio || 0.07)));
+    var bot  = Math.max(100, Math.round(w * (tpl.bottomRatio || 0.22)));
+    canvas.width=w+side*2; canvas.height=h+side+bot;
+    ctx.fillStyle = tpl.bg || COLORS.paperWhite;
+    ctx.fillRect(0,0,canvas.width,canvas.height);
+
+    // photo with subtle shadow
+    ctx.shadowColor="rgba(0,0,0,.16)";
+    ctx.shadowBlur=Math.max(6, Math.round(w*0.012));
+    ctx.shadowOffsetY=Math.max(2, Math.round(w*0.004));
+    ctx.drawImage(s.bmp, side, side, w, h);
+    ctx.shadowColor="transparent"; ctx.shadowBlur=0; ctx.shadowOffsetY=0;
+
+    // hairline border on photo
+    ctx.strokeStyle="rgba(0,0,0,.10)";
+    ctx.lineWidth=Math.max(1, w*0.001);
+    ctx.strokeRect(side+0.5, side+0.5, w-1, h-1);
+
+    var effectiveBarH = Math.max(64, Math.round(bot * 0.6));
+    var textOy = side + h + Math.round((bot - effectiveBarH) * 0.45);
+    drawText(side, textOy, w, effectiveBarH, {
+      text: tpl.text || COLORS.ink,
+      textSoft: tpl.textSoft || mixSoft(tpl.text || COLORS.ink, tpl.bg || COLORS.paperWhite),
+      autoDivider: tpl.accent ? (tpl.accent + "AA") : "rgba(0,0,0,.18)"
+    });
+  }
+
+  function drawCustomOverlay(tpl){
+    var s=getSize(); if(!s) return;
+    var w=s.w, h=s.h;
+    canvas.width=w; canvas.height=h;
+    ctx.drawImage(s.bmp,0,0,w,h);
+
+    // bottom gradient — convert tpl.bg to rgba alpha-fade
+    var rgb = hexToRgb(tpl.bg || "#000000");
+    var grad=ctx.createLinearGradient(0,h*0.5,0,h);
+    grad.addColorStop(0,"rgba("+rgb+",0)");
+    grad.addColorStop(0.6,"rgba("+rgb+",.45)");
+    grad.addColorStop(1,"rgba("+rgb+",.85)");
+    ctx.fillStyle=grad;
+    ctx.fillRect(0, Math.round(h*0.5), w, Math.round(h*0.5));
+
+    if(tpl.accent){
+      var accentH = Math.max(3, Math.round(w*0.005));
+      ctx.fillStyle = tpl.accent;
+      ctx.fillRect(0, h-accentH, w, accentH);
+    }
+
+    var barH = Math.max(60, Math.round(h*0.16));
+    drawText(0, h-barH, w, barH, {
+      text: tpl.text || "#FFFFFF",
+      textSoft: tpl.textSoft || "rgba(255,255,255,.78)",
+      autoDivider: tpl.accent ? (tpl.accent + "AA") : "rgba(255,255,255,.3)"
+    });
+  }
+
+  // helper: pick a "soft" text color = blend text 60% with bg
+  function mixSoft(textHex, bgHex){
+    var t = hexToRgb(textHex).split(",");
+    var b = hexToRgb(bgHex).split(",");
+    var r = Math.round(parseInt(t[0])*0.55 + parseInt(b[0])*0.45);
+    var g = Math.round(parseInt(t[1])*0.55 + parseInt(b[1])*0.45);
+    var bb= Math.round(parseInt(t[2])*0.55 + parseInt(b[2])*0.45);
+    return "rgb("+r+","+g+","+bb+")";
+  }
+  function hexToRgb(hex){
+    var s = String(hex||"").replace("#","");
+    if(s.length===3) s = s[0]+s[0]+s[1]+s[1]+s[2]+s[2];
+    var r=parseInt(s.slice(0,2),16)||0, g=parseInt(s.slice(2,4),16)||0, b=parseInt(s.slice(4,6),16)||0;
+    return r+","+g+","+b;
+  }
+
+  function drawText(ox, oy, w, barH, opts){
+    if(state.mode==="manual") drawManualText(ox, oy, w, barH, opts);
+    else drawAutoText(ox, oy, w, barH, opts);
+  }
+
+  function drawManualText(ox, oy, w, barH, opts){
+    opts = opts || {};
+    var color = opts.text || COLORS.ink;
+    var weight = opts.weight || "500";
+    var text=(textInput.value||"").trim() || "输入想显示的文字";
+    var pad=Math.round(w*0.06);
+    var px=fitFont(text, w-pad*2, Math.round(barH*0.34), weight);
+    ctx.fillStyle = color;
+    ctx.font=weight+" "+px+'px '+FONT;
+    ctx.textAlign="center"; ctx.textBaseline="middle";
+    ctx.fillText(text, ox+w/2, oy+barH/2+barH*0.02);
+  }
+
+  function drawAutoText(ox, oy, w, barH, opts){
+    opts = opts || {};
+    var textColor = opts.text || COLORS.ink;
+    var textSoft  = opts.textSoft || COLORS.inkSoft;
+    var dividerColor = opts.autoDivider || "rgba(0,0,0,.18)";
+    var dividerW = opts.autoDividerW || 0.0016;
+
+    var info=buildInfo(state.exif);
+    var pad=Math.round(w*0.05);
+    var cy=oy+barH/2;
+    ctx.textBaseline="middle";
+
+    // left block
+    var leftRight=pad;
+    if(info.device){
+      var dpx=Math.round(barH*0.30);
+      ctx.font="600 "+dpx+'px '+FONT;
+      ctx.fillStyle=textColor; ctx.textAlign="left";
+      var devY = info.date ? (cy - barH*0.16) : cy;
+      ctx.fillText(info.device, ox+pad, devY);
+      leftRight = Math.max(leftRight, pad+ctx.measureText(info.device).width);
+      if(info.date){
+        var tpx=Math.round(barH*0.20);
+        ctx.font="500 "+tpx+'px '+FONT;
+        ctx.fillStyle=textSoft;
+        ctx.fillText(info.date, ox+pad, cy + barH*0.19);
+        leftRight = Math.max(leftRight, pad+ctx.measureText(info.date).width);
+      }
+    }
+
+    // right block: params
+    if(info.params){
+      var gap=barH*0.42;
+      var maxRW=w-pad-(info.device?leftRight+gap:pad);
+      var rpx=fitFont(info.params, maxRW, Math.round(barH*0.26), "500");
+      ctx.font="500 "+rpx+'px '+FONT;
+      ctx.fillStyle=textColor; ctx.textAlign="right"; ctx.textBaseline="middle";
+      ctx.fillText(info.params, ox+w-pad, cy);
+      // divider
+      if(info.device){
+        var rw=ctx.measureText(info.params).width;
+        var dx=(ox+w-pad-rw)-gap*0.55;
+        if(dx>ox+leftRight+barH*0.18){
+          ctx.strokeStyle=dividerColor;
+          ctx.lineWidth=Math.max(1, w*dividerW);
+          ctx.beginPath();
+          ctx.moveTo(dx, oy+barH*0.27);
+          ctx.lineTo(dx, oy+barH*0.73);
+          ctx.stroke();
+        }
+      }
+    } else if(!info.device){
+      // nothing usable -> show placeholder centered
+      ctx.font="500 "+Math.round(barH*0.3)+'px '+FONT;
+      ctx.fillStyle=textSoft; ctx.textAlign="center";
+      ctx.fillText("无拍摄信息", ox+w/2, cy);
+    }
+  }
+
+  function fitFont(text, maxW, startPx, weight){
+    var px=startPx;
+    ctx.font=weight+" "+px+'px '+FONT;
+    while(ctx.measureText(text).width>maxW && px>9){
+      px-=1; ctx.font=weight+" "+px+'px '+FONT;
+    }
+    return px;
+  }
+
+  // ================= save =================
+  saveBtn.addEventListener("click", function(){
+    if(!state.bitmap){ return; }
+    var url;
+    try{ url=canvas.toDataURL("image/jpeg",0.92); }
+    catch(e){ toast("生成失败，请重试"); return; }
+    resultImg.src=url;
+    downloadLink.href=url;
+    overlay.classList.add("show");
+  });
+  closeSheet.addEventListener("click", function(){ overlay.classList.remove("show"); });
+  overlay.addEventListener("click", function(e){ if(e.target===overlay) overlay.classList.remove("show"); });
+
+  // ================= reset =================
+  resetBtn.addEventListener("click", function(){
+    state.bitmap=null; state.exif=null;
+    editor.style.display="none";
+    drop.style.display="flex";
+    setDropMsg("选择照片 · 拍照","点这里从相册选一张，或直接拍一张，给它加上白框黑字水印");
+  });
+
+  // ================= template search =================
+  searchBtn.addEventListener("click", function(){
+    searchInput.value="";
+    renderSearchResults("");
+    searchOverlay.classList.add("show");
+    setTimeout(function(){ try{ searchInput.focus(); }catch(e){} }, 120);
+  });
+  closeSearch.addEventListener("click", function(){ searchOverlay.classList.remove("show"); });
+  searchOverlay.addEventListener("click", function(e){
+    if(e.target===searchOverlay) searchOverlay.classList.remove("show");
+  });
+  searchInput.addEventListener("input", function(){ renderSearchResults(searchInput.value); });
+
+  function renderSearchResults(query){
+    var q=String(query||"").trim().toLowerCase();
+    var pool=allTemplates();
+    var matches=pool.filter(function(t){
+      if(!q) return true;
+      var hay=(t.name+" "+(t.desc||"")+" "+(t.tags||[]).join(" ")+" "+t.id).toLowerCase();
+      return hay.indexOf(q)!==-1;
+    });
+    if(matches.length===0){
+      searchResults.innerHTML='<div class="template-empty">没找到匹配的模板,换个关键词试试</div>';
+      return;
+    }
+    var html=matches.map(function(t){
+      var cur = (t.id===state.style) ? ' current' : '';
+      var badge = (t.id===state.style) ? '<span class="badge">当前</span>' : '';
+      var customTag = t._custom ? '<span class="tag-custom">我的</span>' : '';
+      var delBtn = t._custom ? '<button class="del" data-del="'+t.id+'">删除</button>' : '';
+      return '<div class="template-item'+cur+'" data-style="'+t.id+'">'+
+             '<div class="name">'+escapeHtml(t.name)+customTag+badge+delBtn+'</div>'+
+             '<div class="desc">'+escapeHtml(t.desc||"")+'</div>'+
+             '</div>';
+    }).join("");
+    searchResults.innerHTML=html;
+    Array.prototype.forEach.call(searchResults.querySelectorAll(".template-item"), function(el){
+      el.addEventListener("click", function(ev){
+        if(ev.target && ev.target.classList && ev.target.classList.contains("del")){
+          var id = ev.target.getAttribute("data-del");
+          deleteCustomTemplate(id);
+          ev.stopPropagation();
+          return;
+        }
+        setStyle(el.getAttribute("data-style"));
+        searchOverlay.classList.remove("show");
+        toast("已切换为「"+el.querySelector(".name").firstChild.nodeValue+"」");
+      });
+    });
+  }
+
+  function deleteCustomTemplate(id){
+    if(!confirm("删除这个自定义模板?")) return;
+    customTemplates = customTemplates.filter(function(c){ return c.id !== id; });
+    persistCustomTemplates();
+    if(state.style === id){ setStyle("classic"); }
+    renderSearchResults(searchInput.value);
+    toast("已删除");
+  }
+
+  // ================= custom template editor =================
+  var customOverlay=$("customOverlay"), customTitle=$("customTitle");
+  var customLayoutSeg=$("customLayoutSeg");
+  var customBg=$("customBg"), customText=$("customText");
+  var customAccent=$("customAccent"), customAccentOn=$("customAccentOn");
+  var customName=$("customName");
+  var customSave=$("customSave"), customCancel=$("customCancel");
+  var newCustomBtn=$("newCustomBtn");
+  var editingCustomId = null;   // null = creating new; otherwise editing existing
+  var customLayout = "bar";
+
+  function openCustomEditor(existing){
+    if(existing){
+      editingCustomId = existing.id;
+      customTitle.textContent = "编辑模板";
+      customLayout = existing.layout || "bar";
+      customBg.value = existing.bg || "#FFFFFF";
+      customText.value = existing.text || "#1C1814";
+      customAccent.value = existing.accent || "#E2001A";
+      customAccentOn.checked = !!existing.accent;
+      customName.value = existing.name || "";
+    } else {
+      editingCustomId = null;
+      customTitle.textContent = "新建模板";
+      customLayout = "bar";
+      customBg.value = "#FFFFFF";
+      customText.value = "#1C1814";
+      customAccent.value = "#E2001A";
+      customAccentOn.checked = false;
+      customName.value = "";
+    }
+    updateLayoutSegUI();
+    customOverlay.classList.add("show");
+  }
+  function closeCustomEditor(){ customOverlay.classList.remove("show"); }
+
+  Array.prototype.forEach.call(customLayoutSeg.querySelectorAll("button"), function(b){
+    b.addEventListener("click", function(){
+      customLayout = b.getAttribute("data-layout");
+      updateLayoutSegUI();
+    });
+  });
+  function updateLayoutSegUI(){
+    Array.prototype.forEach.call(customLayoutSeg.querySelectorAll("button"), function(b){
+      b.classList.toggle("on", b.getAttribute("data-layout") === customLayout);
+    });
+  }
+
+  newCustomBtn.addEventListener("click", function(){
+    searchOverlay.classList.remove("show");
+    openCustomEditor(null);
+  });
+  customCancel.addEventListener("click", closeCustomEditor);
+  customOverlay.addEventListener("click", function(e){
+    if(e.target===customOverlay) closeCustomEditor();
+  });
+
+  customSave.addEventListener("click", function(){
+    var name = (customName.value||"").trim();
+    if(!name){ toast("请给模板起个名字"); customName.focus(); return; }
+    var tpl = {
+      id: editingCustomId || ("custom_"+Date.now().toString(36)),
+      name: name,
+      layout: customLayout,
+      bg: customBg.value,
+      text: customText.value,
+      accent: customAccentOn.checked ? customAccent.value : null,
+      tags: [],
+      desc: "自定义 · "+(customLayout==="bar"?"底栏":customLayout==="frame"?"四周白边":"满版渐变")
+    };
+    if(editingCustomId){
+      customTemplates = customTemplates.map(function(c){ return c.id===editingCustomId ? tpl : c; });
+    } else {
+      customTemplates.push(tpl);
+    }
+    persistCustomTemplates();
+    closeCustomEditor();
+    setStyle(tpl.id);
+    toast(editingCustomId ? "已更新" : "已保存,可在搜索里找到");
+  });
+
+  // load customs on startup
+  loadCustomTemplates();
+
+  // ================= PWA: register service worker for offline =================
+  if('serviceWorker' in navigator){
+    window.addEventListener('load', function(){
+      navigator.serviceWorker.register('sw.js').catch(function(){ /* devfile.cn single-file deploy = no SW; ignore */ });
+    });
+  }
+
+})();
+</script>
+</body>
+</html>
