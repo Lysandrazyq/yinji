@@ -53,6 +53,10 @@
     font-family:var(--display);font-size:11px;letter-spacing:.28em;
     text-transform:uppercase;color:var(--accent);margin-top:7px;font-weight:500;
   }
+  .brand .tag #appVer{
+    font-size:10px;letter-spacing:.04em;text-transform:lowercase;
+    opacity:.7;font-weight:600;
+  }
   .icon-btn{
     width:44px;height:44px;border-radius:14px;border:1px solid var(--line);
     background:var(--surface);display:flex;align-items:center;justify-content:center;
@@ -114,6 +118,14 @@
     content:'';position:absolute;top:5px;right:7px;
     width:5px;height:5px;border-radius:50%;background:var(--accent);
   }
+  /* "+" button at the end of the style seg — opens the custom editor directly */
+  .seg button.new-tpl-btn{
+    flex:0 0 auto;min-width:38px;
+    color:var(--accent);font-size:20px;font-weight:600;
+    padding:7px 12px;line-height:1;
+    border:1px dashed var(--accent);background:transparent;
+  }
+  .seg button.new-tpl-btn:active{background:var(--accent-soft);}
 
   .field{margin-top:16px;}
   .field.hidden{display:none;}
@@ -245,7 +257,7 @@
   <header>
     <div class="brand">
       <span class="name">印迹</span>
-      <span class="tag">Photo&nbsp;Watermark</span>
+      <span class="tag">Photo&nbsp;Watermark · <span id="appVer">v2.2.0</span></span>
     </div>
     <button class="icon-btn" id="searchBtn" aria-label="搜索">
       <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -372,6 +384,9 @@
 <script>
 (function(){
   "use strict";
+
+  // ---------- version (single source of truth; bump on every release) ----------
+  var APP_VERSION = "v2.2.0";
 
   // ---------- state ----------
   var state = { bitmap:null, exif:null, mode:"manual", style:"classic" };
@@ -685,10 +700,18 @@
       var cls = 'custom-tpl' + (state.style === c.id ? ' on' : '');
       html += '<button data-style="'+c.id+'" class="'+cls+'" title="我的模板">'+escapeHtml(c.name)+'</button>';
     });
+    // "+" button at the end → opens the custom editor directly (no need to go via search)
+    html += '<button class="new-tpl-btn" title="新建我的模板" aria-label="新建我的模板">+</button>';
     styleSeg.innerHTML = html;
-    Array.prototype.forEach.call(styleSeg.querySelectorAll("button"), function(b){
+    // bind preset/custom buttons → setStyle
+    Array.prototype.forEach.call(styleSeg.querySelectorAll("button[data-style]"), function(b){
       b.addEventListener("click", function(){ setStyle(b.getAttribute("data-style")); });
     });
+    // bind "+" button → open custom editor
+    var newBtn = styleSeg.querySelector("button.new-tpl-btn");
+    if(newBtn){
+      newBtn.addEventListener("click", function(){ openCustomEditor(null); });
+    }
   }
 
   function setStyle(style){
@@ -1631,6 +1654,9 @@
   // load customs on startup, then build the style seg (presets + customs)
   loadCustomTemplates();
   renderStyleSeg();
+  // inject version into the brand tag (so APP_VERSION constant is the single source)
+  var verEl = document.getElementById('appVer');
+  if(verEl) verEl.textContent = APP_VERSION;
 
   // ================= PWA: register service worker for offline =================
   if('serviceWorker' in navigator){
