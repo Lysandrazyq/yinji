@@ -26,16 +26,56 @@
     --shadow-sm:0 4px 14px rgba(54,40,24,.07);
     --font:-apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Segoe UI",Roboto,sans-serif;
     --display:ui-serif,Georgia,"Songti SC","Times New Roman",serif;
-    /* Liquid glass tokens: semi-transparent surfaces + strong backdrop blur */
-    --glass-bg:rgba(255,255,255,0.55);
-    --glass-bg-strong:rgba(255,255,255,0.78);
-    --glass-bg-faint:rgba(255,255,255,0.35);
-    --glass-border:rgba(255,255,255,0.75);
-    --glass-blur:blur(28px) saturate(180%);
-    --glass-blur-sm:blur(18px) saturate(170%);
-    --glass-highlight:inset 0 1px 1px rgba(255,255,255,0.65);
+    /* Liquid glass tokens (tuned to mimic iOS 26 native feel):
+       - low base opacity so background colors bleed through (refraction)
+       - high blur radius for the frosted look
+       - saturation + slight brightness boost mimic glass light refraction
+       - top inset highlight = glass top-edge reflection
+       - bottom inset darken = glass thickness shadow */
+    --glass-bg:rgba(255,255,255,0.22);
+    --glass-bg-strong:rgba(255,255,255,0.42);
+    --glass-bg-faint:rgba(255,255,255,0.14);
+    --glass-border:rgba(255,255,255,0.30);
+    --glass-blur:blur(44px) saturate(180%) brightness(1.05);
+    --glass-blur-sm:blur(30px) saturate(170%) brightness(1.04);
+    --glass-highlight:inset 0 1px 0 rgba(255,255,255,0.55), inset 0 -1px 0 rgba(28,24,20,0.04);
     --ease:cubic-bezier(.2,.8,.2,1);
   }
+
+  /* "Glass off" mode — disables backdrop-filter for performance / preference.
+     Solid surfaces, no blur. Saves significant GPU work on weaker devices. */
+  body[data-glass="off"]{
+    --glass-bg:rgba(255,255,255,0.95);
+    --glass-bg-strong:#FFFFFF;
+    --glass-bg-faint:rgba(255,255,255,0.85);
+    --glass-border:var(--line);
+    --glass-blur:none;
+    --glass-blur-sm:none;
+    --glass-highlight:0 1px 1px rgba(255,255,255,0.4);
+  }
+  /* kill all backdrop-filter when off (catches hardcoded blur values elsewhere too) */
+  body[data-glass="off"] *{
+    -webkit-backdrop-filter:none!important;
+    backdrop-filter:none!important;
+  }
+  /* solid background overrides for elements with hardcoded rgba */
+  body[data-glass="off"] .seg{background:var(--bg);}
+  body[data-glass="off"] .seg button.on{background:var(--surface);}
+  body[data-glass="off"] .sheet{background:var(--bg);border-top-color:var(--line);}
+  body[data-glass="off"] .overlay{background:rgba(28,24,20,0.55);}
+  body[data-glass="off"] .canvas-stage,
+  body[data-glass="off"] .panel{background:var(--surface);border-color:var(--line);}
+  body[data-glass="off"] .drop{background:rgba(255,255,255,0.7);}
+  body[data-glass="off"] .icon-btn{background:var(--surface);border-color:var(--line);}
+  body[data-glass="off"] .btn-ghost{background:var(--bg);border-color:var(--line);}
+  body[data-glass="off"] .template-item{background:var(--surface);border-color:var(--line);}
+  body[data-glass="off"] .template-item.current{background:var(--accent-soft);}
+  body[data-glass="off"] .search-input,
+  body[data-glass="off"] input[type=text]{background:var(--surface);border-color:var(--line);}
+  body[data-glass="off"] .chip{background:var(--bg);border-color:var(--line);}
+  body[data-glass="off"] .custom-row{background:var(--surface);border-color:var(--line);}
+  body[data-glass="off"] .btn-new-tpl{background:var(--accent-soft);}
+  body[data-glass="off"] .nodata{background:var(--accent-soft);}
 
   /* ========== entry animations ========== */
   @keyframes yj-fadeUp{
@@ -372,6 +412,39 @@
   .custom-row .cb{display:flex;align-items:center;gap:6px;font-size:13px;color:var(--ink-soft);cursor:pointer;}
   .custom-row .cb input{margin:0;}
 
+  /* Settings row (e.g. glass toggle) */
+  .setting-row{
+    display:flex;align-items:center;justify-content:space-between;gap:14px;
+    padding:14px 4px 4px;
+    border-top:1px solid rgba(0,0,0,0.06);
+    margin-top:14px;
+  }
+  .setting-text{flex:1;min-width:0;}
+  .setting-lbl{font-size:14.5px;color:var(--ink);font-weight:500;}
+  .setting-hint{font-size:12px;color:var(--ink-soft);margin-top:2px;line-height:1.4;}
+
+  /* iOS-style switch */
+  .switch{position:relative;display:inline-block;width:48px;height:28px;flex-shrink:0;}
+  .switch input{opacity:0;width:0;height:0;}
+  .switch .slider{
+    position:absolute;cursor:pointer;inset:0;
+    background:rgba(28,24,20,0.18);
+    transition:background .25s var(--ease);
+    border-radius:28px;
+    box-shadow:inset 0 1px 2px rgba(0,0,0,0.08);
+  }
+  .switch .slider::before{
+    content:'';position:absolute;
+    width:24px;height:24px;
+    left:2px;top:2px;
+    background:#fff;
+    border-radius:50%;
+    transition:transform .25s var(--ease), box-shadow .25s var(--ease);
+    box-shadow:0 2px 4px rgba(0,0,0,0.18), 0 0 1px rgba(0,0,0,0.1);
+  }
+  .switch input:checked + .slider{background:var(--accent);}
+  .switch input:checked + .slider::before{transform:translateX(20px);}
+
   /* Toast */
   .toast{
     position:fixed;left:50%;bottom:46px;transform:translateX(-50%) translateY(20px);
@@ -387,7 +460,7 @@
   <header>
     <div class="brand">
       <span class="name">印迹</span>
-      <span class="tag">Photo&nbsp;Watermark · <span id="appVer">v2.3.0</span></span>
+      <span class="tag">Photo&nbsp;Watermark · <span id="appVer">v2.4.0</span></span>
     </div>
     <button class="icon-btn" id="searchBtn" aria-label="搜索">
       <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -464,6 +537,16 @@
     <input type="text" id="searchInput" class="search-input" placeholder="搜模板名 / 风格 / 标签" maxlength="20">
     <button class="btn btn-new-tpl" id="newCustomBtn">+ 新建我的模板</button>
     <div id="searchResults" class="search-results"></div>
+    <div class="setting-row">
+      <div class="setting-text">
+        <div class="setting-lbl">液态玻璃</div>
+        <div class="setting-hint">关掉可减少 GPU 占用,旧设备建议关</div>
+      </div>
+      <label class="switch">
+        <input type="checkbox" id="glassToggle">
+        <span class="slider"></span>
+      </label>
+    </div>
     <div class="row">
       <button class="btn btn-ghost" id="closeSearch">关闭</button>
     </div>
@@ -516,7 +599,7 @@
   "use strict";
 
   // ---------- version (single source of truth; bump on every release) ----------
-  var APP_VERSION = "v2.3.0";
+  var APP_VERSION = "v2.4.0";
 
   // ---------- state ----------
   var state = { bitmap:null, exif:null, mode:"manual", style:"classic" };
@@ -1787,6 +1870,32 @@
   // inject version into the brand tag (so APP_VERSION constant is the single source)
   var verEl = document.getElementById('appVer');
   if(verEl) verEl.textContent = APP_VERSION;
+
+  // ================= Liquid glass on/off preference =================
+  var glassToggle = $("glassToggle");
+  var GLASS_KEY = "yinji.glass";
+
+  function applyGlass(on){
+    document.body.setAttribute("data-glass", on ? "on" : "off");
+    var s = PLATFORM.getStorage();
+    if(s){ try{ s.setItem(GLASS_KEY, on ? "1" : "0"); }catch(e){} }
+  }
+
+  (function initGlass(){
+    var saved = null;
+    var s = PLATFORM.getStorage();
+    if(s){ try{ saved = s.getItem(GLASS_KEY); }catch(e){} }
+    var on = saved !== "0"; // default ON
+    if(glassToggle) glassToggle.checked = on;
+    applyGlass(on);
+  })();
+
+  if(glassToggle){
+    glassToggle.addEventListener("change", function(){
+      applyGlass(glassToggle.checked);
+      toast(glassToggle.checked ? "已开启液态玻璃" : "已关闭液态玻璃");
+    });
+  }
 
   // ================= PWA: register service worker for offline =================
   if('serviceWorker' in navigator){
