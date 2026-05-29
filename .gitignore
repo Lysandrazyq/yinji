@@ -1,0 +1,27 @@
+# 印迹 — git ignore list
+
+node_modules/
+android/
+ios/
+www/
+capacitor.config.json
+package-lock.json
+
+src-tauri/target/
+src-tauri/Cargo.lock
+
+__pycache__/
+*.pyc
+*.pyo
+.check.js
+
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+
+*.tmp
+*.bak
+*.log
