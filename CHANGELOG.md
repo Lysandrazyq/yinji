@@ -7,6 +7,14 @@
 
 ---
 
+## v2.5.0 — 2026-05-29
+
+- 新增 HEIC 拍摄信息读取(iPhone 默认 HEIC 格式的照片,自动模式现在能正确读出机型 / 时间 / 光圈快门 ISO 焦距)
+- 优化 非 Safari 浏览器打开 HEIC 时显示明确报错(原来是静默失败,现在提示"请用 iPhone Safari 或转成 JPEG")
+- 解决 之前 HEIC 照片只能走手动模式的限制(对 iPhone Safari 用户)
+
+> ⚠️ HEIC **图像渲染**只在 iOS Safari / macOS Safari 上工作(浏览器原生支持)。Chrome / Edge / Firefox 不支持 HEIC 解码,需用户先转 JPEG。
+
 ## v2.4.0 — 2026-05-29
 
 - 优化 液态玻璃重做(更接近 iOS 26 原生质感):不透明度大幅降低 + 模糊半径加大 + 亮度补偿 + 顶部高光线 + 底部暗细线模拟玻璃厚度

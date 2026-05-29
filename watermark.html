@@ -460,7 +460,7 @@
   <header>
     <div class="brand">
       <span class="name">印迹</span>
-      <span class="tag">Photo&nbsp;Watermark · <span id="appVer">v2.4.0</span></span>
+      <span class="tag">Photo&nbsp;Watermark · <span id="appVer">v2.5.0</span></span>
     </div>
     <button class="icon-btn" id="searchBtn" aria-label="搜索">
       <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -599,7 +599,7 @@
   "use strict";
 
   // ---------- version (single source of truth; bump on every release) ----------
-  var APP_VERSION = "v2.4.0";
+  var APP_VERSION = "v2.5.0";
 
   // ---------- state ----------
   var state = { bitmap:null, exif:null, mode:"manual", style:"classic" };
@@ -723,16 +723,32 @@
   }
 
   // ================= EXIF parsing =================
+  // Dispatches by file format:
+  //   - JPEG (FF D8 ...)       → parseJpegExif: walks APP1 segments for "Exif\0\0"
+  //   - HEIC / HEIF / AVIF     → parseHeicExif: walks ISOBMFF boxes (ftyp / meta / iinf / iloc)
+  // Returns the same tags object regardless of source format.
   function parseExif(buffer){
     try{
       var view=new DataView(buffer);
-      if(view.getUint16(0)!==0xFFD8) return null; // not JPEG
+      // JPEG path (most common)
+      if(view.byteLength>=2 && view.getUint16(0)===0xFFD8){
+        return parseJpegExif(view);
+      }
+      // ISOBMFF path (HEIC / HEIF / AVIF) — top-level box at offset 4 is "ftyp"
+      if(view.byteLength>=12 && view.getUint32(4)===0x66747970){
+        return parseHeicExif(view);
+      }
+    }catch(e){}
+    return null;
+  }
+
+  function parseJpegExif(view){
+    try{
       var len=view.byteLength, off=2;
       while(off+4<len){
         var marker=view.getUint16(off);
         if(marker===0xFFE1){ // APP1
-          // "Exif" = 0x45786966
-          if(view.getUint32(off+4)===0x45786966){
+          if(view.getUint32(off+4)===0x45786966){ // "Exif"
             return readTiff(view, off+10); // skip "Exif\0\0"
           }
         }
@@ -745,6 +761,167 @@
       }
     }catch(e){}
     return null;
+  }
+
+  // ===== HEIC / HEIF / AVIF EXIF parsing =====
+  // ISOBMFF (ISO/IEC 14496-12) container; HEIF spec ISO/IEC 23008-12 puts Exif as an item.
+  // Steps:
+  //   1) Check ftyp brand is HEIC-family (heic/heix/hevc/mif1/avif/heif/...)
+  //   2) Find top-level 'meta' box (a FullBox; skip 4-byte version+flags)
+  //   3) In meta, find 'iinf' (item info) → walk 'infe' entries → find one with item_type == 'Exif'
+  //   4) In meta, find 'iloc' (item location) → look up that item_id → get file offset + length
+  //   5) Item data layout: [u32 exif_tiff_header_offset][...optional "Exif\0\0"...][TIFF]
+  //      Compute tiffStart = exifOffset + 4 + exif_tiff_header_offset, then reuse readTiff()
+  function parseHeicExif(view){
+    try{
+      if(!isHeicLike(view)) return null;
+      var len=view.byteLength;
+
+      var meta=findBox(view, 0, len, 0x6D657461 /* 'meta' */);
+      if(!meta) return null;
+      var mStart=meta.contentStart+4, mEnd=meta.end; // skip FullBox header
+
+      // -- find Exif item id via iinf / infe --
+      var iinf=findBox(view, mStart, mEnd, 0x69696E66 /* 'iinf' */);
+      if(!iinf) return null;
+      var iinfP=iinf.contentStart;
+      var iinfVer=view.getUint8(iinfP);
+      iinfP+=4;
+      var entryCount;
+      if(iinfVer===0){ entryCount=view.getUint16(iinfP); iinfP+=2; }
+      else           { entryCount=view.getUint32(iinfP); iinfP+=4; }
+
+      var exifItemId=null, p=iinfP;
+      for(var i=0;i<entryCount && p+8<=iinf.end && exifItemId===null;i++){
+        var entrySize=view.getUint32(p);
+        var entryType=view.getUint32(p+4);
+        if(entrySize<8) break;
+        if(entryType===0x696E6665 /* 'infe' */){
+          var infeVer=view.getUint8(p+8);
+          var infeP=p+12;
+          var itemId=0, itemType=0;
+          if(infeVer===2){
+            itemId=view.getUint16(infeP);
+            itemType=view.getUint32(infeP+4);
+          } else if(infeVer===3){
+            itemId=view.getUint32(infeP);
+            itemType=view.getUint32(infeP+6);
+          }
+          if(itemType===0x45786966 /* 'Exif' */) exifItemId=itemId;
+        }
+        p+=entrySize;
+      }
+      if(exifItemId===null) return null;
+
+      // -- find offset+length via iloc --
+      var iloc=findBox(view, mStart, mEnd, 0x696C6F63 /* 'iloc' */);
+      if(!iloc) return null;
+      var ilocP=iloc.contentStart;
+      var ilocVer=view.getUint8(ilocP);
+      ilocP+=4;
+
+      var s1=view.getUint8(ilocP);
+      var offsetSize=(s1>>4)&0x0F, lengthSize=s1&0x0F;
+      var s2=view.getUint8(ilocP+1);
+      var baseOffsetSize=(s2>>4)&0x0F;
+      var indexSize=(ilocVer===1||ilocVer===2)?(s2&0x0F):0;
+      ilocP+=2;
+
+      var itemCount;
+      if(ilocVer<2){ itemCount=view.getUint16(ilocP); ilocP+=2; }
+      else         { itemCount=view.getUint32(ilocP); ilocP+=4; }
+
+      var exifOffset=null;
+      for(var ii=0; ii<itemCount && ilocP<iloc.end && exifOffset===null; ii++){
+        var iid;
+        if(ilocVer<2){ iid=view.getUint16(ilocP); ilocP+=2; }
+        else         { iid=view.getUint32(ilocP); ilocP+=4; }
+        if(ilocVer>=1) ilocP+=2; // construction_method + reserved
+        ilocP+=2; // data_reference_index
+        var baseOff=readVarSize(view, ilocP, baseOffsetSize);
+        ilocP+=baseOffsetSize;
+        var extCount=view.getUint16(ilocP);
+        ilocP+=2;
+        for(var j=0; j<extCount; j++){
+          if(ilocVer>=1 && indexSize>0) ilocP+=indexSize;
+          var extOff=readVarSize(view, ilocP, offsetSize);
+          ilocP+=offsetSize;
+          var extLen=readVarSize(view, ilocP, lengthSize);
+          ilocP+=lengthSize;
+          if(iid===exifItemId && exifOffset===null){
+            exifOffset=baseOff+extOff;
+          }
+        }
+      }
+
+      if(exifOffset===null || exifOffset+4>len) return null;
+
+      // Item data starts with a u32 (big-endian) tiff_header_offset.
+      // Typically 6 (= length of "Exif\0\0"), pointing past that header to actual TIFF.
+      var tiffHdrOff=view.getUint32(exifOffset);
+      var tiffStart=exifOffset+4+tiffHdrOff;
+      if(tiffStart>=len) return null;
+      return readTiff(view, tiffStart);
+
+    }catch(e){ return null; }
+  }
+
+  function isHeicLike(view){
+    if(view.byteLength<12) return false;
+    if(view.getUint32(4)!==0x66747970 /* 'ftyp' */) return false;
+    if(isHeicBrand(view.getUint32(8))) return true; // major brand
+    var ftypSize=view.getUint32(0);
+    // walk compatible_brands list
+    for(var i=16; i+4<=ftypSize && i<view.byteLength; i+=4){
+      if(isHeicBrand(view.getUint32(i))) return true;
+    }
+    return false;
+  }
+  function isHeicBrand(b){
+    // HEIC family brands per ISO/IEC 23008-12 + AVIF
+    return b===0x68656963 /*heic*/ || b===0x68656978 /*heix*/ ||
+           b===0x68657663 /*hevc*/ || b===0x68657678 /*hevx*/ ||
+           b===0x6865696D /*heim*/ || b===0x68656973 /*heis*/ ||
+           b===0x6865766D /*hevm*/ || b===0x68657673 /*hevs*/ ||
+           b===0x6D696631 /*mif1*/ || b===0x6D736631 /*msf1*/ ||
+           b===0x61766966 /*avif*/ || b===0x68656966 /*heif*/;
+  }
+
+  // Generic ISOBMFF box walker. Returns {start, contentStart, end} or null.
+  function findBox(view, start, end, target4cc){
+    var off=start;
+    while(off+8<=end){
+      var size=view.getUint32(off);
+      var type=view.getUint32(off+4);
+      var boxEnd, contentStart;
+      if(size===1){
+        if(off+16>end) break;
+        var h=view.getUint32(off+8), l=view.getUint32(off+12);
+        boxEnd=off+(h*0x100000000+l);
+        contentStart=off+16;
+      } else if(size===0){
+        boxEnd=end; contentStart=off+8;
+      } else {
+        boxEnd=off+size; contentStart=off+8;
+      }
+      if(boxEnd<=off || boxEnd>end) break;
+      if(type===target4cc) return { start:off, contentStart:contentStart, end:boxEnd };
+      off=boxEnd;
+    }
+    return null;
+  }
+
+  // Read a variable-size big-endian unsigned int (0/1/2/4/8 bytes).
+  function readVarSize(view, offset, size){
+    if(size===0) return 0;
+    if(size===4) return view.getUint32(offset);
+    if(size===8){
+      var h=view.getUint32(offset), l=view.getUint32(offset+4);
+      return h*0x100000000+l;
+    }
+    if(size===2) return view.getUint16(offset);
+    if(size===1) return view.getUint8(offset);
+    return 0;
   }
 
   function readTiff(view, tiff){
@@ -846,14 +1023,27 @@
   }
 
   function loadFile(file){
+    var isHeic=false;
     return Promise.resolve().then(function(){
       return file.arrayBuffer ? file.arrayBuffer() : readBufFallback(file);
     }).then(function(buf){
       try{ state.exif=parseExif(buf); }catch(e){ state.exif=null; }
+      isHeic=detectHeic(buf, file.name);
     }, function(){ state.exif=null; })
-    .then(function(){ return loadBitmap(file); })
+    .then(function(){
+      // Wrap loadBitmap so HEIC decode failures (common on non-Safari) get a friendly message.
+      return loadBitmap(file).catch(function(){
+        if(isHeic){
+          throw new Error("HEIC 格式,当前浏览器解不开。请用 iPhone Safari 打开,或先转成 JPEG。");
+        }
+        throw new Error("照片解码失败");
+      });
+    })
     .then(function(bmp){
       if(!bmp || !((bmp.width||bmp.naturalWidth) && (bmp.height||bmp.naturalHeight))){
+        if(isHeic){
+          throw new Error("HEIC 格式,当前浏览器解不开。请用 iPhone Safari 打开,或先转成 JPEG。");
+        }
         throw new Error("照片解码失败");
       }
       state.bitmap=bmp;
@@ -863,6 +1053,18 @@
       renderAutoPanel();
       draw();
     });
+  }
+
+  // True if file is HEIC/HEIF/AVIF (by name extension or magic bytes).
+  function detectHeic(buf, name){
+    if(name){
+      var n=name.toLowerCase();
+      if(n.indexOf(".heic")>=0 || n.indexOf(".heif")>=0 || n.indexOf(".avif")>=0) return true;
+    }
+    try{
+      var view=new DataView(buf);
+      return isHeicLike(view);
+    }catch(e){ return false; }
   }
 
   function readBufFallback(file){
