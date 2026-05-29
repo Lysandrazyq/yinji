@@ -75,6 +75,8 @@
   body[data-glass="off"] .chip{background:var(--bg);border-color:var(--line);}
   body[data-glass="off"] .custom-row{background:var(--surface);border-color:var(--line);}
   body[data-glass="off"] .btn-new-tpl{background:var(--accent-soft);}
+  body[data-glass="off"] .btn-import-tpl,
+  body[data-glass="off"] .share-text{background:var(--surface);border-color:var(--line);}
   body[data-glass="off"] .nodata{background:var(--accent-soft);}
 
   /* ========== entry animations ========== */
@@ -390,6 +392,42 @@
   .btn-new-tpl:hover{background:rgba(244,230,216,.85);}
   .btn-new-tpl:active{transform:scale(.98);background:#EFD8C0;}
 
+  /* new-template + import row (search sheet) */
+  .tpl-actions-row{display:flex;gap:9px;margin-top:10px;}
+  .tpl-actions-row .btn-new-tpl{margin-top:0;flex:1 1 0;}
+  .btn-import-tpl{
+    flex:0 0 auto;white-space:nowrap;
+    background:rgba(255,255,255,.55);
+    -webkit-backdrop-filter:blur(14px);
+    backdrop-filter:blur(14px);
+    color:var(--ink);
+    border:1px solid rgba(255,255,255,.6);border-radius:13px;padding:11px 16px;
+    font-family:var(--font);font-size:14.5px;font-weight:600;cursor:pointer;
+    box-shadow:inset 0 1px 1px rgba(255,255,255,.5);
+    transition:transform .15s var(--ease), background .2s var(--ease);
+  }
+  .btn-import-tpl:hover{background:rgba(255,255,255,.8);}
+  .btn-import-tpl:active{transform:scale(.97);}
+
+  /* per-template share button in search results */
+  .template-item .share{
+    float:right;font-size:12px;color:var(--ink-soft);padding:2px 8px;
+    border:1px solid var(--line);border-radius:8px;background:transparent;
+    cursor:pointer;margin-left:8px;
+  }
+  .template-item .share:active{background:rgba(0,0,0,.05);}
+
+  /* share / import textarea */
+  .share-text{
+    width:100%;box-sizing:border-box;margin-top:6px;resize:none;
+    min-height:104px;border:1px solid rgba(255,255,255,.6);border-radius:13px;
+    padding:12px 14px;font-family:var(--mono,monospace);font-size:13px;line-height:1.5;
+    color:var(--ink);background:rgba(255,255,255,.6);
+    -webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px);
+    word-break:break-all;outline:none;
+  }
+  .share-text:focus{border-color:var(--accent);background:rgba(255,255,255,.85);}
+
   /* Custom editor */
   .custom-row{
     display:flex;align-items:center;justify-content:space-between;
@@ -535,7 +573,10 @@
     <h3>选模板</h3>
     <p class="sub">输入关键词,如「红」「复古」「杂志」「夜」「电影」</p>
     <input type="text" id="searchInput" class="search-input" placeholder="搜模板名 / 风格 / 标签" maxlength="20">
-    <button class="btn btn-new-tpl" id="newCustomBtn">+ 新建我的模板</button>
+    <div class="tpl-actions-row">
+      <button class="btn btn-new-tpl" id="newCustomBtn">+ 新建我的模板</button>
+      <button class="btn btn-import-tpl" id="importTplBtn">导入模板</button>
+    </div>
     <div id="searchResults" class="search-results"></div>
     <div class="setting-row">
       <div class="setting-text">
@@ -592,6 +633,20 @@
   </div>
 </div>
 
+<!-- Share / import template sheet -->
+<div class="overlay" id="shareOverlay">
+  <div class="sheet">
+    <h3 id="shareTitle">分享模板</h3>
+    <p class="sub" id="shareSub">把这段代码复制发给朋友,对方点「导入模板」粘贴就能用</p>
+    <textarea id="shareText" class="share-text" spellcheck="false" autocomplete="off" autocapitalize="off"></textarea>
+    <div class="row">
+      <button class="btn btn-primary" id="shareCopyBtn">复制代码</button>
+      <button class="btn btn-primary" id="shareImportBtn">导入</button>
+      <button class="btn btn-ghost" id="shareClose">关闭</button>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script>
@@ -599,7 +654,7 @@
   "use strict";
 
   // ---------- version (single source of truth; bump on every release) ----------
-  var APP_VERSION = "v2.5.0";
+  var APP_VERSION = "v2.6.0";
 
   // ---------- state ----------
   var state = { bitmap:null, exif:null, mode:"manual", style:"classic" };
@@ -1953,17 +2008,23 @@
       var badge = (t.id===state.style) ? '<span class="badge">当前</span>' : '';
       var customTag = t._custom ? '<span class="tag-custom">我的</span>' : '';
       var delBtn = t._custom ? '<button class="del" data-del="'+t.id+'">删除</button>' : '';
+      var shareBtn = t._custom ? '<button class="share" data-share="'+t.id+'">分享</button>' : '';
       return '<div class="template-item'+cur+'" data-style="'+t.id+'">'+
-             '<div class="name">'+escapeHtml(t.name)+customTag+badge+delBtn+'</div>'+
+             '<div class="name">'+escapeHtml(t.name)+customTag+badge+delBtn+shareBtn+'</div>'+
              '<div class="desc">'+escapeHtml(t.desc||"")+'</div>'+
              '</div>';
     }).join("");
     searchResults.innerHTML=html;
     Array.prototype.forEach.call(searchResults.querySelectorAll(".template-item"), function(el){
       el.addEventListener("click", function(ev){
-        if(ev.target && ev.target.classList && ev.target.classList.contains("del")){
-          var id = ev.target.getAttribute("data-del");
-          deleteCustomTemplate(id);
+        var tgt = ev.target;
+        if(tgt && tgt.classList && tgt.classList.contains("del")){
+          deleteCustomTemplate(tgt.getAttribute("data-del"));
+          ev.stopPropagation();
+          return;
+        }
+        if(tgt && tgt.classList && tgt.classList.contains("share")){
+          shareCustomTemplate(tgt.getAttribute("data-share"));
           ev.stopPropagation();
           return;
         }
@@ -2064,6 +2125,136 @@
     renderStyleSeg();      // rebuild seg so the new/edited custom button appears
     setStyle(tpl.id);
     toast(editingCustomId ? "已更新" : "已保存,主界面顶部已加上你的按钮");
+  });
+
+  // ================= share / import custom templates =================
+  // A custom template travels as one opaque "share code": a fixed prefix plus a
+  // UTF-8-safe base64 of its JSON. Survives copy/paste through chat apps (WeChat),
+  // works fully offline, zero external dependencies.
+  var SHARE_PREFIX = "YINJI1:";
+  var shareOverlay=$("shareOverlay"), shareTitle=$("shareTitle"), shareSub=$("shareSub");
+  var shareText=$("shareText");
+  var shareCopyBtn=$("shareCopyBtn"), shareImportBtn=$("shareImportBtn"), shareClose=$("shareClose");
+  var importTplBtn=$("importTplBtn");
+
+  function isHexColor(v){ return typeof v==="string" && /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/.test(v); }
+
+  function encodeTemplate(tpl){
+    var clean = {
+      name: tpl.name || "",
+      layout: tpl.layout || "bar",
+      bg: tpl.bg || "#FFFFFF",
+      text: tpl.text || "#1C1814",
+      accent: tpl.accent || null
+    };
+    var json = JSON.stringify({ v:1, type:"yinji-template", tpl:clean });
+    var b64;
+    try{ b64 = btoa(unescape(encodeURIComponent(json))); }  // UTF-8 safe (handles 中文 names)
+    catch(e){ b64 = btoa(json); }
+    return SHARE_PREFIX + b64;
+  }
+
+  function decodeTemplate(code){
+    var s = String(code||"");
+    var idx = s.indexOf(SHARE_PREFIX);
+    if(idx !== -1) s = s.slice(idx + SHARE_PREFIX.length);  // tolerate extra text around the code
+    s = s.replace(/\s+/g, "");                               // chat apps may inject spaces / newlines
+    if(!s) throw new Error("empty");
+    var json;
+    try{ json = decodeURIComponent(escape(atob(s))); }
+    catch(e){ try{ json = atob(s); }catch(e2){ throw new Error("bad-base64"); } }
+    var obj;
+    try{ obj = JSON.parse(json); }catch(e){ throw new Error("bad-json"); }
+    return (obj && obj.tpl) ? obj.tpl : obj;                 // tolerate a bare tpl object
+  }
+
+  function openShare(mode, code){
+    if(mode === "export"){
+      shareTitle.textContent = "分享模板";
+      shareSub.textContent = "把这段代码复制发给朋友,对方点「导入模板」粘贴就能用";
+      shareText.value = code || "";
+      shareText.readOnly = true;
+      shareCopyBtn.style.display = "";
+      shareImportBtn.style.display = "none";
+    } else {
+      shareTitle.textContent = "导入模板";
+      shareSub.textContent = "把朋友发你的模板代码粘贴到下面,点「导入」";
+      shareText.value = "";
+      shareText.readOnly = false;
+      shareCopyBtn.style.display = "none";
+      shareImportBtn.style.display = "";
+    }
+    shareOverlay.classList.add("show");
+    var sel = (mode === "export");
+    setTimeout(function(){
+      try{ shareText.focus(); if(sel) shareText.select(); }catch(e){}
+    }, 120);
+  }
+  function closeShare(){ shareOverlay.classList.remove("show"); }
+
+  function shareCustomTemplate(id){
+    var tpl = findCustomTemplate(id);
+    if(!tpl){ toast("找不到这个模板"); return; }
+    searchOverlay.classList.remove("show");
+    openShare("export", encodeTemplate(tpl));
+  }
+
+  function copyShareCode(){
+    var text = shareText.value || "";
+    if(!text) return;
+    function done(ok){ toast(ok ? "已复制,去微信发给朋友吧" : "请长按上面文字手动复制"); }
+    function fallbackCopy(){
+      try{
+        shareText.readOnly = false;
+        shareText.focus(); shareText.select();
+        try{ shareText.setSelectionRange(0, text.length); }catch(e){}
+        var ok = document.execCommand("copy");
+        shareText.readOnly = true;
+        done(ok);
+      }catch(e){ done(false); }
+    }
+    if(navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(text).then(function(){ done(true); }, fallbackCopy);
+    } else {
+      fallbackCopy();
+    }
+  }
+
+  function doImport(){
+    var raw;
+    try{ raw = decodeTemplate(shareText.value); }
+    catch(e){ toast("这段代码看不懂,确认完整复制了吗?"); return; }
+    var layout = (raw && (raw.layout==="bar"||raw.layout==="frame"||raw.layout==="overlay")) ? raw.layout : null;
+    if(!layout || !isHexColor(raw.bg) || !isHexColor(raw.text)){
+      toast("模板信息不完整,导入失败"); return;
+    }
+    var name = (typeof raw.name==="string" && raw.name.trim()) ? raw.name.trim().slice(0,14) : "导入的模板";
+    var tpl = {
+      id: "custom_"+Date.now().toString(36)+Math.floor(Math.random()*1296).toString(36),  // always a fresh id
+      name: name,
+      layout: layout,
+      bg: raw.bg,
+      text: raw.text,
+      accent: isHexColor(raw.accent) ? raw.accent : null,
+      tags: ["导入"],
+      desc: "自定义 · "+(layout==="bar"?"底栏":layout==="frame"?"四周白边":"满版渐变")
+    };
+    customTemplates.push(tpl);
+    persistCustomTemplates();
+    renderStyleSeg();
+    setStyle(tpl.id);
+    closeShare();
+    searchOverlay.classList.remove("show");
+    toast("已导入「"+name+"」,顶部已加上按钮");
+  }
+
+  shareCopyBtn.addEventListener("click", copyShareCode);
+  shareImportBtn.addEventListener("click", doImport);
+  shareClose.addEventListener("click", closeShare);
+  shareOverlay.addEventListener("click", function(e){ if(e.target===shareOverlay) closeShare(); });
+  importTplBtn.addEventListener("click", function(){
+    searchOverlay.classList.remove("show");
+    openShare("import", "");
   });
 
   // load customs on startup, then build the style seg (presets + customs)
