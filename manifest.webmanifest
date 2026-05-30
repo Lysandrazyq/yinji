@@ -7,7 +7,7 @@
   "display": "standalone",
   "orientation": "portrait",
   "background_color": "#EFEAE0",
-  "theme_color": "#EFEAE0",
+  "theme_color": "#F4F0E8",
   "lang": "zh-CN",
   "categories": ["photo", "utilities"],
   "icons": [
