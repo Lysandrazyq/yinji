@@ -144,6 +144,10 @@
   .icon-btn:hover{background:var(--glass-bg-strong);box-shadow:0 6px 20px rgba(28,24,20,.13), var(--glass-highlight);}
   .icon-btn:active{transform:scale(.92);}
   .icon-btn svg{width:21px;height:21px;stroke:var(--ink);}
+  /* header "更多模板" pill (search entry, relabeled) */
+  .more-btn{width:auto;padding:0 14px;gap:7px;}
+  .more-btn svg{width:17px;height:17px;}
+  .more-btn span{font-size:14px;font-weight:600;color:var(--ink);white-space:nowrap;letter-spacing:.01em;}
 
   /* Empty drop zone */
   .drop{
@@ -353,6 +357,21 @@
     background:rgba(255,255,255,.85);
     box-shadow:0 0 0 3px rgba(194,99,45,.10), inset 0 1px 1px rgba(255,255,255,.55);
   }
+  /* category quick-filter chips (更多模板 panel) */
+  .cat-row{display:flex;flex-wrap:wrap;gap:7px;margin-top:11px;}
+  .cat-chip{
+    font-family:var(--font);font-size:13px;font-weight:600;color:var(--ink-soft);
+    background:rgba(255,255,255,.5);
+    -webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);
+    border:1px solid rgba(255,255,255,.55);
+    border-radius:999px;padding:7px 13px;cursor:pointer;
+    transition:transform .15s var(--ease), background .2s var(--ease), color .2s var(--ease), border-color .2s var(--ease);
+  }
+  .cat-chip:hover{background:rgba(255,255,255,.72);}
+  .cat-chip:active{transform:scale(.94);}
+  .cat-chip.on{background:var(--accent);color:#fff;border-color:var(--accent);box-shadow:0 3px 10px rgba(194,99,45,.25);}
+  body[data-glass="off"] .cat-chip{background:var(--surface);border-color:var(--line);}
+  body[data-glass="off"] .cat-chip.on{background:var(--accent);color:#fff;border-color:var(--accent);}
   .search-results{margin-top:14px;max-height:48vh;overflow-y:auto;}
   .template-item{
     background:rgba(255,255,255,.55);
@@ -504,12 +523,13 @@
   <header>
     <div class="brand">
       <span class="name">印迹</span>
-      <span class="tag">Photo&nbsp;Watermark · <span id="appVer">v2.7.0</span></span>
+      <span class="tag">Photo&nbsp;Watermark · <span id="appVer">v2.7.1</span></span>
     </div>
-    <button class="icon-btn" id="searchBtn" aria-label="搜索">
+    <button class="icon-btn more-btn" id="searchBtn" aria-label="更多模板">
       <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <circle cx="11" cy="11" r="7"></circle><line x1="21" y1="21" x2="16.5" y2="16.5"></line>
+        <rect x="3.5" y="3.5" width="7" height="7" rx="1.6"></rect><rect x="13.5" y="3.5" width="7" height="7" rx="1.6"></rect><rect x="3.5" y="13.5" width="7" height="7" rx="1.6"></rect><rect x="13.5" y="13.5" width="7" height="7" rx="1.6"></rect>
       </svg>
+      <span>更多模板</span>
     </button>
   </header>
 
@@ -585,9 +605,10 @@
 <!-- Search sheet -->
 <div class="overlay" id="searchOverlay">
   <div class="sheet search-sheet">
-    <h3>选模板</h3>
-    <p class="sub">输入关键词,如「红」「复古」「杂志」「夜」「电影」</p>
+    <h3>更多模板</h3>
+    <p class="sub">按分类挑,或输入关键词搜</p>
     <input type="text" id="searchInput" class="search-input" placeholder="搜模板名 / 风格 / 标签" maxlength="20">
+    <div class="cat-row" id="catRow"></div>
     <div class="tpl-actions-row">
       <button class="btn btn-new-tpl" id="newCustomBtn">+ 新建我的模板</button>
       <button class="btn btn-import-tpl" id="importTplBtn">导入模板</button>
@@ -669,7 +690,7 @@
   "use strict";
 
   // ---------- version (single source of truth; bump on every release) ----------
-  var APP_VERSION = "v2.7.0";
+  var APP_VERSION = "v2.7.1";
 
   // ---------- state ----------
   var state = { bitmap:null, exif:null, exifApp1:null, mode:"manual", style:"classic", exportQuality:"standard" };
@@ -692,6 +713,21 @@
     hasselbladDark:    "#252320",
     hasselbladOrange:  "#E8A050",
     cinemaBlack:       "#000000"
+  };
+
+  // Seasonal palettes — one shared renderer (drawSeasonStyle) tinted four ways.
+  // bg = soft tinted bar, text = deep readable ink, soft = muted, accent = thin hairline.
+  var SEASON = {
+    spring: { bg:"#FBEAF0", text:"#A8456E", soft:"#C98AA4", accent:"#E59CB6" },
+    summer: { bg:"#E1F0F5", text:"#2B6C89", soft:"#73A7BD", accent:"#6FB7D4" },
+    autumn: { bg:"#F7E7D2", text:"#9A5A22", soft:"#C0936A", accent:"#D98A45" },
+    winter: { bg:"#E9EDF0", text:"#445561", soft:"#8FA1AD", accent:"#9FB0BC" }
+  };
+  // Camera-brand palettes — one shared renderer (drawBrandStyle), dark bar + brand accent.
+  var BRAND = {
+    fuji:  { bg:"#16241D", accent:"#4FA877", text:"#7FCBA0", soft:"#6E8E7C" },
+    sony:  { bg:"#141414", accent:"#E8841A", text:"#F0A055", soft:"#9A8470" },
+    nikon: { bg:"#1A1712", accent:"#F2C200", text:"#F3D24A", soft:"#A0936A" }
   };
 
   // ---------- platform interface ----------
@@ -722,8 +758,10 @@
   var overlay=$("overlay"), resultImg=$("resultImg"), downloadLink=$("downloadLink"), closeSheet=$("closeSheet");
   var searchBtn=$("searchBtn"), toastEl=$("toast");
   var searchOverlay=$("searchOverlay"), searchInput=$("searchInput"), searchResults=$("searchResults"), closeSearch=$("closeSearch");
+  var catRow=$("catRow");
+  var searchCat="all";   // active category filter in the 更多模板 panel
 
-  // ---------- template registry (15 presets + user-defined customs at runtime) ----------
+  // ---------- template registry (26 presets + user-defined customs at runtime) ----------
   var TEMPLATES = [
     {id:"classic",       name:"经典",         desc:"白底栏黑字,最克制简洁。", tags:["简洁","默认","白","黑字","底栏","clean"]},
     {id:"polaroid",      name:"拍立得",       desc:"照片四周白边,底部更厚。复古文艺。", tags:["白边","复古","文艺","拍立得","白框"]},
@@ -739,8 +777,48 @@
     {id:"bigDate",       name:"大字日期",     desc:"照片上压一个巨大的年份数字,大字报感。", tags:["大字","年份","日期","big","数字","醒目"]},
     {id:"hasselblad",    name:"哈苏风",       desc:"深色底栏 + 橙色细条 + 橙字,致敬哈苏。", tags:["哈苏","橙","暗","hasselblad","深色"]},
     {id:"minimalFrame",  name:"极简框",       desc:"照片加一圈细白边 + 下方小字,几乎隐形。", tags:["极简","细框","clean","简","边框","纤细"]},
-    {id:"magazineLight", name:"杂志浅版",     desc:"杂志封面的白底版本:白色面板 + 黑字大标题。", tags:["杂志","浅","白底","magazine","light","干净"]}
+    {id:"magazineLight", name:"杂志浅版",     desc:"杂志封面的白底版本:白色面板 + 黑字大标题。", tags:["杂志","浅","白底","magazine","light","干净"]},
+    // —— 季节 / 节气款(共用 drawSeasonStyle)——
+    {id:"springCherry",  name:"春·樱",        desc:"春日樱粉色调,柔和清新的底栏 + 细线。", tags:["春","樱","粉","季节","清新","spring","season"]},
+    {id:"summerSea",     name:"夏·海",        desc:"夏日海蓝色调,清凉底栏 + 细线。", tags:["夏","海","蓝","季节","清凉","summer","season"]},
+    {id:"autumnMaple",   name:"秋·枫",        desc:"秋日枫橙色调,温暖底栏 + 细线。", tags:["秋","枫","橙","季节","温暖","autumn","season"]},
+    {id:"winterSnow",    name:"冬·雪",        desc:"冬日雪青色调,清冷底栏 + 细线。", tags:["冬","雪","青","灰","季节","winter","season"]},
+    // —— 相机品牌风(共用 drawBrandStyle)——
+    {id:"fujiFilm",      name:"富士绿",       desc:"墨绿深色底栏 + 绿色细条 + 绿字,富士胶片风。", tags:["富士","绿","胶片","相机","fuji","film"]},
+    {id:"sonyAlpha",     name:"索尼橙",       desc:"深黑底栏 + 橙色细条 + 橙字,索尼 α 风。", tags:["索尼","橙","黑","相机","sony","alpha"]},
+    {id:"nikonGold",     name:"尼康黄",       desc:"深褐底栏 + 明黄细条 + 黄字,尼康风。", tags:["尼康","黄","金","相机","nikon"]},
+    // —— 玻璃质感水印 ——
+    {id:"glassBar",      name:"玻璃底栏",     desc:"照片底部一条磨砂玻璃,半透明 + 高光,液态玻璃质感。", tags:["玻璃","磨砂","液态","透明","glass","ios","质感"]},
+    {id:"glassCard",     name:"玻璃卡片",     desc:"底部悬浮一块磨砂玻璃圆角卡片放文字,最有 iOS 质感。", tags:["玻璃","卡片","悬浮","液态","glass","chip","ios"]},
+    // —— 生日 / 纪念日 ——
+    {id:"birthday",      name:"生日快乐",     desc:"暖色底栏 + 彩色纸屑,生日 / 派对专用。", tags:["生日","派对","彩带","纸屑","birthday","庆","气球"]},
+    {id:"anniversary",   name:"纪念日",       desc:"白色底栏 + 一颗小红心,纪念日 / 情侣款。", tags:["纪念","情侣","爱心","心","anniversary","love","结婚"]}
   ];
+
+  // ---------- categories (quick-filter chips in the 更多模板 panel) ----------
+  // "all" shows everything (presets + customs); a specific category shows only its presets.
+  var CATEGORIES = [
+    {key:"all",      label:"全部"},
+    {key:"base",     label:"基础"},
+    {key:"dark",     label:"深色"},
+    {key:"color",    label:"彩色"},
+    {key:"season",   label:"季节"},
+    {key:"brand",    label:"品牌"},
+    {key:"glass",    label:"玻璃"},
+    {key:"festival", label:"节日"}
+  ];
+  var CAT_IDS = {
+    base:     ["classic","polaroid","polaroidPlus","minimalFrame","magazineLight","minimalCorner"],
+    dark:     ["darkBar","cinema","magazine","hasselblad"],
+    color:    ["leica","filmStrip","checkIn","bigDate"],
+    season:   ["springCherry","summerSea","autumnMaple","winterSnow"],
+    brand:    ["fujiFilm","sonyAlpha","nikonGold"],
+    glass:    ["glassBar","glassCard"],
+    festival: ["festivalRed","birthday","anniversary"]
+  };
+  // reverse lookup: preset id -> category key
+  var CAT_OF = {};
+  (function(){ for(var k in CAT_IDS){ if(CAT_IDS.hasOwnProperty(k)){ for(var i=0;i<CAT_IDS[k].length;i++){ CAT_OF[CAT_IDS[k][i]]=k; } } } })();
 
   // ---------- custom templates (user-defined, stored in localStorage) ----------
   var CUSTOM_STORAGE_KEY = "yinji.customTemplates.v1";
@@ -1276,7 +1354,7 @@
 
   // ================= style switching =================
   // 5 presets always shown in the seg; user customs appended after them.
-  var SEG_PRESETS = ['classic', 'polaroid', 'leica', 'magazine', 'polaroidPlus'];
+  var SEG_PRESETS = ['classic', 'polaroid', 'leica', 'glassBar', 'magazine', 'polaroidPlus'];
 
   function presetById(id){
     for(var i=0;i<TEMPLATES.length;i++) if(TEMPLATES[i].id===id) return TEMPLATES[i];
@@ -1390,7 +1468,22 @@
     bigDate:        drawBigDate,
     hasselblad:     drawHasselblad,
     minimalFrame:   drawMinimalFrame,
-    magazineLight:  drawMagazineLight
+    magazineLight:  drawMagazineLight,
+    // seasonal — shared renderer bound to a palette
+    springCherry:   function(){ drawSeasonStyle(SEASON.spring); },
+    summerSea:      function(){ drawSeasonStyle(SEASON.summer); },
+    autumnMaple:    function(){ drawSeasonStyle(SEASON.autumn); },
+    winterSnow:     function(){ drawSeasonStyle(SEASON.winter); },
+    // camera-brand — shared renderer bound to a palette
+    fujiFilm:       function(){ drawBrandStyle(BRAND.fuji); },
+    sonyAlpha:      function(){ drawBrandStyle(BRAND.sony); },
+    nikonGold:      function(){ drawBrandStyle(BRAND.nikon); },
+    // liquid glass
+    glassBar:       drawGlassBar,
+    glassCard:      drawGlassCard,
+    // birthday / anniversary
+    birthday:       drawBirthday,
+    anniversary:    drawAnniversary
   };
 
   function draw(){
@@ -1888,6 +1981,221 @@
     }
   }
 
+  // ========== v2.7.1 added presets: seasonal / camera-brand / glass / celebration ==========
+
+  // rounded-rect path helper (used by glass card); builds a path, caller fills/strokes/clips
+  function roundRectPath(x, y, wd, ht, r){
+    r = Math.min(r, wd/2, ht/2);
+    ctx.beginPath();
+    ctx.moveTo(x+r, y);
+    ctx.arcTo(x+wd, y,    x+wd, y+ht, r);
+    ctx.arcTo(x+wd, y+ht, x,    y+ht, r);
+    ctx.arcTo(x,    y+ht, x,    y,    r);
+    ctx.arcTo(x,    y,    x+wd, y,    r);
+    ctx.closePath();
+  }
+
+  // Seasonal — tinted bottom bar + thin accent hairline. One renderer, four palettes.
+  function drawSeasonStyle(pal){
+    var s=getSize(); if(!s) return;
+    var w=s.w, h=s.h;
+    var barH=Math.max(72, Math.round(w*0.13));
+    canvas.width=w; canvas.height=h+barH;
+    ctx.fillStyle=pal.bg;
+    ctx.fillRect(0,0,canvas.width,canvas.height);
+    ctx.drawImage(s.bmp,0,0,w,h);
+
+    // thin accent rule a little below the photo edge (editorial feel)
+    var pad=Math.round(w*0.06);
+    var lineY=h+Math.round(barH*0.24);
+    ctx.strokeStyle=pal.accent;
+    ctx.lineWidth=Math.max(2, Math.round(w*0.0028));
+    ctx.beginPath(); ctx.moveTo(pad, lineY+0.5); ctx.lineTo(w-pad, lineY+0.5); ctx.stroke();
+
+    drawText(0, lineY, w, barH-(lineY-h), {
+      text: pal.text,
+      textSoft: pal.soft,
+      autoDivider: pal.accent
+    });
+  }
+
+  // Camera-brand — dark bar + brand-color accent strip + brand-color text. Mirrors Hasselblad.
+  function drawBrandStyle(pal){
+    var s=getSize(); if(!s) return;
+    var w=s.w, h=s.h;
+    var barH=Math.max(72, Math.round(w*0.13));
+    canvas.width=w; canvas.height=h+barH;
+    ctx.fillStyle=pal.bg;
+    ctx.fillRect(0,0,canvas.width,canvas.height);
+    ctx.drawImage(s.bmp,0,0,w,h);
+
+    var accentH=Math.max(4, Math.round(barH*0.08));
+    ctx.fillStyle=pal.accent;
+    ctx.fillRect(0, h, w, accentH);
+
+    drawText(0, h+accentH, w, barH-accentH, {
+      text: pal.text,
+      textSoft: pal.soft,
+      autoDivider: pal.accent
+    });
+  }
+
+  // Liquid glass — frosted bottom bar OVER the photo. ctx.filter blur with graceful fallback.
+  function drawGlassBar(){
+    var s=getSize(); if(!s) return;
+    var w=s.w, h=s.h;
+    canvas.width=w; canvas.height=h;
+    ctx.drawImage(s.bmp,0,0,w,h);
+
+    var barH=Math.max(72, Math.round(h*0.15));
+    var barTop=h-barH;
+
+    // frost: blur the photo region under the bar (skip if ctx.filter unsupported → still translucent)
+    if(typeof ctx.filter !== "undefined"){
+      ctx.save();
+      ctx.beginPath(); ctx.rect(0, barTop, w, barH); ctx.clip();
+      ctx.filter="blur("+Math.max(8, Math.round(w*0.022))+"px)";
+      ctx.drawImage(s.bmp, 0, 0, w, h);
+      ctx.filter="none";
+      ctx.restore();
+    }
+    // translucent dark tint so white text stays legible over any photo
+    var g=ctx.createLinearGradient(0, barTop, 0, h);
+    g.addColorStop(0, "rgba(22,22,26,.28)");
+    g.addColorStop(1, "rgba(22,22,26,.46)");
+    ctx.fillStyle=g;
+    ctx.fillRect(0, barTop, w, barH);
+    // bright top highlight line (glass edge)
+    ctx.fillStyle="rgba(255,255,255,.38)";
+    ctx.fillRect(0, barTop, w, Math.max(1, Math.round(h*0.0016)));
+
+    drawText(0, barTop, w, barH, {
+      text:"#FFFFFF",
+      textSoft:"rgba(255,255,255,.82)",
+      autoDivider:"rgba(255,255,255,.42)"
+    });
+  }
+
+  // Liquid glass — floating frosted rounded chip near the bottom holding the text.
+  function drawGlassCard(){
+    var s=getSize(); if(!s) return;
+    var w=s.w, h=s.h;
+    canvas.width=w; canvas.height=h;
+    ctx.drawImage(s.bmp,0,0,w,h);
+
+    var chipH=Math.max(66, Math.round(h*0.13));
+    var chipW=Math.round(w*0.74);
+    var chipX=Math.round((w-chipW)/2);
+    var chipY=h - Math.round(h*0.05) - chipH;
+    var r=Math.round(chipH*0.34);
+
+    // frost: blur clipped to the rounded chip
+    if(typeof ctx.filter !== "undefined"){
+      ctx.save();
+      roundRectPath(chipX, chipY, chipW, chipH, r); ctx.clip();
+      ctx.filter="blur("+Math.max(8, Math.round(w*0.02))+"px)";
+      ctx.drawImage(s.bmp, 0, 0, w, h);
+      ctx.filter="none";
+      ctx.restore();
+    }
+    // tinted glass fill
+    ctx.save();
+    roundRectPath(chipX, chipY, chipW, chipH, r);
+    var g=ctx.createLinearGradient(0, chipY, 0, chipY+chipH);
+    g.addColorStop(0, "rgba(28,28,32,.30)");
+    g.addColorStop(1, "rgba(28,28,32,.48)");
+    ctx.fillStyle=g; ctx.fill();
+    ctx.restore();
+    // highlight border
+    ctx.save();
+    roundRectPath(chipX, chipY, chipW, chipH, r);
+    ctx.lineWidth=Math.max(1, Math.round(w*0.0016));
+    ctx.strokeStyle="rgba(255,255,255,.5)";
+    ctx.stroke();
+    ctx.restore();
+
+    drawText(chipX, chipY, chipW, chipH, {
+      text:"#FFFFFF",
+      textSoft:"rgba(255,255,255,.82)",
+      autoDivider:"rgba(255,255,255,.42)"
+    });
+  }
+
+  // small filled heart (for the anniversary style)
+  function drawHeartIcon(cx, cy, sz, color){
+    ctx.save();
+    ctx.fillStyle=color;
+    ctx.beginPath();
+    ctx.moveTo(cx, cy + sz*0.32);
+    ctx.bezierCurveTo(cx - sz*0.55, cy - sz*0.05, cx - sz*0.40, cy - sz*0.50, cx, cy - sz*0.16);
+    ctx.bezierCurveTo(cx + sz*0.40, cy - sz*0.50, cx + sz*0.55, cy - sz*0.05, cx, cy + sz*0.32);
+    ctx.closePath();
+    ctx.fill();
+    ctx.restore();
+  }
+
+  // Birthday — warm bar with a thin band of colorful confetti dots above the text.
+  function drawBirthday(){
+    var s=getSize(); if(!s) return;
+    var w=s.w, h=s.h;
+    var barH=Math.max(84, Math.round(w*0.15));
+    canvas.width=w; canvas.height=h+barH;
+    ctx.fillStyle="#FFF6F0";
+    ctx.fillRect(0,0,canvas.width,canvas.height);
+    ctx.drawImage(s.bmp,0,0,w,h);
+
+    var g=ctx.createLinearGradient(0,h,0,h+barH);
+    g.addColorStop(0,"#FFE7D2");
+    g.addColorStop(1,"#FFF6F0");
+    ctx.fillStyle=g;
+    ctx.fillRect(0,h,w,barH);
+
+    // fixed (deterministic) confetti so the preview doesn't flicker between draws
+    var confetti=[
+      [0.06,0.20,"#EB5757"],[0.15,0.78,"#F2994A"],[0.24,0.30,"#F2C94C"],
+      [0.35,0.70,"#27AE60"],[0.46,0.22,"#2D9CDB"],[0.57,0.74,"#9B51E0"],
+      [0.68,0.28,"#EB5757"],[0.79,0.72,"#F2C94C"],[0.89,0.26,"#2D9CDB"],
+      [0.95,0.70,"#27AE60"]
+    ];
+    var topPad=barH*0.12, bandH=barH*0.22;
+    var dotR=Math.max(3, Math.round(w*0.006));
+    for(var i=0;i<confetti.length;i++){
+      var c=confetti[i];
+      ctx.fillStyle=c[2];
+      ctx.beginPath();
+      ctx.arc(Math.round(w*c[0]), h+Math.round(topPad+bandH*c[1]), dotR, 0, Math.PI*2);
+      ctx.fill();
+    }
+
+    var textOy=h+Math.round(barH*0.40);
+    drawText(0, textOy, w, barH-Math.round(barH*0.40), {
+      text:"#7A4B2B",
+      textSoft:"#B98A66",
+      autoDivider:"rgba(242,153,74,.5)",
+      weight:"600"
+    });
+  }
+
+  // Anniversary — clean white bar with a small rose heart above the text.
+  function drawAnniversary(){
+    var s=getSize(); if(!s) return;
+    var w=s.w, h=s.h;
+    var barH=Math.max(80, Math.round(w*0.14));
+    canvas.width=w; canvas.height=h+barH;
+    ctx.fillStyle=COLORS.paperWhite;
+    ctx.fillRect(0,0,canvas.width,canvas.height);
+    ctx.drawImage(s.bmp,0,0,w,h);
+
+    drawHeartIcon(w/2, h+Math.round(barH*0.27), Math.round(barH*0.24), "#D2607A");
+
+    var textOy=h+Math.round(barH*0.44);
+    drawText(0, textOy, w, barH-Math.round(barH*0.44), {
+      text:"#7C4A57",
+      textSoft:"#B68C97",
+      autoDivider:"rgba(210,96,122,.5)"
+    });
+  }
+
   // ========== custom (user-defined) template renderer ==========
 
   function drawCustom(tpl){
@@ -2189,10 +2497,28 @@
   // ================= template search =================
   searchBtn.addEventListener("click", function(){
     searchInput.value="";
+    searchCat="all";
+    renderCatRow();
     renderSearchResults("");
     searchOverlay.classList.add("show");
     setTimeout(function(){ try{ searchInput.focus(); }catch(e){} }, 120);
   });
+
+  // build the category quick-filter chips; clicking one filters the list to that category
+  function renderCatRow(){
+    if(!catRow) return;
+    catRow.innerHTML = CATEGORIES.map(function(c){
+      return '<button class="cat-chip'+(c.key===searchCat?' on':'')+'" data-cat="'+c.key+'">'+c.label+'</button>';
+    }).join("");
+    Array.prototype.forEach.call(catRow.querySelectorAll(".cat-chip"), function(el){
+      el.addEventListener("click", function(){
+        searchCat = el.getAttribute("data-cat");
+        Array.prototype.forEach.call(catRow.querySelectorAll(".cat-chip"), function(x){ x.classList.remove("on"); });
+        el.classList.add("on");
+        renderSearchResults(searchInput.value);
+      });
+    });
+  }
   closeSearch.addEventListener("click", function(){ searchOverlay.classList.remove("show"); });
   searchOverlay.addEventListener("click", function(e){
     if(e.target===searchOverlay) searchOverlay.classList.remove("show");
@@ -2203,6 +2529,10 @@
     var q=String(query||"").trim().toLowerCase();
     var pool=allTemplates();
     var matches=pool.filter(function(t){
+      // category filter (custom templates only appear under 全部)
+      if(searchCat!=="all"){
+        if(t._custom || CAT_OF[t.id]!==searchCat) return false;
+      }
       if(!q) return true;
       var hay=(t.name+" "+(t.desc||"")+" "+(t.tags||[]).join(" ")+" "+t.id).toLowerCase();
       return hay.indexOf(q)!==-1;
