@@ -109,6 +109,8 @@
     min-height:100vh;
     padding:0 0 calc(env(safe-area-inset-bottom) + 30px);
     -webkit-font-smoothing:antialiased;
+    -moz-osx-font-smoothing:grayscale;
+    text-rendering:optimizeLegibility;
   }
   .wrap{max-width:480px;margin:0 auto;padding:0 18px;}
 
@@ -326,9 +328,13 @@
   @keyframes rise{from{transform:translateY(100%);}to{transform:translateY(0);}}
   .sheet h3{margin:0 0 4px;font-size:18px;font-weight:600;text-align:center;}
   .sheet .sub{margin:0 0 16px;font-size:13px;color:var(--ink-soft);text-align:center;line-height:1.5;}
-  .sheet img{width:100%;border-radius:14px;box-shadow:var(--shadow);display:block;}
-  .sheet .row{display:flex;gap:10px;margin-top:18px;}
+  .sheet img{width:100%;max-height:42vh;object-fit:contain;border-radius:14px;box-shadow:var(--shadow);display:block;}
+  .sheet .row{display:flex;gap:10px;margin-top:12px;}
   .sheet a.btn,.sheet button.btn{flex:1;text-decoration:none;text-align:center;display:block;}
+  /* export quality selector */
+  .qual-seg{margin-top:16px;}
+  .qual-note{margin:9px 4px 0;font-size:12px;color:var(--ink-soft);text-align:center;line-height:1.5;min-height:18px;}
+  .btn-album{display:block;width:100%;margin-top:14px;flex:none;font-size:16.5px;padding:16px 0;}
 
   /* Search sheet */
   .search-input{
@@ -498,7 +504,7 @@
   <header>
     <div class="brand">
       <span class="name">印迹</span>
-      <span class="tag">Photo&nbsp;Watermark · <span id="appVer">v2.5.0</span></span>
+      <span class="tag">Photo&nbsp;Watermark · <span id="appVer">v2.7.0</span></span>
     </div>
     <button class="icon-btn" id="searchBtn" aria-label="搜索">
       <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -517,7 +523,7 @@
       </svg>
     </span>
     <h2>选择照片 · 拍照</h2>
-    <p>点这里从相册选一张，或直接拍一张，给它加上白框黑字水印</p>
+    <p>从相册选一张，或直接拍一张</p>
   </label>
   <input type="file" id="fileInput" accept="image/*">
 
@@ -558,10 +564,19 @@
 <div class="overlay" id="overlay">
   <div class="sheet">
     <h3>水印完成 ✦</h3>
-    <p class="sub">长按下方图片 →「存储到照片」即可保存到相册</p>
+    <p class="sub" id="resultSub">点「保存到相册」最方便；也可长按图片选「存储到照片」</p>
     <img id="resultImg" alt="带水印的照片">
+
+    <div class="qual-seg seg" id="qualitySeg" role="group" aria-label="导出画质">
+      <button data-q="standard" class="on">标准</button>
+      <button data-q="high">高清</button>
+      <button data-q="png">无损</button>
+    </div>
+    <p class="qual-note" id="qualityNote">JPEG · 体积小，日常分享够用，保留拍摄信息</p>
+
+    <button class="btn btn-primary btn-album" id="saveAlbumBtn">保存到相册</button>
     <div class="row">
-      <a class="btn btn-primary" id="downloadLink" download="印迹-水印照片.jpg">下载图片</a>
+      <button class="btn btn-ghost" id="downloadLink">下载文件</button>
       <button class="btn btn-ghost" id="closeSheet">关闭</button>
     </div>
   </div>
@@ -654,10 +669,10 @@
   "use strict";
 
   // ---------- version (single source of truth; bump on every release) ----------
-  var APP_VERSION = "v2.6.0";
+  var APP_VERSION = "v2.7.0";
 
   // ---------- state ----------
-  var state = { bitmap:null, exif:null, mode:"manual", style:"classic" };
+  var state = { bitmap:null, exif:null, exifApp1:null, mode:"manual", style:"classic", exportQuality:"standard" };
   var FONT = '-apple-system,"PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif';
   var SERIF = 'ui-serif,Georgia,"Songti SC","STSong","Times New Roman",serif';
 
@@ -828,6 +843,15 @@
   //   5) Item data layout: [u32 exif_tiff_header_offset][...optional "Exif\0\0"...][TIFF]
   //      Compute tiffStart = exifOffset + 4 + exif_tiff_header_offset, then reuse readTiff()
   function parseHeicExif(view){
+    var loc=locateHeicExif(view);
+    if(!loc) return null;
+    return readTiff(view, loc.tiffStart);
+  }
+
+  // Walk the ISOBMFF boxes to find where the embedded Exif TIFF block lives.
+  // Returns {tiffStart, exifOffset, itemLen} or null. Shared by the tag reader
+  // (parseHeicExif) and the APP1 builder (buildHeicApp1, used for export).
+  function locateHeicExif(view){
     try{
       if(!isHeicLike(view)) return null;
       var len=view.byteLength;
@@ -886,7 +910,7 @@
       if(ilocVer<2){ itemCount=view.getUint16(ilocP); ilocP+=2; }
       else         { itemCount=view.getUint32(ilocP); ilocP+=4; }
 
-      var exifOffset=null;
+      var exifOffset=null, exifItemLen=0;
       for(var ii=0; ii<itemCount && ilocP<iloc.end && exifOffset===null; ii++){
         var iid;
         if(ilocVer<2){ iid=view.getUint16(ilocP); ilocP+=2; }
@@ -905,6 +929,7 @@
           ilocP+=lengthSize;
           if(iid===exifItemId && exifOffset===null){
             exifOffset=baseOff+extOff;
+            exifItemLen=extLen;
           }
         }
       }
@@ -916,7 +941,7 @@
       var tiffHdrOff=view.getUint32(exifOffset);
       var tiffStart=exifOffset+4+tiffHdrOff;
       if(tiffStart>=len) return null;
-      return readTiff(view, tiffStart);
+      return { tiffStart:tiffStart, exifOffset:exifOffset, itemLen:exifItemLen };
 
     }catch(e){ return null; }
   }
@@ -1038,6 +1063,105 @@
     }catch(e){ return 0; }
   }
 
+  // ================= EXIF re-injection (for export) =================
+  // The canvas export strips all metadata. To keep the photo's shooting info
+  // (device / time / aperture / shutter / ISO / focal length, plus GPS etc.),
+  // we grab a ready-to-splice APP1 (Exif) segment from the ORIGINAL file and
+  // re-insert it right after the JPEG SOI marker on export.
+  //   - JPEG source : copy the original APP1 segment verbatim.
+  //   - HEIC source : wrap the embedded TIFF block in a fresh APP1.
+  // Orientation is forced to 1 because loadBitmap already rendered upright pixels
+  // (imageOrientation:"from-image"); re-embedding the original would rotate twice.
+  function extractExifApp1(buffer){
+    try{
+      var view=new DataView(buffer);
+      if(view.byteLength>=2 && view.getUint16(0)===0xFFD8) return extractJpegApp1(view);
+      if(view.byteLength>=12 && view.getUint32(4)===0x66747970) return buildHeicApp1(view);
+    }catch(e){}
+    return null;
+  }
+
+  function extractJpegApp1(view){
+    var len=view.byteLength, off=2;
+    while(off+4<len){
+      var marker=view.getUint16(off);
+      if(marker===0xFFE1 && view.getUint32(off+4)===0x45786966){ // APP1 + "Exif"
+        var segLen=view.getUint16(off+2);
+        var total=2+segLen; // marker(2) + length-field+payload(segLen)
+        if(off+total>len) return null;
+        var copy=new Uint8Array(total);
+        copy.set(new Uint8Array(view.buffer, view.byteOffset+off, total));
+        neutralizeOrientation(copy);
+        return copy;
+      }
+      if((marker & 0xFF00)!==0xFF00) break;
+      var m=marker & 0xFF;
+      if(m===0xD8 || m===0xD9 || (m>=0xD0 && m<=0xD7)){ off+=2; continue; }
+      var sl=view.getUint16(off+2);
+      if(sl<2) break;
+      off += 2 + sl;
+    }
+    return null;
+  }
+
+  function buildHeicApp1(view){
+    try{
+      var loc=locateHeicExif(view);
+      if(!loc) return null;
+      var len=view.byteLength;
+      var tiffEnd = (loc.itemLen>0) ? (loc.exifOffset+loc.itemLen) : len;
+      if(tiffEnd>len) tiffEnd=len;
+      var tiffLen=tiffEnd-loc.tiffStart;
+      if(tiffLen<=8) return null;
+      var segLen=2+6+tiffLen; // length-field(2) + "Exif\0\0"(6) + TIFF
+      if(segLen>0xFFFF) return null; // APP1 length field is a u16
+      var app1=new Uint8Array(2+segLen);
+      app1[0]=0xFF; app1[1]=0xE1;
+      app1[2]=(segLen>>8)&0xFF; app1[3]=segLen&0xFF;
+      app1[4]=0x45; app1[5]=0x78; app1[6]=0x69; app1[7]=0x66; app1[8]=0; app1[9]=0; // "Exif\0\0"
+      app1.set(new Uint8Array(view.buffer, view.byteOffset+loc.tiffStart, tiffLen), 10);
+      neutralizeOrientation(app1);
+      return app1;
+    }catch(e){ return null; }
+  }
+
+  // In a finished APP1 segment (TIFF starts at byte 10), set Orientation (0x0112) to 1.
+  function neutralizeOrientation(app1){
+    try{
+      var dv=new DataView(app1.buffer, app1.byteOffset, app1.byteLength);
+      var tiff=10; // FFE1(2) + length(2) + "Exif\0\0"(6)
+      var bo=dv.getUint16(tiff), little;
+      if(bo===0x4949) little=true; else if(bo===0x4D4D) little=false; else return;
+      if(dv.getUint16(tiff+2, little)!==0x002A) return;
+      var ifd0=tiff+dv.getUint32(tiff+4, little);
+      if(ifd0+2>app1.byteLength) return;
+      var count=dv.getUint16(ifd0, little);
+      for(var i=0;i<count;i++){
+        var e=ifd0+2+i*12;
+        if(e+12>app1.byteLength) break;
+        if(dv.getUint16(e, little)===0x0112){ dv.setUint16(e+8, 1, little); return; }
+      }
+    }catch(e){}
+  }
+
+  // Insert an APP1 segment immediately after the SOI (FFD8) of a JPEG byte array.
+  function spliceApp1(jpegBytes, app1){
+    if(!app1 || jpegBytes.length<2 || jpegBytes[0]!==0xFF || jpegBytes[1]!==0xD8) return jpegBytes;
+    var out=new Uint8Array(2+app1.length+(jpegBytes.length-2));
+    out[0]=0xFF; out[1]=0xD8;
+    out.set(app1, 2);
+    out.set(jpegBytes.subarray(2), 2+app1.length);
+    return out;
+  }
+
+  function dataURLToUint8(dataURL){
+    var i=dataURL.indexOf(",");
+    var bin=atob(dataURL.slice(i+1));
+    var n=bin.length, u=new Uint8Array(n);
+    for(var k=0;k<n;k++) u[k]=bin.charCodeAt(k);
+    return u;
+  }
+
   // ---------- format exif into display fields ----------
   function buildInfo(ex){
     var device = ex.model || ex.make || "";
@@ -1083,8 +1207,9 @@
       return file.arrayBuffer ? file.arrayBuffer() : readBufFallback(file);
     }).then(function(buf){
       try{ state.exif=parseExif(buf); }catch(e){ state.exif=null; }
+      try{ state.exifApp1=extractExifApp1(buf); }catch(e){ state.exifApp1=null; }
       isHeic=detectHeic(buf, file.name);
-    }, function(){ state.exif=null; })
+    }, function(){ state.exif=null; state.exifApp1=null; })
     .then(function(){
       // Wrap loadBitmap so HEIC decode failures (common on non-Safari) get a friendly message.
       return loadBitmap(file).catch(function(){
@@ -1957,22 +2082,105 @@
     return px;
   }
 
-  // ================= save =================
+  // ================= save / export =================
+  var qualitySeg=$("qualitySeg"), qualityNote=$("qualityNote"), saveAlbumBtn=$("saveAlbumBtn");
+  function setExportQuality(q){
+    if(q!=="standard" && q!=="high" && q!=="png") q="standard";
+    state.exportQuality=q;
+    var note;
+    if(q==="png"){
+      note="PNG · 无损画质，文件最大，不含拍摄信息";
+    } else {
+      note=(q==="high") ? "JPEG · 更高画质，文件略大" : "JPEG · 体积小，日常分享够用";
+      if(state.exifApp1) note+="，保留拍摄信息";
+    }
+    if(qualityNote) qualityNote.textContent=note;
+    if(qualitySeg){
+      Array.prototype.forEach.call(qualitySeg.querySelectorAll("button[data-q]"), function(b){
+        if(b.getAttribute("data-q")===q) b.classList.add("on"); else b.classList.remove("on");
+      });
+    }
+  }
+  if(qualitySeg){
+    Array.prototype.forEach.call(qualitySeg.querySelectorAll("button[data-q]"), function(b){
+      b.addEventListener("click", function(){ setExportQuality(b.getAttribute("data-q")); });
+    });
+  }
+
+  // Produce export bytes for the current quality. JPEG paths re-inject the
+  // original photo's EXIF (device/time/exposure/GPS…); PNG is metadata-free.
+  function buildExport(){
+    var q=state.exportQuality||"standard", mime, ext, u;
+    if(q==="png"){
+      u=dataURLToUint8(canvas.toDataURL("image/png"));
+      mime="image/png"; ext="png";
+    } else {
+      u=dataURLToUint8(canvas.toDataURL("image/jpeg", q==="high"?0.98:0.92));
+      if(state.exifApp1){ try{ u=spliceApp1(u, state.exifApp1); }catch(e){} }
+      mime="image/jpeg"; ext="jpg";
+    }
+    return { blob:new Blob([u],{type:mime}), mime:mime, ext:ext };
+  }
+  function downloadBlob(blob, filename){
+    try{
+      var url=URL.createObjectURL(blob);
+      var a=document.createElement("a");
+      a.href=url; a.download=filename;
+      document.body.appendChild(a); a.click();
+      setTimeout(function(){ try{document.body.removeChild(a);}catch(e){} URL.revokeObjectURL(url); }, 1500);
+      return true;
+    }catch(e){ return false; }
+  }
+
+  // Open the result sheet with a quick preview (always a light JPEG for display).
   saveBtn.addEventListener("click", function(){
     if(!state.bitmap){ return; }
     var url;
     try{ url=canvas.toDataURL("image/jpeg",0.92); }
     catch(e){ toast("生成失败，请重试"); return; }
     resultImg.src=url;
-    downloadLink.href=url;
+    setExportQuality(state.exportQuality||"standard");
     overlay.classList.add("show");
   });
+
+  // Save to album via Web Share (iOS「存储图像」/ Android「保存到相册」); download as fallback.
+  // NOTE: must stay synchronous inside the click gesture — deferring share() loses
+  // user activation on iOS Safari and the share sheet won't open.
+  if(saveAlbumBtn){
+    saveAlbumBtn.addEventListener("click", function(){
+      if(!state.bitmap){ return; }
+      var out;
+      try{ out=buildExport(); }catch(e){ toast("生成失败，请重试"); return; }
+      var filename="印迹-水印照片."+out.ext, file=null;
+      try{ file=new File([out.blob], filename, {type:out.mime}); }catch(e){ file=null; }
+      if(file && navigator.canShare && navigator.canShare({files:[file]}) && navigator.share){
+        // bare {files} only — the canonical "save image" invocation on iOS
+        navigator.share({ files:[file] }).catch(function(err){
+          if(err && err.name==="AbortError") return; // user cancelled — silent
+          if(downloadBlob(out.blob, filename)) toast("已开始下载，请到下载文件夹查看");
+        });
+        return;
+      }
+      if(downloadBlob(out.blob, filename)) toast("已开始下载，请到下载文件夹查看");
+      else toast("无法自动保存，请长按上方图片保存");
+    });
+  }
+
+  // Download as a file (mainly for desktop browsers).
+  downloadLink.addEventListener("click", function(){
+    if(!state.bitmap){ return; }
+    var out;
+    try{ out=buildExport(); }catch(e){ toast("生成失败，请重试"); return; }
+    if(downloadBlob(out.blob, "印迹-水印照片."+out.ext)) toast("已开始下载");
+    else toast("下载失败，请长按上方图片保存");
+  });
+
   closeSheet.addEventListener("click", function(){ overlay.classList.remove("show"); });
   overlay.addEventListener("click", function(e){ if(e.target===overlay) overlay.classList.remove("show"); });
 
   // ================= reset =================
   resetBtn.addEventListener("click", function(){
-    state.bitmap=null; state.exif=null;
+    state.bitmap=null; state.exif=null; state.exifApp1=null;
     editor.style.display="none";
     drop.style.display="flex";
     setDropMsg("选择照片 · 拍照","点这里从相册选一张，或直接拍一张，给它加上白框黑字水印");
