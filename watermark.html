@@ -295,11 +295,11 @@
     content:'';position:absolute;top:5px;right:7px;
     width:5px;height:5px;border-radius:50%;background:var(--accent);
   }
-  /* "+" button at the front of the style seg — opens the custom editor directly */
+  /* "添加模板" button at the front of the style seg — opens the custom editor directly */
   .seg button.new-tpl-btn{
     flex:0 0 auto;min-width:38px;
-    color:var(--accent);font-size:20px;font-weight:600;
-    padding:7px 12px;line-height:1;
+    color:var(--accent);font-size:14.5px;font-weight:600;
+    padding:10px 14px;line-height:1.15;
     border:1.5px dashed var(--accent);
     background:rgba(255,255,255,.35);
     -webkit-backdrop-filter:blur(10px);
@@ -594,6 +594,12 @@
   }
   .set-lbl{font-size:13.5px;color:var(--ink);font-weight:500;margin:14px 2px 8px;}
   .set-hint{font-size:12px;color:var(--ink-soft);margin:8px 2px 0;line-height:1.5;}
+  /* native dropdown for 默认打开模板 — themed via CSS vars so it flips with dark mode; OS draws the picker */
+  .set-select{
+    width:100%;margin-top:2px;padding:11px 12px;border-radius:11px;
+    border:1px solid var(--line);background:var(--surface);color:var(--ink);
+    font-family:var(--font);font-size:15px;line-height:1.3;
+  }
   /* setting-row inside a section: no top divider, tighter */
   .set-sec .setting-row{border-top:none;margin-top:10px;padding:4px;}
   /* autoFields checkbox grid */
@@ -648,7 +654,7 @@
   <header>
     <div class="brand">
       <span class="name">印迹</span>
-      <span class="tag">Photo&nbsp;Watermark · <span id="appVer">v2.9.0</span></span>
+      <span class="tag">Photo&nbsp;Watermark · <span id="appVer">v2.9.1</span></span>
     </div>
     <div class="header-actions">
       <button class="icon-btn more-btn" id="searchBtn" aria-label="更多模板">
@@ -844,6 +850,9 @@
           <span class="slider"></span>
         </label>
       </div>
+      <div class="set-lbl">默认打开模板</div>
+      <select id="defStyleSel" class="set-select" aria-label="默认打开模板"></select>
+      <div class="set-hint">每次打开照片默认套用的样式。选「用上次用的」就接着上回那款来。</div>
       <div class="set-lbl">默认文字模式</div>
       <div class="seg" id="defModeSeg" role="group" aria-label="默认文字模式">
         <button data-m="last" class="on">用上次的</button>
@@ -912,8 +921,16 @@
     </div>
 
     <div class="set-sec">
+      <h4>AI · 即将推出</h4>
+      <div class="set-hint" style="margin-top:0;">3.0 版本将加入 AI 能力(如智能文案、自动排版等)。所有 AI 处理都会守住「照片不上传」的底线——需要联网的能力会单独、明确征得你同意后才用。</div>
+      <div class="set-actions">
+        <button class="btn btn-ghost" id="aiSoonBtn">AI 功能抢先看 ✨</button>
+      </div>
+    </div>
+
+    <div class="set-sec">
       <h4>关于</h4>
-      <div class="about-ver">印迹 · 照片水印 &nbsp;<b id="aboutVer">v2.9.0</b></div>
+      <div class="about-ver">印迹 · 照片水印 &nbsp;<b id="aboutVer">v2.9.1</b></div>
       <div class="set-actions">
         <button class="btn btn-ghost" id="replayOnboardBtn">重看新手引导</button>
       </div>
@@ -948,7 +965,7 @@
   "use strict";
 
   // ---------- version (single source of truth; bump on every release) ----------
-  var APP_VERSION = "v2.9.0";
+  var APP_VERSION = "v2.9.1";
 
   // ---------- state ----------
   var state = { bitmap:null, exif:null, exifApp1:null, mode:"manual", style:"classic", exportQuality:"standard" };
@@ -974,6 +991,7 @@
     return {
       theme: "auto",               // "auto"(跟随系统) | "light" | "dark"
       rememberLast: true,          // restore last style/mode/quality on open
+      defaultStyle: "last",        // "last"(用上次的) | a preset id | a custom-template id
       defaultTextMode: "last",     // "last" | "manual" | "auto"
       defaultQuality: "standard",  // "standard" | "high" | "png"
       longPress: true,             // long-press canvas to peek original
@@ -1030,13 +1048,18 @@
     spring: { bg:"#FBEAF0", text:"#A8456E", soft:"#C98AA4", accent:"#E59CB6" },
     summer: { bg:"#E1F0F5", text:"#2B6C89", soft:"#73A7BD", accent:"#6FB7D4" },
     autumn: { bg:"#F7E7D2", text:"#9A5A22", soft:"#C0936A", accent:"#D98A45" },
-    winter: { bg:"#E9EDF0", text:"#445561", soft:"#8FA1AD", accent:"#9FB0BC" }
+    winter: { bg:"#E9EDF0", text:"#445561", soft:"#8FA1AD", accent:"#9FB0BC" },
+    // —— v2.9.1 新增三款(共用同一渲染器,只换调色)——
+    grad:     { bg:"#E8EBF3", text:"#2C3C68", soft:"#808DB0", accent:"#C6A24A" }, // 毕业季:藏青字 + 金线,学院风
+    morandi:  { bg:"#ECE6E1", text:"#6E5D55", soft:"#A99B91", accent:"#BBA08C" }, // 莫兰迪:低饱和灰玫
+    solarTerm:{ bg:"#E5EDE4", text:"#3F6B4C", soft:"#85A48E", accent:"#79AC85" }  // 节气·青:青瓷绿
   };
   // Camera-brand palettes — one shared renderer (drawBrandStyle), dark bar + brand accent.
   var BRAND = {
     fuji:  { bg:"#16241D", accent:"#4FA877", text:"#7FCBA0", soft:"#6E8E7C" },
     sony:  { bg:"#141414", accent:"#E8841A", text:"#F0A055", soft:"#9A8470" },
-    nikon: { bg:"#1A1712", accent:"#F2C200", text:"#F3D24A", soft:"#A0936A" }
+    nikon: { bg:"#1A1712", accent:"#F2C200", text:"#F3D24A", soft:"#A0936A" },
+    canon: { bg:"#1B1311", accent:"#D8262C", text:"#EC6A6E", soft:"#A07473" }  // v2.9.1 新增:佳能红
   };
 
   // ---------- platform interface ----------
@@ -1071,7 +1094,7 @@
   var catRow=$("catRow");
   var searchCat="all";   // active category filter in the 更多模板 panel
 
-  // ---------- template registry (26 presets + user-defined customs at runtime) ----------
+  // ---------- template registry (30 presets + user-defined customs at runtime) ----------
   var TEMPLATES = [
     {id:"classic",       name:"经典",         desc:"白底栏黑字,最克制简洁。", tags:["简洁","默认","白","黑字","底栏","clean"]},
     {id:"polaroid",      name:"拍立得",       desc:"照片四周白边,底部更厚。复古文艺。", tags:["白边","复古","文艺","拍立得","白框"]},
@@ -1097,6 +1120,11 @@
     {id:"fujiFilm",      name:"富士绿",       desc:"墨绿深色底栏 + 绿色细条 + 绿字,富士胶片风。", tags:["富士","绿","胶片","相机","fuji","film"]},
     {id:"sonyAlpha",     name:"索尼橙",       desc:"深黑底栏 + 橙色细条 + 橙字,索尼 α 风。", tags:["索尼","橙","黑","相机","sony","alpha"]},
     {id:"nikonGold",     name:"尼康黄",       desc:"深褐底栏 + 明黄细条 + 黄字,尼康风。", tags:["尼康","黄","金","相机","nikon"]},
+    {id:"canonRed",      name:"佳能红",       desc:"深黑底栏 + 佳能红细条 + 红字,佳能 EOS 风。", tags:["佳能","红","黑","相机","canon","eos"]},
+    // —— v2.9.1 新增:学院 / 莫兰迪 / 节气(共用 drawSeasonStyle)——
+    {id:"graduation",    name:"毕业季",       desc:"藏青字 + 金色细线,学院风,毕业 / 答辩留念。", tags:["毕业","学院","藏青","金","纪念","graduation","季"]},
+    {id:"morandi",       name:"莫兰迪",       desc:"莫兰迪灰玫调,低饱和高级感底栏 + 细线。", tags:["莫兰迪","灰","高级","低饱和","morandi","柔"]},
+    {id:"solarTerm",     name:"节气·青",      desc:"青瓷绿调底栏 + 细线,二十四节气清雅风。", tags:["节气","青","绿","青瓷","清雅","solar","term"]},
     // —— 玻璃质感水印 ——
     {id:"glassBar",      name:"玻璃底栏",     desc:"照片底部一条磨砂玻璃,半透明 + 高光,液态玻璃质感。", tags:["玻璃","磨砂","液态","透明","glass","ios","质感"]},
     {id:"glassCard",     name:"玻璃卡片",     desc:"底部悬浮一块磨砂玻璃圆角卡片放文字,最有 iOS 质感。", tags:["玻璃","卡片","悬浮","液态","glass","chip","ios"]},
@@ -1120,11 +1148,11 @@
   var CAT_IDS = {
     base:     ["classic","polaroid","polaroidPlus","minimalFrame","magazineLight","minimalCorner"],
     dark:     ["darkBar","cinema","magazine","hasselblad"],
-    color:    ["leica","filmStrip","checkIn","bigDate"],
-    season:   ["springCherry","summerSea","autumnMaple","winterSnow"],
-    brand:    ["fujiFilm","sonyAlpha","nikonGold"],
+    color:    ["leica","filmStrip","checkIn","bigDate","morandi"],
+    season:   ["springCherry","summerSea","autumnMaple","winterSnow","solarTerm"],
+    brand:    ["fujiFilm","sonyAlpha","nikonGold","canonRed"],
     glass:    ["glassBar","glassCard"],
-    festival: ["festivalRed","birthday","anniversary"]
+    festival: ["festivalRed","birthday","anniversary","graduation"]
   };
   // reverse lookup: preset id -> category key
   var CAT_OF = {};
@@ -1718,7 +1746,7 @@
     if(!segPins) loadSegPins();
     var html = '';
     // "+" button at the FRONT (leftmost) — most discoverable place to create new
-    html += '<button class="new-tpl-btn" title="新建我的模板" aria-label="新建我的模板">+</button>';
+    html += '<button class="new-tpl-btn" title="添加模板" aria-label="添加模板">＋ 添加模板</button>';
     // then the user's pinned templates (presets + customs), in pin order
     segPins.forEach(function(id){
       var p = presetById(id);
@@ -1835,10 +1863,15 @@
     summerSea:      function(){ drawSeasonStyle(SEASON.summer); },
     autumnMaple:    function(){ drawSeasonStyle(SEASON.autumn); },
     winterSnow:     function(){ drawSeasonStyle(SEASON.winter); },
+    // v2.9.1 — same seasonal renderer, three more palettes
+    graduation:     function(){ drawSeasonStyle(SEASON.grad); },
+    morandi:        function(){ drawSeasonStyle(SEASON.morandi); },
+    solarTerm:      function(){ drawSeasonStyle(SEASON.solarTerm); },
     // camera-brand — shared renderer bound to a palette
     fujiFilm:       function(){ drawBrandStyle(BRAND.fuji); },
     sonyAlpha:      function(){ drawBrandStyle(BRAND.sony); },
     nikonGold:      function(){ drawBrandStyle(BRAND.nikon); },
+    canonRed:       function(){ drawBrandStyle(BRAND.canon); },
     // liquid glass
     glassBar:       drawGlassBar,
     glassCard:      drawGlassCard,
@@ -2818,6 +2851,18 @@
 
   // Produce export bytes for the current quality. JPEG paths re-inject the
   // original photo's EXIF (device/time/exposure/GPS…); PNG is metadata-free.
+  // name of the currently-selected style (preset name or the user's custom-template name)
+  function currentStyleName(){
+    var c=findCustomTemplate(state.style); if(c && c.name) return c.name;
+    var n=presetName(state.style); return n || "水印";
+  }
+  // human-friendly export filename, e.g. 印迹_2026-05-31_经典.jpg (date + style, illegal chars stripped)
+  function exportFilename(ext){
+    var d=new Date(), p=function(n){return (n<10?"0":"")+n;};
+    var date=d.getFullYear()+"-"+p(d.getMonth()+1)+"-"+p(d.getDate());
+    var name=String(currentStyleName()).replace(/[\\\/:*?"<>|\s]+/g,"");
+    return "印迹_"+date+"_"+name+"."+ext;
+  }
   function buildExport(){
     var q=state.exportQuality||"standard", mime, ext, u;
     if(q==="png"){
@@ -2860,7 +2905,7 @@
       if(!state.bitmap){ return; }
       var out;
       try{ out=buildExport(); }catch(e){ toast("生成失败，请重试"); return; }
-      var filename="印迹-水印照片."+out.ext, file=null;
+      var filename=exportFilename(out.ext), file=null;
       try{ file=new File([out.blob], filename, {type:out.mime}); }catch(e){ file=null; }
       if(file && navigator.canShare && navigator.canShare({files:[file]}) && navigator.share){
         // bare {files} only — the canonical "save image" invocation on iOS
@@ -2880,7 +2925,7 @@
     if(!state.bitmap){ return; }
     var out;
     try{ out=buildExport(); }catch(e){ toast("生成失败，请重试"); return; }
-    if(downloadBlob(out.blob, "印迹-水印照片."+out.ext)) toast("已开始下载");
+    if(downloadBlob(out.blob, exportFilename(out.ext))) toast("已开始下载");
     else toast("下载失败，请长按上方图片保存");
   });
 
@@ -3238,11 +3283,18 @@
   (function initPrefs(){
     var st=ensureSettings();
     setExportQuality(st.defaultQuality);    // baseline from settings default
-    if(!st.rememberLast) return;            // not remembering → keep the defaults
-    var p=loadPrefs(); if(!p) return;
-    if(p.mode==="auto"||p.mode==="manual") prefMode=p.mode;
-    if(p.quality) setExportQuality(p.quality);
-    if(p.style && (DRAW_DISPATCH[p.style] || findCustomTemplate(p.style))) setStyle(p.style);
+    // remember-last restores mode/quality, and the style only when 默认打开模板 = 用上次的
+    if(st.rememberLast){
+      var p=loadPrefs();
+      if(p){
+        if(p.mode==="auto"||p.mode==="manual") prefMode=p.mode;
+        if(p.quality) setExportQuality(p.quality);
+        if((st.defaultStyle||"last")==="last" && p.style && (DRAW_DISPATCH[p.style] || findCustomTemplate(p.style))) setStyle(p.style);
+      }
+    }
+    // an explicit 默认打开模板 wins over "用上次的" (and works even with 记住上次 off)
+    var ds=st.defaultStyle;
+    if(ds && ds!=="last" && (DRAW_DISPATCH[ds] || findCustomTemplate(ds))) setStyle(ds);
   })();
 
   // inject version into the brand tag (so APP_VERSION constant is the single source)
@@ -3308,7 +3360,7 @@
   // ================= Settings panel (v2.9.0) =================
   var settingsBtn=$("settingsBtn"), settingsOverlay=$("settingsOverlay"), closeSettings=$("closeSettings");
   var themeSeg=$("themeSeg"), rememberLastToggle=$("rememberLastToggle");
-  var defModeSeg=$("defModeSeg"), defTextSeg=$("defTextSeg"), fixedTextWrap=$("fixedTextWrap"), fixedTextInput=$("fixedTextInput");
+  var defModeSeg=$("defModeSeg"), defTextSeg=$("defTextSeg"), fixedTextWrap=$("fixedTextWrap"), fixedTextInput=$("fixedTextInput"), defStyleSel=$("defStyleSel");
   var autoFieldsGrid=$("autoFieldsGrid"), defQualSeg=$("defQualSeg"), maxEdgeSeg=$("maxEdgeSeg"), longPressToggle=$("longPressToggle");
   var resetPinsBtn=$("resetPinsBtn"), clearTplBtn=$("clearTplBtn"), resetSettingsBtn=$("resetSettingsBtn"), replayOnboardBtn=$("replayOnboardBtn"), aboutVer=$("aboutVer");
 
@@ -3332,10 +3384,19 @@
   }
 
   // reflect the saved settings onto every control (called each time the sheet opens)
+  // populate the 默认打开模板 dropdown: "用上次用的" + every preset + the user's customs
+  function buildDefStyleOptions(){
+    if(!defStyleSel) return;
+    var html='<option value="last">用上次用的</option>';
+    for(var i=0;i<TEMPLATES.length;i++){ html+='<option value="'+TEMPLATES[i].id+'">'+escapeHtml(TEMPLATES[i].name)+'</option>'; }
+    for(var j=0;j<customTemplates.length;j++){ var c=customTemplates[j]; html+='<option value="'+c.id+'">'+escapeHtml(c.name)+'（我的）</option>'; }
+    defStyleSel.innerHTML=html;
+  }
   function syncSettingsUI(){
     var st=ensureSettings();
     segSelect(themeSeg, "data-theme", st.theme);
     if(rememberLastToggle) rememberLastToggle.checked = !!st.rememberLast;
+    if(defStyleSel){ buildDefStyleOptions(); var _ds=st.defaultStyle||"last"; if(_ds!=="last" && !(DRAW_DISPATCH[_ds]||findCustomTemplate(_ds))) _ds="last"; defStyleSel.value=_ds; }
     segSelect(defModeSeg, "data-m", st.defaultTextMode);
     segSelect(defTextSeg, "data-t", st.defaultText);
     if(fixedTextWrap) fixedTextWrap.classList.toggle("hidden", st.defaultText!=="fixed");
@@ -3361,6 +3422,8 @@
   // — bindings: each writes the setting, persists, and re-applies whatever it affects —
   segBind(themeSeg, "data-theme", function(v){ ensureSettings().theme=v; saveSettings(); applyTheme(); });
   if(rememberLastToggle) rememberLastToggle.addEventListener("change", function(){ ensureSettings().rememberLast=rememberLastToggle.checked; saveSettings(); });
+  // 默认打开模板: applies on the NEXT photo / 换一张 (initPrefs), not retroactively to the current one
+  if(defStyleSel) defStyleSel.addEventListener("change", function(){ ensureSettings().defaultStyle=defStyleSel.value||"last"; saveSettings(); });
   segBind(defModeSeg, "data-m", function(v){ ensureSettings().defaultTextMode=v; saveSettings(); });
   // 默认水印文字: takes effect on the NEXT photo / 换一张 — we don't clobber text the user may be editing now
   segBind(defTextSeg, "data-t", function(v){
@@ -3442,6 +3505,44 @@
     if(s){ try{ seen=s.getItem(ONB_KEY); }catch(e){} }
     if(seen!=="1") setTimeout(startOnboarding, 450);
   })();
+
+  // ================= 3.0 reserved: AI extension point =================
+  // 印迹 3.0 主打 AI。这里先把"接入位置"搭好,2.x 不产生任何行为,也不联网。
+  // 铁律:照片绝不静默上传。未来若有需要联网的 AI 能力,必须由用户在当次明确授权。
+  // 3.0 用法:window.Yinji.ai.register({ id, label, run })。run 收到的是
+  // window.Yinji.getContext() 的只读快照(故意不含原始像素 / bitmap),
+  // 需要像素的能力必须显式、单独向用户申请,不从这里直接拿。
+  window.Yinji.ai = window.Yinji.ai || {
+    version: "3.0-reserved",
+    available: false,                 // 3.0 注册了 provider 后才翻 true
+    _features: [],
+    register: function(feature){
+      if(feature && feature.id && typeof feature.run==="function"){
+        this._features.push(feature); this.available = true;
+      }
+      return this;
+    },
+    list: function(){ return this._features.slice(); },
+    run: function(id){
+      for(var i=0;i<this._features.length;i++){ if(this._features[i].id===id) return this._features[i].run(window.Yinji.getContext()); }
+      return false;                   // 2.x:没有任何功能注册,始终 no-op
+    }
+  };
+  // 交给未来 AI 功能的只读上下文 —— 不含照片像素,照片数据留在本地
+  window.Yinji.getContext = window.Yinji.getContext || function(){
+    return {
+      version: APP_VERSION,
+      hasPhoto: !!state.bitmap,
+      style: state.style,
+      mode: state.mode,
+      text: (typeof textInput!=="undefined" && textInput) ? textInput.value : ""
+    };
+  };
+  // 设置面板里的 "AI · 即将推出" 占位入口(3.0 预告)
+  var aiSoonBtn=$("aiSoonBtn");
+  if(aiSoonBtn) aiSoonBtn.addEventListener("click", function(){
+    toast("AI 功能将在 3.0 版本加入,敬请期待 ✨");
+  });
 
   // ================= PWA: register service worker for offline =================
   if('serviceWorker' in navigator){
