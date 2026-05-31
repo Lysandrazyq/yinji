@@ -340,6 +340,7 @@
   .sheet img{width:100%;max-height:42vh;object-fit:contain;border-radius:14px;box-shadow:var(--shadow);display:block;}
   .sheet .row{display:flex;gap:10px;margin-top:12px;}
   .sheet a.btn,.sheet button.btn{flex:1;text-decoration:none;text-align:center;display:block;}
+  .sheet a.btn[hidden],.sheet button.btn[hidden]{display:none;}   /* let the hidden attr win over display:block */
   /* export quality selector */
   .qual-seg{margin-top:16px;}
   .qual-note{margin:9px 4px 0;font-size:12px;color:var(--ink-soft);text-align:center;line-height:1.5;min-height:18px;}
@@ -447,6 +448,15 @@
   }
   .template-item .share:active{background:rgba(0,0,0,.05);}
 
+  /* per-template "pin to 常用栏" toggle in search results */
+  .template-item .pin{
+    float:right;font-size:12px;color:var(--ink-soft);padding:2px 9px;
+    border:1px solid var(--line);border-radius:8px;background:transparent;
+    cursor:pointer;margin-left:8px;font-family:inherit;
+  }
+  .template-item .pin.on{color:var(--accent);border-color:var(--accent);background:var(--accent-soft);}
+  .template-item .pin:active{transform:scale(.95);}
+
   /* share / import textarea */
   .share-text{
     width:100%;box-sizing:border-box;margin-top:6px;resize:none;
@@ -528,7 +538,7 @@
   <header>
     <div class="brand">
       <span class="name">印迹</span>
-      <span class="tag">Photo&nbsp;Watermark · <span id="appVer">v2.8.0</span></span>
+      <span class="tag">Photo&nbsp;Watermark · <span id="appVer">v2.8.1</span></span>
     </div>
     <button class="icon-btn more-btn" id="searchBtn" aria-label="更多模板">
       <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -599,8 +609,8 @@
     <p class="qual-note" id="qualityNote">JPEG · 体积小，日常分享够用，保留拍摄信息</p>
 
     <button class="btn btn-primary btn-album" id="saveAlbumBtn">保存到相册</button>
-    <button class="btn btn-ghost" id="copyImgBtn" hidden>复制图片</button>
     <div class="row">
+      <button class="btn btn-ghost" id="copyImgBtn" hidden>复制图片</button>
       <button class="btn btn-ghost" id="downloadLink">下载文件</button>
       <button class="btn btn-ghost" id="closeSheet">关闭</button>
     </div>
@@ -695,7 +705,7 @@
   "use strict";
 
   // ---------- version (single source of truth; bump on every release) ----------
-  var APP_VERSION = "v2.8.0";
+  var APP_VERSION = "v2.8.1";
 
   // ---------- state ----------
   var state = { bitmap:null, exif:null, exifApp1:null, mode:"manual", style:"classic", exportQuality:"standard" };
@@ -1379,19 +1389,54 @@
     return null;
   }
 
+  // ---------- "常用栏" pins: which templates show in the top quick-pick bar (user-chosen, persisted) ----------
+  var SEG_PINS_KEY = "yinji.segPins.v1";
+  var segPins = null;   // ordered array of pinned template ids; lazy-loaded on first use
+  function defaultPins(){
+    // first-run default preserves old behavior: the preset quick-picks + every existing custom
+    return SEG_PRESETS.concat(customTemplates.map(function(c){ return c.id; }));
+  }
+  function loadSegPins(){
+    var s=PLATFORM.getStorage();
+    if(s){
+      try{ var raw=s.getItem(SEG_PINS_KEY); if(raw){ var arr=JSON.parse(raw); if(Array.isArray(arr)){ segPins=arr; return; } } }catch(e){}
+    }
+    segPins = defaultPins();
+  }
+  function saveSegPins(){ var s=PLATFORM.getStorage(); if(!s) return; try{ s.setItem(SEG_PINS_KEY, JSON.stringify(segPins)); }catch(e){} }
+  function isPinned(id){ if(!segPins) loadSegPins(); return segPins.indexOf(id)!==-1; }
+  function addPin(id){ if(!segPins) loadSegPins(); if(segPins.indexOf(id)===-1){ segPins.push(id); saveSegPins(); } }
+  function removePin(id){ if(!segPins) loadSegPins(); var i=segPins.indexOf(id); if(i!==-1){ segPins.splice(i,1); saveSegPins(); } }
+  function togglePin(id){
+    if(!segPins) loadSegPins();
+    if(segPins.indexOf(id)===-1){ addPin(id); toast("已加到常用栏，编辑页顶部能直接点"); }
+    else {
+      if(segPins.length<=1){ toast("至少留一个常用模板"); return; }
+      removePin(id); toast("已从常用栏移除");
+    }
+    renderStyleSeg();
+    renderSearchResults(searchInput.value);
+  }
+
   function renderStyleSeg(){
+    if(!segPins) loadSegPins();
     var html = '';
     // "+" button at the FRONT (leftmost) — most discoverable place to create new
     html += '<button class="new-tpl-btn" title="新建我的模板" aria-label="新建我的模板">+</button>';
-    SEG_PRESETS.forEach(function(id){
-      var t = presetById(id);
-      if(!t) return;
-      var cls = (state.style === id) ? 'on' : '';
-      html += '<button data-style="'+id+'"'+(cls?' class="'+cls+'"':'')+'>'+escapeHtml(t.name)+'</button>';
-    });
-    customTemplates.forEach(function(c){
-      var cls = 'custom-tpl' + (state.style === c.id ? ' on' : '');
-      html += '<button data-style="'+c.id+'" class="'+cls+'" title="我的模板">'+escapeHtml(c.name)+'</button>';
+    // then the user's pinned templates (presets + customs), in pin order
+    segPins.forEach(function(id){
+      var p = presetById(id);
+      if(p){
+        var cls = (state.style === id) ? 'on' : '';
+        html += '<button data-style="'+id+'"'+(cls?' class="'+cls+'"':'')+'>'+escapeHtml(p.name)+'</button>';
+        return;
+      }
+      var c = findCustomTemplate(id);
+      if(c){
+        var cls2 = 'custom-tpl' + (state.style === c.id ? ' on' : '');
+        html += '<button data-style="'+c.id+'" class="'+cls2+'" title="我的模板">'+escapeHtml(c.name)+'</button>';
+      }
+      // stale id (e.g. a deleted custom) → silently skip
     });
     styleSeg.innerHTML = html;
     // bind preset/custom buttons → setStyle
@@ -2630,8 +2675,10 @@
       var customTag = t._custom ? '<span class="tag-custom">我的</span>' : '';
       var delBtn = t._custom ? '<button class="del" data-del="'+t.id+'">删除</button>' : '';
       var shareBtn = t._custom ? '<button class="share" data-share="'+t.id+'">分享</button>' : '';
+      var pinned = isPinned(t.id);
+      var pinBtn = '<button class="pin'+(pinned?' on':'')+'" data-pin="'+t.id+'" title="'+(pinned?'从常用栏移除':'加到顶部常用栏')+'">'+(pinned?'★ 常用':'☆ 常用')+'</button>';
       return '<div class="template-item'+cur+'" data-style="'+t.id+'">'+
-             '<div class="name">'+escapeHtml(t.name)+customTag+badge+delBtn+shareBtn+'</div>'+
+             '<div class="name">'+escapeHtml(t.name)+customTag+badge+pinBtn+delBtn+shareBtn+'</div>'+
              '<div class="desc">'+escapeHtml(t.desc||"")+'</div>'+
              '</div>';
     }).join("");
@@ -2639,6 +2686,11 @@
     Array.prototype.forEach.call(searchResults.querySelectorAll(".template-item"), function(el){
       el.addEventListener("click", function(ev){
         var tgt = ev.target;
+        if(tgt && tgt.classList && tgt.classList.contains("pin")){
+          togglePin(tgt.getAttribute("data-pin"));
+          ev.stopPropagation();
+          return;
+        }
         if(tgt && tgt.classList && tgt.classList.contains("del")){
           deleteCustomTemplate(tgt.getAttribute("data-del"));
           ev.stopPropagation();
@@ -2660,6 +2712,7 @@
     if(!confirm("删除这个自定义模板?")) return;
     customTemplates = customTemplates.filter(function(c){ return c.id !== id; });
     persistCustomTemplates();
+    removePin(id);         // drop it from the 常用栏 too
     if(state.style === id){ setStyle("classic"); }
     renderStyleSeg();      // rebuild seg (deleted button disappears)
     renderSearchResults(searchInput.value);
@@ -2740,6 +2793,7 @@
       customTemplates = customTemplates.map(function(c){ return c.id===editingCustomId ? tpl : c; });
     } else {
       customTemplates.push(tpl);
+      addPin(tpl.id);       // new custom auto-appears in the 常用栏 (matches old behavior)
     }
     persistCustomTemplates();
     closeCustomEditor();
@@ -2861,6 +2915,7 @@
       desc: "自定义 · "+(layout==="bar"?"底栏":layout==="frame"?"四周白边":"满版渐变")
     };
     customTemplates.push(tpl);
+    addPin(tpl.id);       // imported custom auto-appears in the 常用栏
     persistCustomTemplates();
     renderStyleSeg();
     setStyle(tpl.id);
