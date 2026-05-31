@@ -308,6 +308,12 @@
   }
   .seg button.new-tpl-btn:hover{background:rgba(244,230,216,.7);}
   .seg button.new-tpl-btn:active{transform:scale(.92);background:var(--accent-soft);}
+  /* when no templates are pinned, the add-template button stands alone — big & centered (v2.9.2) */
+  .seg button.new-tpl-btn.solo{
+    flex:1 1 auto;width:100%;
+    display:flex;align-items:center;justify-content:center;
+    font-size:16px;padding:15px 16px;border-radius:13px;letter-spacing:.02em;
+  }
 
   .field{margin-top:16px;}
   .field.hidden{display:none;}
@@ -654,7 +660,7 @@
   <header>
     <div class="brand">
       <span class="name">印迹</span>
-      <span class="tag">Photo&nbsp;Watermark · <span id="appVer">v2.9.1</span></span>
+      <span class="tag">Photo&nbsp;Watermark · <span id="appVer">v2.9.2</span></span>
     </div>
     <div class="header-actions">
       <button class="icon-btn more-btn" id="searchBtn" aria-label="更多模板">
@@ -664,9 +670,20 @@
         <span>更多模板</span>
       </button>
       <button class="icon-btn" id="settingsBtn" aria-label="设置">
-        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <circle cx="12" cy="12" r="3.1"></circle>
-          <path d="M19.4 13a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.6 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09A1.65 1.65 0 0 0 15 4.6a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9v0a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+        <!-- symmetric 8-tooth gear (v2.9.2): teeth are one shape rotated by 45°, so it's perfectly balanced -->
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="6.6"></circle>
+          <circle cx="12" cy="12" r="2.7"></circle>
+          <g>
+            <rect x="10.6" y="1.9" width="2.8" height="3.8" rx="0.9"></rect>
+            <rect x="10.6" y="1.9" width="2.8" height="3.8" rx="0.9" transform="rotate(45 12 12)"></rect>
+            <rect x="10.6" y="1.9" width="2.8" height="3.8" rx="0.9" transform="rotate(90 12 12)"></rect>
+            <rect x="10.6" y="1.9" width="2.8" height="3.8" rx="0.9" transform="rotate(135 12 12)"></rect>
+            <rect x="10.6" y="1.9" width="2.8" height="3.8" rx="0.9" transform="rotate(180 12 12)"></rect>
+            <rect x="10.6" y="1.9" width="2.8" height="3.8" rx="0.9" transform="rotate(225 12 12)"></rect>
+            <rect x="10.6" y="1.9" width="2.8" height="3.8" rx="0.9" transform="rotate(270 12 12)"></rect>
+            <rect x="10.6" y="1.9" width="2.8" height="3.8" rx="0.9" transform="rotate(315 12 12)"></rect>
+          </g>
         </svg>
       </button>
     </div>
@@ -930,7 +947,7 @@
 
     <div class="set-sec">
       <h4>关于</h4>
-      <div class="about-ver">印迹 · 照片水印 &nbsp;<b id="aboutVer">v2.9.1</b></div>
+      <div class="about-ver">印迹 · 照片水印 &nbsp;<b id="aboutVer">v2.9.2</b></div>
       <div class="set-actions">
         <button class="btn btn-ghost" id="replayOnboardBtn">重看新手引导</button>
       </div>
@@ -965,7 +982,7 @@
   "use strict";
 
   // ---------- version (single source of truth; bump on every release) ----------
-  var APP_VERSION = "v2.9.1";
+  var APP_VERSION = "v2.9.2";
 
   // ---------- state ----------
   var state = { bitmap:null, exif:null, exifApp1:null, mode:"manual", style:"classic", exportQuality:"standard" };
@@ -1714,11 +1731,12 @@
   }
 
   // ---------- "常用栏" pins: which templates show in the top quick-pick bar (user-chosen, persisted) ----------
-  var SEG_PINS_KEY = "yinji.segPins.v1";
+  var SEG_PINS_KEY = "yinji.segPins.v2";   // v2 (v2.9.2): default is now an EMPTY bar (was preset quick-picks)
   var segPins = null;   // ordered array of pinned template ids; lazy-loaded on first use
   function defaultPins(){
-    // first-run default preserves old behavior: the preset quick-picks + every existing custom
-    return SEG_PRESETS.concat(customTemplates.map(function(c){ return c.id; }));
+    // v2.9.2: default bar starts EMPTY — top shows just the big "添加模板" button.
+    // user grows it by pinning (☆常用) in 更多模板, or by creating / importing a template (auto-pins).
+    return [];
   }
   function loadSegPins(){
     var s=PLATFORM.getStorage();
@@ -1735,7 +1753,7 @@
     if(!segPins) loadSegPins();
     if(segPins.indexOf(id)===-1){ addPin(id); toast("已加到常用栏，编辑页顶部能直接点"); }
     else {
-      if(segPins.length<=1){ toast("至少留一个常用模板"); return; }
+      // v2.9.2: allow emptying the bar fully — default is empty, so un-pinning the last one is fine.
       removePin(id); toast("已从常用栏移除");
     }
     renderStyleSeg();
@@ -1745,8 +1763,10 @@
   function renderStyleSeg(){
     if(!segPins) loadSegPins();
     var html = '';
-    // "+" button at the FRONT (leftmost) — most discoverable place to create new
-    html += '<button class="new-tpl-btn" title="添加模板" aria-label="添加模板">＋ 添加模板</button>';
+    // "添加模板" button at the FRONT (leftmost) — most discoverable place to create new.
+    // When no templates are pinned, it stands alone as one big, centered button (v2.9.2).
+    var solo = !segPins || segPins.length === 0;
+    html += '<button class="new-tpl-btn'+(solo?' solo':'')+'" title="添加模板" aria-label="添加模板">＋ 添加模板</button>';
     // then the user's pinned templates (presets + customs), in pin order
     segPins.forEach(function(id){
       var p = presetById(id);
@@ -3471,7 +3491,7 @@
   var ONB_KEY = "yinji.onboarded.v1";
   var ONB_STEPS = [
     { emoji:"👋", title:"欢迎用印迹", body:"给照片加一条好看的相机水印。所有处理都在你手机本地完成,照片绝不上传,放心用。" },
-    { emoji:"🖼️", title:"选照片 · 挑样式", body:"点中间大框选一张照片。顶部那排是常用样式条,左右滑动挑;想要更多点右上角「更多模板」,挑中的还能用「☆ 常用」钉到顶部。" },
+    { emoji:"🖼️", title:"选照片 · 挑样式", body:"点中间大框选一张照片。顶部默认是个大大的「添加模板」按钮;点右上角「更多模板」挑样式,喜欢的用「☆ 常用」钉到顶部,常用的就排成一条快捷栏。" },
     { emoji:"✍️", title:"两种文字,随意切", body:"「手动输入」自己写一句;「自动读取」从照片里读出设备、时间、光圈快门 ISO,排成相机水印。改文字实时预览。" },
     { emoji:"💾", title:"保存 · 分享", body:"点「保存图片」再选「保存到相册」直接进相册;也能一键「复制图片」粘到聊天。右上角齿轮是设置,主题 / 默认行为都能调。" }
   ];
