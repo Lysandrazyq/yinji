@@ -79,6 +79,66 @@
   body[data-glass="off"] .share-text{background:var(--surface);border-color:var(--line);}
   body[data-glass="off"] .nodata{background:var(--accent-soft);}
 
+  /* ========== Dark theme (v2.9.0) ==========
+     Redefines the palette + the few hardcoded-light surfaces. Pure UI chrome —
+     the canvas watermark output is never touched (it draws its own colors).
+     applyTheme() sets body[data-theme] to an explicit "light"/"dark" (auto resolved in JS). */
+  body[data-theme="dark"]{
+    --bg:#16130F;
+    --surface:#221E19;
+    --ink:#F1EBE1;
+    --ink-soft:#A99C8C;
+    --line:#37302A;
+    --accent:#E08A4C;
+    --accent-soft:#3A2A1C;
+    --shadow:0 10px 34px rgba(0,0,0,.45);
+    --shadow-sm:0 4px 14px rgba(0,0,0,.35);
+    --glass-bg:rgba(255,255,255,0.07);
+    --glass-bg-strong:rgba(255,255,255,0.12);
+    --glass-bg-faint:rgba(255,255,255,0.045);
+    --glass-border:rgba(255,255,255,0.14);
+    --glass-highlight:inset 0 1px 0 rgba(255,255,255,0.10), inset 0 -1px 0 rgba(0,0,0,0.25);
+    /* warm dark gradient field for the glass to refract through */
+    background-image:
+      radial-gradient(130% 90% at 50% -10%, rgba(255,255,255,.05), transparent 55%),
+      radial-gradient(55% 38% at 12% 22%, rgba(224,138,76,.13), transparent 70%),
+      radial-gradient(50% 35% at 88% 70%, rgba(90,130,180,.10), transparent 70%),
+      radial-gradient(45% 30% at 80% 20%, rgba(200,150,90,.08), transparent 70%),
+      radial-gradient(100% 60% at 50% 112%, rgba(224,138,76,.06), transparent 60%);
+  }
+  /* hardcoded-light surfaces → dark equivalents */
+  body[data-theme="dark"] .sheet{background:rgba(34,30,25,.86);border-top-color:rgba(255,255,255,.10);}
+  body[data-theme="dark"] .seg{background:rgba(255,255,255,.05);border-color:rgba(255,255,255,.10);box-shadow:inset 0 1px 1px rgba(255,255,255,.06);}
+  body[data-theme="dark"] .seg button.on{background:rgba(255,255,255,.16);box-shadow:0 2px 10px rgba(0,0,0,.30), inset 0 1px 1px rgba(255,255,255,.12);}
+  body[data-theme="dark"] .seg button.new-tpl-btn{background:rgba(255,255,255,.05);}
+  body[data-theme="dark"] input[type=text],
+  body[data-theme="dark"] .search-input,
+  body[data-theme="dark"] .share-text{background:rgba(255,255,255,.06);border-color:rgba(255,255,255,.12);color:var(--ink);box-shadow:inset 0 1px 1px rgba(255,255,255,.05);}
+  body[data-theme="dark"] input[type=text]:focus,
+  body[data-theme="dark"] .search-input:focus{background:rgba(255,255,255,.10);border-color:var(--accent);box-shadow:0 0 0 3px rgba(224,138,76,.18), inset 0 1px 1px rgba(255,255,255,.06);}
+  body[data-theme="dark"] input::placeholder,
+  body[data-theme="dark"] textarea::placeholder{color:rgba(241,235,225,.34);}
+  body[data-theme="dark"] .cat-chip{background:rgba(255,255,255,.06);border-color:rgba(255,255,255,.12);color:var(--ink-soft);}
+  body[data-theme="dark"] .cat-chip:hover{background:rgba(255,255,255,.12);}
+  body[data-theme="dark"] .chip{background:rgba(255,255,255,.06);border-color:rgba(255,255,255,.12);}
+  body[data-theme="dark"] .custom-row{background:rgba(255,255,255,.05);}
+  body[data-theme="dark"] .drop{border-color:#4A4138;}
+  body[data-theme="dark"] .nodata{background:rgba(224,138,76,.14);border-color:rgba(255,255,255,.10);}
+  body[data-theme="dark"] canvas{box-shadow:0 4px 16px rgba(0,0,0,.5);}
+  body[data-theme="dark"] .toast{background:#34302A;}
+  body[data-theme="dark"] .set-check{background:rgba(255,255,255,.05);border-color:rgba(255,255,255,.12);}
+  /* dark + glass-off: solid dark surfaces (specificity beats both single-attr blocks) */
+  body[data-theme="dark"][data-glass="off"]{
+    --glass-bg:#221E19;
+    --glass-bg-strong:#2A251F;
+    --glass-bg-faint:#201C17;
+    --glass-border:var(--line);
+    --glass-blur:none;
+    --glass-blur-sm:none;
+    --glass-highlight:0 1px 1px rgba(255,255,255,.04);
+  }
+  body[data-theme="dark"][data-glass="off"] .drop{background:rgba(255,255,255,.04);}
+
   /* ========== entry animations ========== */
   @keyframes yj-fadeUp{
     from{opacity:0;transform:translateY(12px);}
@@ -144,6 +204,7 @@
   .icon-btn:hover{background:var(--glass-bg-strong);box-shadow:0 6px 20px rgba(28,24,20,.13), var(--glass-highlight);}
   .icon-btn:active{transform:scale(.92);}
   .icon-btn svg{width:21px;height:21px;stroke:var(--ink);}
+  .header-actions{display:flex;align-items:center;gap:9px;}
   /* header "更多模板" pill (search entry, relabeled) */
   .more-btn{width:auto;padding:0 14px;gap:7px;}
   .more-btn svg{width:17px;height:17px;}
@@ -523,6 +584,55 @@
   .switch input:checked + .slider{background:var(--accent);}
   .switch input:checked + .slider::before{transform:translateX(20px);}
 
+  /* ===== Settings sheet (v2.9.0) ===== */
+  .settings-sheet{max-height:86vh;overflow-y:auto;-webkit-overflow-scrolling:touch;}
+  .set-sec{margin-top:20px;}
+  .set-sec:first-of-type{margin-top:8px;}
+  .set-sec > h4{
+    margin:0 0 4px;font-size:12px;font-weight:700;
+    color:var(--accent);letter-spacing:.08em;
+  }
+  .set-lbl{font-size:13.5px;color:var(--ink);font-weight:500;margin:14px 2px 8px;}
+  .set-hint{font-size:12px;color:var(--ink-soft);margin:8px 2px 0;line-height:1.5;}
+  /* setting-row inside a section: no top divider, tighter */
+  .set-sec .setting-row{border-top:none;margin-top:10px;padding:4px;}
+  /* autoFields checkbox grid */
+  .set-grid{display:flex;flex-wrap:wrap;gap:8px;}
+  .set-check{
+    display:flex;align-items:center;gap:8px;
+    font-size:14px;color:var(--ink);cursor:pointer;
+    background:var(--glass-bg-faint);
+    -webkit-backdrop-filter:var(--glass-blur-sm);backdrop-filter:var(--glass-blur-sm);
+    border:1px solid var(--glass-border);
+    border-radius:11px;padding:10px 13px;
+    flex:1 0 27%;min-width:90px;
+    box-shadow:var(--glass-highlight);
+  }
+  .set-check input{width:17px;height:17px;accent-color:var(--accent);margin:0;flex-shrink:0;}
+  /* stacked action buttons (data & privacy, about) */
+  .set-actions{display:flex;flex-direction:column;gap:9px;margin-top:4px;}
+  .set-actions .btn{flex:none;width:100%;padding:13px 0;}
+  .btn-ghost.btn-warn{color:#C5503E;}
+  body[data-theme="dark"] .btn-ghost.btn-warn{color:#F08A78;}
+  .privacy-note{font-size:12px;color:var(--ink-soft);line-height:1.65;margin:12px 2px 0;}
+  .about-ver{text-align:center;font-size:13.5px;color:var(--ink-soft);margin:0 0 12px;}
+  .about-ver b{color:var(--ink);font-weight:600;}
+
+  /* ===== Onboarding (v2.9.0) — stepped cards ===== */
+  .onb-card{text-align:center;padding:6px 6px 2px;}
+  .onb-emoji{font-size:46px;line-height:1;margin:8px 0 16px;}
+  .onb-card h3{margin:0 0 10px;font-size:20px;font-weight:700;text-align:center;}
+  .onb-card p{margin:0 auto;font-size:14.5px;color:var(--ink-soft);line-height:1.7;max-width:300px;}
+  .onb-dots{display:flex;justify-content:center;gap:8px;margin:22px 0 16px;}
+  .onb-dot{width:8px;height:8px;border-radius:50%;background:var(--ink-soft);opacity:.32;transition:opacity .2s,transform .2s,background .2s;}
+  .onb-dot.on{opacity:1;background:var(--accent);transform:scale(1.25);}
+  .onb-nav{display:flex;gap:10px;align-items:center;}
+  .onb-nav .btn{flex:1;}
+  .onb-skip{
+    background:none;border:none;color:var(--ink-soft);font-family:var(--font);
+    font-size:14px;cursor:pointer;padding:14px 6px;flex:0 0 auto;
+  }
+
   /* Toast */
   .toast{
     position:fixed;left:50%;bottom:46px;transform:translateX(-50%) translateY(20px);
@@ -538,14 +648,22 @@
   <header>
     <div class="brand">
       <span class="name">印迹</span>
-      <span class="tag">Photo&nbsp;Watermark · <span id="appVer">v2.8.1</span></span>
+      <span class="tag">Photo&nbsp;Watermark · <span id="appVer">v2.9.0</span></span>
     </div>
-    <button class="icon-btn more-btn" id="searchBtn" aria-label="更多模板">
-      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <rect x="3.5" y="3.5" width="7" height="7" rx="1.6"></rect><rect x="13.5" y="3.5" width="7" height="7" rx="1.6"></rect><rect x="3.5" y="13.5" width="7" height="7" rx="1.6"></rect><rect x="13.5" y="13.5" width="7" height="7" rx="1.6"></rect>
-      </svg>
-      <span>更多模板</span>
-    </button>
+    <div class="header-actions">
+      <button class="icon-btn more-btn" id="searchBtn" aria-label="更多模板">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3.5" y="3.5" width="7" height="7" rx="1.6"></rect><rect x="13.5" y="3.5" width="7" height="7" rx="1.6"></rect><rect x="3.5" y="13.5" width="7" height="7" rx="1.6"></rect><rect x="13.5" y="13.5" width="7" height="7" rx="1.6"></rect>
+        </svg>
+        <span>更多模板</span>
+      </button>
+      <button class="icon-btn" id="settingsBtn" aria-label="设置">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="3.1"></circle>
+          <path d="M19.4 13a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.6 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09A1.65 1.65 0 0 0 15 4.6a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9v0a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+        </svg>
+      </button>
+    </div>
   </header>
 
   <!-- Empty state -->
@@ -629,16 +747,6 @@
       <button class="btn btn-import-tpl" id="importTplBtn">导入模板</button>
     </div>
     <div id="searchResults" class="search-results"></div>
-    <div class="setting-row">
-      <div class="setting-text">
-        <div class="setting-lbl">液态玻璃</div>
-        <div class="setting-hint">关掉可减少 GPU 占用,旧设备建议关</div>
-      </div>
-      <label class="switch">
-        <input type="checkbox" id="glassToggle">
-        <span class="slider"></span>
-      </label>
-    </div>
     <div class="row">
       <button class="btn btn-ghost" id="closeSearch">关闭</button>
     </div>
@@ -698,6 +806,141 @@
   </div>
 </div>
 
+<!-- Settings sheet (v2.9.0) -->
+<div class="overlay" id="settingsOverlay">
+  <div class="sheet settings-sheet">
+    <h3>设置</h3>
+    <p class="sub">下面这些选择都只存在你这台设备上</p>
+
+    <div class="set-sec">
+      <h4>外观</h4>
+      <div class="set-lbl" style="margin-top:0;">主题</div>
+      <div class="seg" id="themeSeg" role="group" aria-label="主题">
+        <button data-theme="auto" class="on">跟随系统</button>
+        <button data-theme="light">浅色</button>
+        <button data-theme="dark">深色</button>
+      </div>
+      <div class="setting-row">
+        <div class="setting-text">
+          <div class="setting-lbl">液态玻璃</div>
+          <div class="setting-hint">关掉可减少 GPU 占用,旧设备建议关</div>
+        </div>
+        <label class="switch">
+          <input type="checkbox" id="glassToggle">
+          <span class="slider"></span>
+        </label>
+      </div>
+    </div>
+
+    <div class="set-sec">
+      <h4>打开照片时</h4>
+      <div class="setting-row">
+        <div class="setting-text">
+          <div class="setting-lbl">记住上次选择</div>
+          <div class="setting-hint">下次打开自动用回上次的样式 / 模式 / 画质</div>
+        </div>
+        <label class="switch">
+          <input type="checkbox" id="rememberLastToggle">
+          <span class="slider"></span>
+        </label>
+      </div>
+      <div class="set-lbl">默认文字模式</div>
+      <div class="seg" id="defModeSeg" role="group" aria-label="默认文字模式">
+        <button data-m="last" class="on">用上次的</button>
+        <button data-m="manual">手动输入</button>
+        <button data-m="auto">自动读取</button>
+      </div>
+      <div class="set-lbl">默认水印文字</div>
+      <div class="seg" id="defTextSeg" role="group" aria-label="默认水印文字">
+        <button data-t="date" class="on">今天日期</button>
+        <button data-t="blank">留空</button>
+        <button data-t="fixed">固定一句</button>
+      </div>
+      <div id="fixedTextWrap" class="field hidden" style="margin-top:10px;">
+        <input type="text" id="fixedTextInput" placeholder="例:愿你被这世界温柔以待" maxlength="40">
+      </div>
+    </div>
+
+    <div class="set-sec">
+      <h4>自动模式显示哪些信息</h4>
+      <div class="set-grid" id="autoFieldsGrid">
+        <label class="set-check"><input type="checkbox" data-f="device">设备型号</label>
+        <label class="set-check"><input type="checkbox" data-f="time">拍摄时间</label>
+        <label class="set-check"><input type="checkbox" data-f="aperture">光圈</label>
+        <label class="set-check"><input type="checkbox" data-f="shutter">快门</label>
+        <label class="set-check"><input type="checkbox" data-f="iso">ISO</label>
+        <label class="set-check"><input type="checkbox" data-f="focal">焦段</label>
+      </div>
+      <div class="set-hint">只在「自动读取」模式下生效;取消勾选的项不会出现在水印里。</div>
+    </div>
+
+    <div class="set-sec">
+      <h4>照片与导出</h4>
+      <div class="set-lbl" style="margin-top:0;">默认导出画质</div>
+      <div class="seg" id="defQualSeg" role="group" aria-label="默认画质">
+        <button data-q="standard" class="on">标准</button>
+        <button data-q="high">高清</button>
+        <button data-q="png">无损</button>
+      </div>
+      <div class="set-lbl">导出尺寸上限</div>
+      <div class="seg" id="maxEdgeSeg" role="group" aria-label="导出尺寸上限">
+        <button data-e="1600">省流</button>
+        <button data-e="2200" class="on">标准</button>
+        <button data-e="3200">高清</button>
+      </div>
+      <div class="set-hint">指照片最长边的像素上限。越大越清晰、文件也越大。</div>
+      <div class="setting-row">
+        <div class="setting-text">
+          <div class="setting-lbl">长按看原图</div>
+          <div class="setting-hint">编辑时长按预览图,临时显示无水印原图</div>
+        </div>
+        <label class="switch">
+          <input type="checkbox" id="longPressToggle">
+          <span class="slider"></span>
+        </label>
+      </div>
+    </div>
+
+    <div class="set-sec">
+      <h4>数据与隐私</h4>
+      <div class="set-actions">
+        <button class="btn btn-ghost" id="resetPinsBtn">重置主样式条常用栏</button>
+        <button class="btn btn-ghost btn-warn" id="clearTplBtn">清空我的自定义模板</button>
+        <button class="btn btn-ghost btn-warn" id="resetSettingsBtn">恢复默认设置</button>
+      </div>
+      <div class="privacy-note">印迹所有照片处理都在你的设备本地完成,绝不上传任何服务器。上面这些数据(模板 / 偏好 / 设置)只存在本机浏览器里,清除浏览器数据或换设备就会消失。</div>
+    </div>
+
+    <div class="set-sec">
+      <h4>关于</h4>
+      <div class="about-ver">印迹 · 照片水印 &nbsp;<b id="aboutVer">v2.9.0</b></div>
+      <div class="set-actions">
+        <button class="btn btn-ghost" id="replayOnboardBtn">重看新手引导</button>
+      </div>
+    </div>
+
+    <div class="row">
+      <button class="btn btn-primary" id="closeSettings">完成</button>
+    </div>
+  </div>
+</div>
+
+<!-- Onboarding sheet (v2.9.0) — stepped cards -->
+<div class="overlay" id="onboardOverlay">
+  <div class="sheet">
+    <div class="onb-card">
+      <div class="onb-emoji" id="onbEmoji">👋</div>
+      <h3 id="onbTitle">欢迎用印迹</h3>
+      <p id="onbBody">给照片加一条好看的相机水印。所有处理都在你手机本地完成,照片绝不上传,放心用。</p>
+    </div>
+    <div class="onb-dots" id="onbDots"></div>
+    <div class="onb-nav">
+      <button class="onb-skip" id="onbSkip">跳过</button>
+      <button class="btn btn-primary" id="onbNext">下一步</button>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script>
@@ -705,7 +948,7 @@
   "use strict";
 
   // ---------- version (single source of truth; bump on every release) ----------
-  var APP_VERSION = "v2.8.1";
+  var APP_VERSION = "v2.9.0";
 
   // ---------- state ----------
   var state = { bitmap:null, exif:null, exifApp1:null, mode:"manual", style:"classic", exportQuality:"standard" };
@@ -721,6 +964,45 @@
     var s=PLATFORM.getStorage(); if(!s) return null;
     try{ var raw=s.getItem(PREFS_KEY); return raw?JSON.parse(raw):null; }catch(e){ return null; }
   }
+
+  // ---------- user settings (consolidated, persisted in localStorage) ----------
+  // One object so adding new toggles later is cheap. Read lazily via ensureSettings()
+  // because some consumers (date prefill, getSize) run before bootstrap.
+  var SETTINGS_KEY = "yinji.settings.v1";
+  var settings = null;
+  function defaultSettings(){
+    return {
+      theme: "auto",               // "auto"(跟随系统) | "light" | "dark"
+      rememberLast: true,          // restore last style/mode/quality on open
+      defaultTextMode: "last",     // "last" | "manual" | "auto"
+      defaultQuality: "standard",  // "standard" | "high" | "png"
+      longPress: true,             // long-press canvas to peek original
+      defaultText: "date",         // "date"(今天日期) | "blank" | "fixed"
+      fixedText: "",               // used when defaultText === "fixed"
+      autoFields: { device:true, time:true, aperture:true, shutter:true, iso:true, focal:true },
+      maxEdge: 2200                // longest-edge cap: 1600(省流) | 2200(标准) | 3200(高清)
+    };
+  }
+  function loadSettings(){
+    var d = defaultSettings();
+    var s = PLATFORM.getStorage(); var obj = null;
+    if(s){ try{ var raw=s.getItem(SETTINGS_KEY); if(raw){ obj=JSON.parse(raw); } }catch(e){} }
+    if(obj && typeof obj === "object"){
+      for(var k in d){ if(!d.hasOwnProperty(k)) continue;
+        if(k === "autoFields"){
+          if(obj.autoFields && typeof obj.autoFields === "object"){
+            for(var f in d.autoFields){ if(d.autoFields.hasOwnProperty(f) && typeof obj.autoFields[f] === "boolean") d.autoFields[f] = obj.autoFields[f]; }
+          }
+        } else if(typeof obj[k] !== "undefined" && obj[k] !== null){
+          d[k] = obj[k];
+        }
+      }
+    }
+    settings = d;
+  }
+  function saveSettings(){ var s=PLATFORM.getStorage(); if(!s) return; try{ s.setItem(SETTINGS_KEY, JSON.stringify(settings)); }catch(e){} }
+  function ensureSettings(){ if(!settings) loadSettings(); return settings; }
+
   var FONT = '-apple-system,"PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif';
   var SERIF = 'ui-serif,Georgia,"Songti SC","STSong","Times New Roman",serif';
 
@@ -883,12 +1165,25 @@
     return null;
   }
 
-  // default manual text = today's date
-  (function(){
+  // default manual text depends on the 默认水印文字 setting (今天日期 / 留空 / 固定文字)
+  function applyDefaultText(){
+    var st=ensureSettings();
+    if(st.defaultText==="blank"){ textInput.value=""; return; }
+    if(st.defaultText==="fixed"){ textInput.value = st.fixedText || ""; return; }
     var d=new Date();
     var p=function(n){return (n<10?"0":"")+n;};
     textInput.value = d.getFullYear()+"."+p(d.getMonth()+1)+"."+p(d.getDate());
-  })();
+  }
+  applyDefaultText();
+
+  // decide the text mode to start a freshly-loaded photo in, per the 默认文字模式 setting
+  function chooseInitialMode(){
+    var st=ensureSettings();
+    if(st.defaultTextMode==="manual") return "manual";
+    if(st.defaultTextMode==="auto")   return state.exif ? "auto" : "manual";
+    // "last": follow the remembered intent when 记住上次 is on, else smart default
+    return (st.rememberLast && prefMode) ? prefMode : (state.exif ? "auto" : "manual");
+  }
 
   // ---------- toast ----------
   var toastTimer=null;
@@ -1270,13 +1565,14 @@
 
   // ---------- format exif into display fields ----------
   function buildInfo(ex){
-    var device = ex.model || ex.make || "";
-    var date = formatDate(ex.date);
+    var af = ensureSettings().autoFields;   // per-field show/hide from 设置
+    var device = af.device ? (ex.model || ex.make || "") : "";
+    var date = af.time ? formatDate(ex.date) : "";
     var parts=[];
-    if(ex.fnumber) parts.push("f/"+ trimNum(ex.fnumber));
-    if(ex.exposure) parts.push(ex.exposure<1 ? ("1/"+Math.round(1/ex.exposure)+"s") : (trimNum(ex.exposure)+"s"));
-    if(ex.iso) parts.push("ISO"+ex.iso);
-    if(ex.focal) parts.push(Math.round(ex.focal)+"mm");
+    if(af.aperture && ex.fnumber) parts.push("f/"+ trimNum(ex.fnumber));
+    if(af.shutter && ex.exposure) parts.push(ex.exposure<1 ? ("1/"+Math.round(1/ex.exposure)+"s") : (trimNum(ex.exposure)+"s"));
+    if(af.iso && ex.iso) parts.push("ISO"+ex.iso);
+    if(af.focal && ex.focal) parts.push(Math.round(ex.focal)+"mm");
     return { device:device, date:date, params:parts.join("  ·  ") };
   }
   function trimNum(n){ return (n%1===0)? String(n) : n.toFixed(1); }
@@ -1333,7 +1629,7 @@
         throw new Error("照片解码失败");
       }
       state.bitmap=bmp;
-      setMode(prefMode ? prefMode : (state.exif ? "auto" : "manual"), true);
+      setMode(chooseInitialMode(), true);
       drop.style.display="none";
       editor.style.display="block";
       renderAutoPanel();
@@ -1513,7 +1809,7 @@
     if(!bmp) return null;
     var iw=bmp.width||bmp.naturalWidth, ih=bmp.height||bmp.naturalHeight;
     if(!iw||!ih) return null;
-    var MAX=2200, scale=Math.min(1, MAX/Math.max(iw,ih));
+    var MAX=ensureSettings().maxEdge||2200, scale=Math.min(1, MAX/Math.max(iw,ih));
     return { bmp:bmp, w:Math.round(iw*scale), h:Math.round(ih*scale) };
   }
 
@@ -1570,7 +1866,7 @@
   }
   (function(){
     var holdTimer=null, holding=false, sx=0, sy=0;
-    function begin(x,y){ if(!state.bitmap) return; sx=x; sy=y; holdTimer=setTimeout(function(){ holding=true; drawOriginalOnly(); }, 220); }
+    function begin(x,y){ if(!state.bitmap) return; if(!ensureSettings().longPress) return; sx=x; sy=y; holdTimer=setTimeout(function(){ holding=true; drawOriginalOnly(); }, 220); }
     function moveCancel(x,y){ if(holdTimer && (Math.abs(x-sx)>10||Math.abs(y-sy)>10)){ clearTimeout(holdTimer); holdTimer=null; } }
     function end(){ if(holdTimer){ clearTimeout(holdTimer); holdTimer=null; } if(holding){ holding=false; draw(); } }
     canvas.addEventListener("touchstart", function(e){ if(e.touches[0]) begin(e.touches[0].clientX,e.touches[0].clientY); }, {passive:true});
@@ -2619,6 +2915,7 @@
     state.bitmap=null; state.exif=null; state.exifApp1=null;
     editor.style.display="none";
     drop.style.display="flex";
+    applyDefaultText();   // next photo starts from the configured 默认水印文字
     setDropMsg("选择照片 · 拍照","点这里从相册选一张，或直接拍一张，给它加上白框黑字水印");
   });
 
@@ -2939,6 +3236,9 @@
 
   // restore last-used choices (style / text-mode / export quality) from a prior visit
   (function initPrefs(){
+    var st=ensureSettings();
+    setExportQuality(st.defaultQuality);    // baseline from settings default
+    if(!st.rememberLast) return;            // not remembering → keep the defaults
     var p=loadPrefs(); if(!p) return;
     if(p.mode==="auto"||p.mode==="manual") prefMode=p.mode;
     if(p.quality) setExportQuality(p.quality);
@@ -2974,6 +3274,174 @@
       toast(glassToggle.checked ? "已开启液态玻璃" : "已关闭液态玻璃");
     });
   }
+
+  // ================= Theme: light / dark / follow system (v2.9.0) =================
+  // Only repaints the UI chrome (body[data-theme]); the canvas watermark output is untouched.
+  var THEME_DARK_BG = "#16130F", THEME_LIGHT_BG = "#F4F0E8";
+  var darkMQ = window.matchMedia ? window.matchMedia("(prefers-color-scheme: dark)") : null;
+  function resolveDark(){
+    var st=ensureSettings();
+    if(st.theme==="dark")  return true;
+    if(st.theme==="light") return false;
+    return !!(darkMQ && darkMQ.matches);   // "auto" → follow the OS
+  }
+  function applyTheme(){
+    var dark = resolveDark();
+    document.body.setAttribute("data-theme", dark ? "dark" : "light");
+    var meta = document.querySelector('meta[name="theme-color"]');
+    if(meta) meta.setAttribute("content", dark ? THEME_DARK_BG : THEME_LIGHT_BG);
+  }
+  if(darkMQ){
+    var mqHandler = function(){ if(ensureSettings().theme==="auto") applyTheme(); };
+    if(darkMQ.addEventListener) darkMQ.addEventListener("change", mqHandler);
+    else if(darkMQ.addListener) darkMQ.addListener(mqHandler);   // older Safari
+  }
+  applyTheme();   // bootstrap: paint the right theme on first load
+
+  // ================= long-press hint visibility (v2.9.0) =================
+  var stageHintEl = document.querySelector(".stage-hint");
+  function applyLongPressHint(){
+    if(stageHintEl) stageHintEl.style.display = ensureSettings().longPress ? "" : "none";
+  }
+  applyLongPressHint();
+
+  // ================= Settings panel (v2.9.0) =================
+  var settingsBtn=$("settingsBtn"), settingsOverlay=$("settingsOverlay"), closeSettings=$("closeSettings");
+  var themeSeg=$("themeSeg"), rememberLastToggle=$("rememberLastToggle");
+  var defModeSeg=$("defModeSeg"), defTextSeg=$("defTextSeg"), fixedTextWrap=$("fixedTextWrap"), fixedTextInput=$("fixedTextInput");
+  var autoFieldsGrid=$("autoFieldsGrid"), defQualSeg=$("defQualSeg"), maxEdgeSeg=$("maxEdgeSeg"), longPressToggle=$("longPressToggle");
+  var resetPinsBtn=$("resetPinsBtn"), clearTplBtn=$("clearTplBtn"), resetSettingsBtn=$("resetSettingsBtn"), replayOnboardBtn=$("replayOnboardBtn"), aboutVer=$("aboutVer");
+
+  // mark the .on button in a seg whose data-<attr> equals value
+  function segSelect(segEl, attr, value){
+    if(!segEl) return;
+    Array.prototype.forEach.call(segEl.querySelectorAll("button"), function(b){
+      b.classList.toggle("on", b.getAttribute(attr) === String(value));
+    });
+  }
+  // delegate clicks in a seg → mark .on + run cb(value)
+  function segBind(segEl, attr, cb){
+    if(!segEl) return;
+    segEl.addEventListener("click", function(e){
+      var b=e.target; while(b && b!==segEl && b.tagName!=="BUTTON") b=b.parentNode;
+      if(!b || b===segEl) return;
+      var v=b.getAttribute(attr); if(v===null) return;
+      segSelect(segEl, attr, v);
+      cb(v);
+    });
+  }
+
+  // reflect the saved settings onto every control (called each time the sheet opens)
+  function syncSettingsUI(){
+    var st=ensureSettings();
+    segSelect(themeSeg, "data-theme", st.theme);
+    if(rememberLastToggle) rememberLastToggle.checked = !!st.rememberLast;
+    segSelect(defModeSeg, "data-m", st.defaultTextMode);
+    segSelect(defTextSeg, "data-t", st.defaultText);
+    if(fixedTextWrap) fixedTextWrap.classList.toggle("hidden", st.defaultText!=="fixed");
+    if(fixedTextInput) fixedTextInput.value = st.fixedText || "";
+    if(autoFieldsGrid){
+      Array.prototype.forEach.call(autoFieldsGrid.querySelectorAll("input[type=checkbox]"), function(c){
+        var f=c.getAttribute("data-f"); c.checked = !!(st.autoFields && st.autoFields[f]);
+      });
+    }
+    segSelect(defQualSeg, "data-q", st.defaultQuality);
+    segSelect(maxEdgeSeg, "data-e", st.maxEdge);
+    if(longPressToggle) longPressToggle.checked = !!st.longPress;
+    if(glassToggle) glassToggle.checked = document.body.getAttribute("data-glass") !== "off";
+    if(aboutVer) aboutVer.textContent = APP_VERSION;
+  }
+  function openSettings(){ syncSettingsUI(); settingsOverlay.classList.add("show"); }
+  function closeSettingsPanel(){ settingsOverlay.classList.remove("show"); }
+
+  if(settingsBtn) settingsBtn.addEventListener("click", openSettings);
+  if(closeSettings) closeSettings.addEventListener("click", closeSettingsPanel);
+  if(settingsOverlay) settingsOverlay.addEventListener("click", function(e){ if(e.target===settingsOverlay) closeSettingsPanel(); });
+
+  // — bindings: each writes the setting, persists, and re-applies whatever it affects —
+  segBind(themeSeg, "data-theme", function(v){ ensureSettings().theme=v; saveSettings(); applyTheme(); });
+  if(rememberLastToggle) rememberLastToggle.addEventListener("change", function(){ ensureSettings().rememberLast=rememberLastToggle.checked; saveSettings(); });
+  segBind(defModeSeg, "data-m", function(v){ ensureSettings().defaultTextMode=v; saveSettings(); });
+  // 默认水印文字: takes effect on the NEXT photo / 换一张 — we don't clobber text the user may be editing now
+  segBind(defTextSeg, "data-t", function(v){
+    ensureSettings().defaultText=v; saveSettings();
+    if(fixedTextWrap) fixedTextWrap.classList.toggle("hidden", v!=="fixed");
+  });
+  if(fixedTextInput) fixedTextInput.addEventListener("input", function(){ ensureSettings().fixedText=fixedTextInput.value; saveSettings(); });
+  // 自动模式字段勾选: live-refresh the auto panel + preview
+  if(autoFieldsGrid) autoFieldsGrid.addEventListener("change", function(e){
+    var c=e.target; if(!c || c.tagName!=="INPUT") return;
+    var f=c.getAttribute("data-f"); if(!f) return;
+    var st=ensureSettings(); if(!st.autoFields) st.autoFields={};
+    st.autoFields[f]=c.checked; saveSettings();
+    if(state.mode==="auto"){ renderAutoPanel(); if(state.bitmap) draw(); }
+  });
+  segBind(defQualSeg, "data-q", function(v){ ensureSettings().defaultQuality=v; saveSettings(); });
+  segBind(maxEdgeSeg, "data-e", function(v){ ensureSettings().maxEdge=parseInt(v,10)||2200; saveSettings(); if(state.bitmap) draw(); });
+  if(longPressToggle) longPressToggle.addEventListener("change", function(){ ensureSettings().longPress=longPressToggle.checked; saveSettings(); applyLongPressHint(); });
+
+  // — data & privacy actions —
+  if(resetPinsBtn) resetPinsBtn.addEventListener("click", function(){
+    segPins = defaultPins(); saveSegPins();
+    renderStyleSeg(); renderSearchResults(searchInput.value||"");
+    toast("常用栏已重置");
+  });
+  if(clearTplBtn) clearTplBtn.addEventListener("click", function(){
+    if(!customTemplates.length){ toast("还没有自定义模板"); return; }
+    if(!window.confirm("确定清空所有自定义模板?此操作不可恢复。")) return;
+    for(var i=0;i<customTemplates.length;i++) removePin(customTemplates[i].id);
+    customTemplates=[]; persistCustomTemplates();
+    renderStyleSeg();
+    if(!findCustomTemplate(state.style) && !DRAW_DISPATCH[state.style]) setStyle("classic");
+    renderSearchResults(searchInput.value||"");
+    toast("已清空自定义模板");
+  });
+  if(resetSettingsBtn) resetSettingsBtn.addEventListener("click", function(){
+    if(!window.confirm("恢复默认设置?(不会动你的照片、模板和常用栏)")) return;
+    settings = defaultSettings(); saveSettings();
+    applyTheme(); applyLongPressHint(); syncSettingsUI();
+    toast("已恢复默认设置");
+  });
+  if(replayOnboardBtn) replayOnboardBtn.addEventListener("click", function(){ closeSettingsPanel(); startOnboarding(); });
+
+  // ================= Onboarding: stepped cards (v2.9.0) =================
+  var ONB_KEY = "yinji.onboarded.v1";
+  var ONB_STEPS = [
+    { emoji:"👋", title:"欢迎用印迹", body:"给照片加一条好看的相机水印。所有处理都在你手机本地完成,照片绝不上传,放心用。" },
+    { emoji:"🖼️", title:"选照片 · 挑样式", body:"点中间大框选一张照片。顶部那排是常用样式条,左右滑动挑;想要更多点右上角「更多模板」,挑中的还能用「☆ 常用」钉到顶部。" },
+    { emoji:"✍️", title:"两种文字,随意切", body:"「手动输入」自己写一句;「自动读取」从照片里读出设备、时间、光圈快门 ISO,排成相机水印。改文字实时预览。" },
+    { emoji:"💾", title:"保存 · 分享", body:"点「保存图片」再选「保存到相册」直接进相册;也能一键「复制图片」粘到聊天。右上角齿轮是设置,主题 / 默认行为都能调。" }
+  ];
+  var onbStep=0;
+  var onboardOverlay=$("onboardOverlay"), onbEmoji=$("onbEmoji"), onbTitle=$("onbTitle"), onbBody=$("onbBody"), onbDots=$("onbDots"), onbSkip=$("onbSkip"), onbNext=$("onbNext");
+  function renderOnbStep(){
+    var s=ONB_STEPS[onbStep]; if(!s) return;
+    if(onbEmoji) onbEmoji.textContent=s.emoji;
+    if(onbTitle) onbTitle.textContent=s.title;
+    if(onbBody)  onbBody.textContent=s.body;
+    var last = (onbStep===ONB_STEPS.length-1);
+    if(onbNext) onbNext.textContent = last ? "开始用" : "下一步";
+    if(onbSkip) onbSkip.style.visibility = last ? "hidden" : "visible";
+    if(onbDots){
+      var h=""; for(var i=0;i<ONB_STEPS.length;i++) h+='<span class="onb-dot'+(i===onbStep?" on":"")+'"></span>';
+      onbDots.innerHTML=h;
+    }
+  }
+  function startOnboarding(){ onbStep=0; renderOnbStep(); if(onboardOverlay) onboardOverlay.classList.add("show"); }
+  function finishOnboarding(){
+    if(onboardOverlay) onboardOverlay.classList.remove("show");
+    var s=PLATFORM.getStorage(); if(s){ try{ s.setItem(ONB_KEY,"1"); }catch(e){} }
+  }
+  if(onbNext) onbNext.addEventListener("click", function(){
+    if(onbStep < ONB_STEPS.length-1){ onbStep++; renderOnbStep(); } else finishOnboarding();
+  });
+  if(onbSkip) onbSkip.addEventListener("click", finishOnboarding);
+  // first run only: show it once, after the UI has painted
+  (function initOnboard(){
+    var seen=null, s=PLATFORM.getStorage();
+    if(s){ try{ seen=s.getItem(ONB_KEY); }catch(e){} }
+    if(seen!=="1") setTimeout(startOnboarding, 450);
+  })();
 
   // ================= PWA: register service worker for offline =================
   if('serviceWorker' in navigator){
