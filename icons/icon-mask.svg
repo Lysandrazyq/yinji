@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- maskable variant: full-bleed bg, glass card centered inside the safe zone -->
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#FFD9A8"/>
+      <stop offset="0.5" stop-color="#F2965E"/>
+      <stop offset="1" stop-color="#C2632D"/>
+    </linearGradient>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#3A4D78"/>
+      <stop offset="0.55" stop-color="#7C6A9C"/>
+      <stop offset="1" stop-color="#E8896B"/>
+    </linearGradient>
+    <linearGradient id="sheen" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#FFFFFF" stop-opacity="0.55"/>
+      <stop offset="0.4" stop-color="#FFFFFF" stop-opacity="0.08"/>
+      <stop offset="1" stop-color="#FFFFFF" stop-opacity="0"/>
+    </linearGradient>
+    <linearGradient id="frost" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FFFFFF" stop-opacity="0.82"/>
+      <stop offset="1" stop-color="#FFFFFF" stop-opacity="0.62"/>
+    </linearGradient>
+    <clipPath id="c"><rect x="116" y="116" width="280" height="280" rx="52"/></clipPath>
+  </defs>
+
+  <rect width="512" height="512" fill="url(#bg)"/>
+  <circle cx="120" cy="120" r="130" fill="#FFFFFF" opacity="0.16"/>
+  <circle cx="420" cy="430" r="150" fill="#9A3D12" opacity="0.20"/>
+
+  <g clip-path="url(#c)">
+    <rect x="116" y="116" width="280" height="280" fill="url(#sky)"/>
+    <circle cx="330" cy="186" r="34" fill="#FFF0CE" opacity="0.92"/>
+    <polygon points="116,340 206,236 262,282 332,214 396,286 396,340" fill="#2A2740" opacity="0.92"/>
+    <polygon points="116,340 230,272 318,300 396,252 396,340" fill="#3A3656" opacity="0.95"/>
+    <rect x="116" y="340" width="280" height="56" fill="url(#frost)"/>
+    <rect x="116" y="340" width="280" height="9" fill="#E2001A"/>
+    <rect x="138" y="364" width="120" height="10" rx="5" fill="#2D3A4F" opacity="0.5"/>
+    <circle cx="368" cy="372" r="11" fill="#E2001A" opacity="0.85"/>
+  </g>
+
+  <rect x="116" y="116" width="280" height="280" rx="52" fill="url(#sheen)"/>
+  <rect x="116.5" y="116.5" width="279" height="279" rx="51.5" fill="none" stroke="#FFFFFF" stroke-opacity="0.6" stroke-width="2"/>
+</svg>

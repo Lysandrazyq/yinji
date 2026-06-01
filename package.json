@@ -1,0 +1,15 @@
+{
+  "name": "yinji",
+  "version": "1.0.0",
+  "description": "印迹 · 照片水印 — 单文件网页 App + PWA（可选 Windows Tauri 打包）",
+  "private": true,
+  "scripts": {
+    "serve": "python -m http.server 8080",
+    "tauri": "tauri",
+    "tauri:dev": "tauri dev",
+    "tauri:build": "tauri build"
+  },
+  "devDependencies": {
+    "@tauri-apps/cli": "^1.5.0"
+  }
+}

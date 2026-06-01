@@ -1,0 +1,65 @@
+{
+  "_comment": "示例 tauri.conf.json — 跑 `npx tauri init` 后,把生成的 src-tauri/tauri.conf.json 里的对应字段改成下面的值。",
+  "build": {
+    "beforeBuildCommand": "",
+    "beforeDevCommand": "",
+    "devPath": "../watermark.html",
+    "distDir": "../",
+    "withGlobalTauri": false
+  },
+  "package": {
+    "productName": "印迹",
+    "version": "1.0.0"
+  },
+  "tauri": {
+    "allowlist": {
+      "all": false,
+      "fs": {
+        "all": false,
+        "writeFile": true,
+        "scope": ["$PICTURE/*", "$DOWNLOAD/*"]
+      },
+      "dialog": {
+        "all": false,
+        "save": true,
+        "open": true
+      }
+    },
+    "windows": [
+      {
+        "title": "印迹 · 照片水印",
+        "width": 480,
+        "height": 820,
+        "minWidth": 380,
+        "minHeight": 600,
+        "resizable": true,
+        "fullscreen": false,
+        "center": true
+      }
+    ],
+    "bundle": {
+      "active": true,
+      "category": "Photography",
+      "copyright": "",
+      "deb": { "depends": [] },
+      "externalBin": [],
+      "icon": [
+        "../icons/icon.svg"
+      ],
+      "identifier": "cn.yinji.app",
+      "longDescription": "印迹是一个本地照片水印工具,所有处理都在你的设备上完成,不上传任何照片。",
+      "macOS": { "entitlements": null, "exceptionDomain": "", "frameworks": [], "providerShortName": null, "signingIdentity": null },
+      "resources": [],
+      "shortDescription": "照片水印 App",
+      "targets": ["msi", "nsis"],
+      "windows": {
+        "certificateThumbprint": null,
+        "digestAlgorithm": "sha256",
+        "timestampUrl": "",
+        "webviewInstallMode": { "type": "embedBootstrapper" }
+      }
+    },
+    "security": { "csp": null },
+    "updater": { "active": false }
+  }
+}

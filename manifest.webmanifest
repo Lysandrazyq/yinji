@@ -1,0 +1,17 @@
+{
+  "name": "印迹 · 照片水印",
+  "short_name": "印迹",
+  "description": "浏览器里的照片水印 App,白框黑字本地处理不上传。",
+  "start_url": "./watermark.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#EFEAE0",
+  "theme_color": "#F4F0E8",
+  "lang": "zh-CN",
+  "categories": ["photo", "utilities"],
+  "icons": [
+    { "src": "icons/icon.svg",       "sizes": "any",     "type": "image/svg+xml", "purpose": "any" },
+    { "src": "icons/icon-mask.svg",  "sizes": "any",     "type": "image/svg+xml", "purpose": "maskable" }
+  ]
+}
