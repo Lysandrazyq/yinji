@@ -314,14 +314,109 @@
     display:flex;align-items:center;justify-content:center;
     font-size:16px;padding:15px 16px;border-radius:13px;letter-spacing:.02em;
   }
-  /* color-grade (调色 · 色调影调) chip row — chips reuse the generic .seg / .seg button styles */
+  /* 滤镜 (v2.14.0): 分类行 + 滤镜 chips(复用 .seg / .seg button)+ 操作按钮 + 随机一套 */
   .tone-block{margin-top:14px;}
   .tone-head{display:flex;align-items:center;gap:8px;margin:0 0 7px 2px;}
   .tone-label{font-size:12.5px;color:var(--ink-soft);letter-spacing:.02em;}
-  .beta-tag{
-    font-size:10px;font-weight:700;letter-spacing:.06em;color:var(--accent);
-    background:var(--accent-soft);padding:1px 6px;border-radius:6px;line-height:1.6;
+  .filter-rand{
+    margin-left:auto;font-family:var(--font);font-size:12px;font-weight:600;color:var(--accent);
+    background:var(--accent-soft);border:none;padding:5px 11px;border-radius:9px;cursor:pointer;
+    letter-spacing:.02em;transition:transform .14s var(--ease), opacity .14s var(--ease);
   }
+  .filter-rand:active{transform:scale(.93);opacity:.7;}
+  /* 滤镜分类小条:横向滚动的胶囊 */
+  .filter-cats{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;margin:0 0 7px 0;}
+  .filter-cats::-webkit-scrollbar{display:none;}
+  .filter-cats button{
+    flex:0 0 auto;font-family:var(--font);font-size:12.5px;color:var(--ink-soft);
+    background:rgba(239,234,224,.5);border:1px solid rgba(255,255,255,.5);
+    padding:5px 12px;border-radius:9px;cursor:pointer;white-space:nowrap;
+    transition:all .16s var(--ease);
+  }
+  .filter-cats button.on{
+    background:rgba(255,255,255,.85);color:var(--ink);font-weight:600;
+    box-shadow:0 2px 8px rgba(28,24,20,.08), inset 0 1px 1px rgba(255,255,255,.9);
+  }
+  /* 自定义滤镜 chip 右上角橙点(同自定义模板) */
+  .seg button.custom-flt::after{
+    content:'';position:absolute;top:5px;right:7px;
+    width:5px;height:5px;border-radius:50%;background:var(--accent);
+  }
+  /* 「我的」空态提示 */
+  .filter-mine-hint{margin:8px 2px 0;font-size:12px;color:var(--ink-soft);line-height:1.5;opacity:.85;}
+  .filter-mine-hint.hidden{display:none;}
+  /* 滤镜操作按钮行:存为滤镜 / 导入 / 分享 / 删除 */
+  .filter-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:9px;}
+  .flt-act{
+    font-family:var(--font);font-size:12.5px;color:var(--accent);letter-spacing:.02em;
+    background:rgba(255,255,255,.5);border:1px solid rgba(255,255,255,.6);
+    padding:7px 13px;border-radius:10px;cursor:pointer;
+    -webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);
+    transition:transform .12s var(--ease), opacity .14s var(--ease);
+  }
+  .flt-act:active{transform:scale(.94);}
+  .flt-act.danger{color:#c0392b;}
+  .flt-act.hidden{display:none;}
+  .filter-name-input{margin-top:6px;}
+  /* ---- 调色盘 (v2.13.0): 2D 拖动盘 + 强度/饱和滑杆,默认折叠 ---- */
+  .dial-toggle{
+    margin-left:auto;font-size:12px;color:var(--accent);letter-spacing:.02em;
+    background:none;border:none;padding:2px 4px;cursor:pointer;font-family:var(--font);
+  }
+  .dial-toggle:active{opacity:.55;}
+  .tone-dial{margin-top:11px;}
+  .tone-dial.hidden{display:none;}
+  /* 智能配色按钮 (v3.0 A1):端上分析这张照片,自动拨好下面的盘子 */
+  .dial-smart{
+    display:block;width:100%;margin:2px 0 14px;padding:11px 14px;
+    border:none;border-radius:13px;cursor:pointer;font-family:var(--font);
+    background:var(--accent);color:#fff;font-size:15px;font-weight:600;letter-spacing:.02em;
+    text-align:center;line-height:1.3;
+    box-shadow:0 3px 10px rgba(0,0,0,.16);
+    transition:transform .12s var(--ease), opacity .14s var(--ease);
+  }
+  .dial-smart:active{transform:scale(.97);}
+  .dial-smart .sub{display:block;margin-top:3px;font-size:11.5px;font-weight:400;opacity:.92;}
+  .dial-smart[disabled]{opacity:.5;cursor:default;box-shadow:none;}
+  .dial-pad{
+    position:relative;width:180px;height:180px;margin:2px auto 4px;
+    border-radius:16px;touch-action:none;cursor:crosshair;
+    border:1px solid rgba(255,255,255,.6);
+    box-shadow:inset 0 1px 2px rgba(255,255,255,.45), 0 1px 4px rgba(0,0,0,.06);
+    /* X:左冷(蓝)→右暖(橙);Y:上品红→下绿。给出 4 角色彩暗示,白色旋钮叠在上面 */
+    background:
+      linear-gradient(to bottom, rgba(208,86,170,.5), rgba(110,196,116,.5)),
+      linear-gradient(to right, rgba(64,128,224,.5), rgba(240,150,58,.5));
+    background-blend-mode:multiply;
+  }
+  /* 盘中心十字准星,提示"中点=不调" */
+  .dial-pad::before,.dial-pad::after{content:"";position:absolute;background:rgba(255,255,255,.45);}
+  .dial-pad::before{left:8px;right:8px;top:50%;height:1px;margin-top:-.5px;}
+  .dial-pad::after{top:8px;bottom:8px;left:50%;width:1px;margin-left:-.5px;}
+  .dial-knob{
+    position:absolute;left:50%;top:50%;width:26px;height:26px;margin:-13px 0 0 -13px;
+    border-radius:50%;background:rgba(255,255,255,.92);
+    border:2px solid rgba(255,255,255,.96);
+    box-shadow:0 2px 6px rgba(0,0,0,.28), inset 0 1px 1px rgba(255,255,255,.85);
+    touch-action:none;cursor:grab;z-index:2;
+  }
+  .dial-knob:active{cursor:grabbing;}
+  .dial-axis{display:flex;justify-content:space-between;font-size:11px;color:var(--ink-soft);
+    width:180px;margin:0 auto 12px;opacity:.85;}
+  .dial-sliders{display:flex;flex-direction:column;gap:12px;}
+  .dial-sl{display:flex;flex-direction:column;gap:5px;}
+  .dial-sl > span{font-size:12px;color:var(--ink-soft);display:flex;justify-content:space-between;letter-spacing:.02em;}
+  .dial-sl > span b{font-weight:600;color:var(--ink);}
+  .dial-sl input[type=range]{width:100%;accent-color:var(--accent);}
+  .dial-reset{
+    margin-top:12px;align-self:flex-start;font-size:12.5px;color:var(--ink-soft);font-family:var(--font);
+    background:rgba(255,255,255,.5);border:1px solid rgba(255,255,255,.6);
+    padding:7px 14px;border-radius:10px;cursor:pointer;
+    -webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);
+    transition:transform .12s var(--ease);
+  }
+  .dial-reset:active{transform:scale(.94);}
+  .dial-hint{margin:10px 2px 0;font-size:11.5px;color:var(--ink-soft);line-height:1.5;opacity:.85;}
 
   .field{margin-top:16px;}
   .field.hidden{display:none;}
@@ -695,7 +790,7 @@
   <header>
     <div class="brand">
       <span class="name">印迹</span>
-      <span class="tag">Photo&nbsp;Watermark · <span id="appVer">v2.12.0</span></span>
+      <span class="tag">Photo&nbsp;Watermark · <span id="appVer">v3.0.0-beta.1</span></span>
     </div>
     <div class="header-actions">
       <button class="icon-btn more-btn" id="searchBtn" aria-label="更多模板">
@@ -750,10 +845,38 @@
 
       <div class="tone-block" id="toneBlock">
         <div class="tone-head">
-          <span class="tone-label">调色 · 色调影调</span>
-          <span class="beta-tag">Beta</span>
+          <span class="tone-label">滤镜</span>
+          <button class="filter-rand" id="filterRandBtn" type="button">🎲 随机一套</button>
+          <button class="dial-toggle" id="toneToggle" type="button" aria-expanded="false" aria-controls="tonePanel">调色盘 ▾</button>
         </div>
-        <div class="seg tone-seg" id="toneSeg"><!-- chips rendered by renderToneSeg() --></div>
+        <div class="filter-cats" id="filterCats"><!-- category chips rendered by renderFilterCats() --></div>
+        <div class="seg tone-seg" id="toneSeg"><!-- filter chips rendered by renderFilterChips() --></div>
+        <p class="filter-mine-hint hidden" id="filterMineHint">还没有「我的滤镜」。调出满意的效果后，点下面「＋ 存为滤镜」就能收藏到这里。</p>
+        <div class="filter-actions" id="filterActions">
+          <button class="flt-act" id="saveFilterBtn" type="button">＋ 存为滤镜</button>
+          <button class="flt-act" id="importFilterBtn" type="button">导入滤镜</button>
+          <button class="flt-act" id="shareFilterBtn" type="button">分享</button>
+          <button class="flt-act danger" id="delFilterBtn" type="button">删除</button>
+        </div>
+        <div class="tone-dial hidden" id="tonePanel">
+          <button class="dial-smart" id="smartColorBtn" type="button">✨ 帮我配色<span class="sub">看一眼这张照片,自动拨好下面的盘子</span></button>
+          <div class="dial-pad" id="tonePad" role="slider" aria-label="色调微调盘:左右调冷暖,上下调绿与品红" tabindex="0">
+            <div class="dial-knob" id="toneKnob"></div>
+          </div>
+          <div class="dial-axis"><span>← 冷</span><span>暖 →</span></div>
+          <div class="dial-sliders">
+            <label class="dial-sl">
+              <span>强度<b id="toneIntensityVal">100%</b></span>
+              <input type="range" id="toneIntensity" min="0" max="100" step="1" value="100">
+            </label>
+            <label class="dial-sl">
+              <span>饱和<b id="toneSatVal">0</b></span>
+              <input type="range" id="toneSat" min="-100" max="100" step="1" value="0">
+            </label>
+          </div>
+          <button class="dial-reset" id="toneReset" type="button">复位调色盘</button>
+          <p class="dial-hint">拖动圆点:左右调冷暖、上下调绿/品红;「强度」控整体深浅,「饱和」控鲜艳度。可叠加在上面一排一键色调之上。所有调整只改这张照片、随成图保存,不上传。</p>
+        </div>
       </div>
 
       <div class="seg" id="seg" style="margin-top:10px;">
@@ -869,6 +992,19 @@
       <button class="btn btn-primary" id="shareCopyBtn">复制代码</button>
       <button class="btn btn-primary" id="shareImportBtn">导入</button>
       <button class="btn btn-ghost" id="shareClose">关闭</button>
+    </div>
+  </div>
+</div>
+
+<!-- Save current look as a custom filter (v2.14.0) -->
+<div class="overlay" id="filterSaveOverlay">
+  <div class="sheet">
+    <h3>存为我的滤镜</h3>
+    <p class="sub">给当前这套调色起个名字，存进「我的」分类，随时一键套用。只存在你这台设备上。</p>
+    <input type="text" id="filterName" class="filter-name-input" maxlength="12" placeholder="例如：胶片暖" autocomplete="off" autocapitalize="off" spellcheck="false">
+    <div class="row">
+      <button class="btn btn-primary" id="filterSaveDo">保存</button>
+      <button class="btn btn-ghost" id="filterSaveCancel">取消</button>
     </div>
   </div>
 </div>
@@ -991,7 +1127,7 @@
 
     <div class="set-sec">
       <h4>关于</h4>
-      <div class="about-ver">印迹 · 照片水印 &nbsp;<b id="aboutVer">v2.12.0</b></div>
+      <div class="about-ver">印迹 · 照片水印 &nbsp;<b id="aboutVer">v3.0.0-beta.1</b></div>
       <div class="set-actions">
         <button class="btn btn-ghost" id="replayOnboardBtn">重看新手引导</button>
       </div>
@@ -1031,17 +1167,21 @@
   "use strict";
 
   // ---------- version (single source of truth; bump on every release) ----------
-  var APP_VERSION = "v2.12.0";
+  var APP_VERSION = "v3.0.0-beta.1";
 
   // ---------- state ----------
-  var state = { bitmap:null, exif:null, exifApp1:null, mode:"manual", style:"classic", exportQuality:"standard", tone:"none" };
+  var state = { bitmap:null, exif:null, exifApp1:null, mode:"manual", style:"classic", exportQuality:"standard", tone:"none",
+    // 调色盘微调层 (v2.13.0): 叠加在所选 tone 预设之上。temp 冷暖, tint 绿品, sat 饱和(-100..100), intensity 整体强度(0..100)
+    toneAdj:{ temp:0, tint:0, sat:0, intensity:100 },
+    // 当前选中的「我的滤镜」id (v2.14.0);为 null 表示用的是内置滤镜或未保存的临时微调
+    filterId:null };
 
   // ---------- remember last choices (style / text-mode / export quality) ----------
   var PREFS_KEY = "yinji.prefs.v1";
   var prefMode = null;  // user's chosen text-mode intent ("auto"/"manual"); survives EXIF auto→manual fallback
   function savePrefs(){
     var s=PLATFORM.getStorage(); if(!s) return;
-    try{ s.setItem(PREFS_KEY, JSON.stringify({ style:state.style, mode:prefMode||state.mode, quality:state.exportQuality, tone:state.tone })); }catch(e){}
+    try{ s.setItem(PREFS_KEY, JSON.stringify({ style:state.style, mode:prefMode||state.mode, quality:state.exportQuality, tone:state.tone, toneAdj:state.toneAdj, filterId:state.filterId })); }catch(e){}
   }
   function loadPrefs(){
     var s=PLATFORM.getStorage(); if(!s) return null;
@@ -1158,6 +1298,17 @@
   var fileInput=$("fileInput"), drop=$("drop"), editor=$("editor");
   var canvas=$("canvas"), ctx=canvas.getContext("2d");
   var seg=$("seg"), styleSeg=$("styleSeg"), toneSeg=$("toneSeg"), manualField=$("manualField"), autoField=$("autoField"), autoBody=$("autoBody");
+  var toneToggle=$("toneToggle"), tonePanel=$("tonePanel"), tonePad=$("tonePad"), toneKnob=$("toneKnob"),
+      toneIntensity=$("toneIntensity"), toneIntensityVal=$("toneIntensityVal"),
+      toneSat=$("toneSat"), toneSatVal=$("toneSatVal"), toneReset=$("toneReset"),
+      smartColorBtn=$("smartColorBtn");
+  // 滤镜 (v2.14.0): 分类行 / 随机 / 操作按钮 / 空态提示 / 存为滤镜弹窗
+  var filterCats=$("filterCats"), filterRandBtn=$("filterRandBtn"),
+      saveFilterBtn=$("saveFilterBtn"), importFilterBtn=$("importFilterBtn"),
+      shareFilterBtn=$("shareFilterBtn"), delFilterBtn=$("delFilterBtn"),
+      filterMineHint=$("filterMineHint"),
+      filterSaveOverlay=$("filterSaveOverlay"), filterName=$("filterName"),
+      filterSaveDo=$("filterSaveDo"), filterSaveCancel=$("filterSaveCancel");
   var textInput=$("textInput"), saveBtn=$("saveBtn"), resetBtn=$("resetBtn");
   var overlay=$("overlay"), resultImg=$("resultImg"), downloadLink=$("downloadLink"), closeSheet=$("closeSheet");
   var copyImgBtn=$("copyImgBtn");
@@ -1876,25 +2027,274 @@
     savePrefs();
   }
 
-  // ---------- color-grade chip row (调色 · 色调影调, Beta) ----------
-  function renderToneSeg(){
-    if(!toneSeg) return;
-    var cur = state.tone || "none";
-    toneSeg.innerHTML = TONE_LIST.map(function(t){
-      return '<button data-tone="'+t.id+'"'+(t.id===cur?' class="on"':'')+'>'+escapeHtml(t.name)+'</button>';
+  // ---------- 滤镜区(v2.14.0):分类行 + 滤镜 chips(内置 + 我的) + 选中态 ----------
+  function toneAdjNeutral(){
+    var a = state.toneAdj || {};
+    return clampNum(a.temp,-100,100,0)===0 && clampNum(a.tint,-100,100,0)===0
+      && clampNum(a.sat,-100,100,0)===0 && clampNum(a.intensity,0,100,100)===100;
+  }
+  // 滤镜分类 chip 行
+  function renderFilterCats(){
+    if(!filterCats) return;
+    filterCats.innerHTML = FILTER_CATEGORIES.map(function(c){
+      return '<button data-fcat="'+c.key+'"'+(c.key===filterCat?' class="on"':'')+'>'+escapeHtml(c.label)+'</button>';
     }).join("");
-    Array.prototype.forEach.call(toneSeg.querySelectorAll("button[data-tone]"), function(b){
-      b.addEventListener("click", function(){ setTone(b.getAttribute("data-tone")); });
+    Array.prototype.forEach.call(filterCats.querySelectorAll("button[data-fcat]"), function(b){
+      b.addEventListener("click", function(){
+        filterCat = b.getAttribute("data-fcat");
+        renderFilterCats(); renderFilterChips();
+      });
     });
   }
+  // 当前分类下应展示的滤镜 → [{kind:"builtin"|"custom", id, name}]。原图永远排第一,当"关闭"开关。
+  function filtersForCat(){
+    var out = [{kind:"builtin", id:"none", name:"原图"}];
+    if(filterCat==="mine"){
+      customFilters.forEach(function(f){ out.push({kind:"custom", id:f.id, name:f.name}); });
+      return out;
+    }
+    TONE_LIST.forEach(function(t){
+      if(t.id==="none") return;
+      if(filterCat==="all" || t.cat===filterCat) out.push({kind:"builtin", id:t.id, name:t.name});
+    });
+    return out;
+  }
+  function renderFilterChips(){
+    if(!toneSeg) return;
+    toneSeg.innerHTML = filtersForCat().map(function(f){
+      return '<button data-fkind="'+f.kind+'" data-fid="'+f.id+'"'
+        + (f.kind==="custom"?' class="custom-flt"':'') + '>'+escapeHtml(f.name)+'</button>';
+    }).join("");
+    Array.prototype.forEach.call(toneSeg.querySelectorAll("button[data-fid]"), function(b){
+      b.addEventListener("click", function(){
+        if(b.getAttribute("data-fkind")==="custom") applyCustomFilter(b.getAttribute("data-fid"));
+        else setTone(b.getAttribute("data-fid"));
+      });
+    });
+    markFilterActive();
+    updateFilterActions();
+  }
+  function renderFilters(){ renderFilterCats(); renderFilterChips(); }
+  // 高亮当前生效的滤镜:内置 = 没选我的滤镜 且 tone 匹配 且 调色盘中性;我的 = filterId 匹配
+  function markFilterActive(){
+    if(!toneSeg) return;
+    Array.prototype.forEach.call(toneSeg.querySelectorAll("button[data-fid]"), function(b){
+      var kind=b.getAttribute("data-fkind"), id=b.getAttribute("data-fid"), on=false;
+      if(kind==="custom") on = (state.filterId===id);
+      else on = (!state.filterId && state.tone===id && toneAdjNeutral());
+      b.classList.toggle("on", on);
+    });
+  }
+  // 滤镜操作按钮(存为滤镜 / 分享 / 删除 / 空态提示)的显隐
+  function updateFilterActions(){
+    var canSave = hasGrade() && !state.filterId;   // 有效果、且不是正用着某个已存滤镜 → 可存为新滤镜
+    if(saveFilterBtn) saveFilterBtn.classList.toggle("hidden", !canSave);
+    if(shareFilterBtn) shareFilterBtn.classList.toggle("hidden", !state.filterId);
+    if(delFilterBtn) delFilterBtn.classList.toggle("hidden", !state.filterId);
+    if(filterMineHint) filterMineHint.classList.toggle("hidden", !(filterCat==="mine" && customFilters.length===0));
+  }
+  // 选内置滤镜:整套覆盖(重置调色盘到中性 + 清掉我的滤镜选中)。内置滤镜 = 一个干净完整的效果。
   function setTone(tone){
     if(tone!=="none" && !TONE_PARAMS[tone]) tone="none";
     state.tone = tone;
-    Array.prototype.forEach.call(toneSeg.querySelectorAll("button"), function(b){
-      b.classList.toggle("on", b.getAttribute("data-tone")===tone);
-    });
+    state.filterId = null;
+    state.toneAdj = { temp:0, tint:0, sat:0, intensity:100 };
+    syncTonePad();
+    markFilterActive(); updateFilterActions();
     if(state.bitmap) draw();   // re-grade (cache misses on tone change) + redraw current style
     savePrefs();
+  }
+  // 选我的滤镜:载入它的底色调 + 调色盘微调,记住 filterId 用于高亮
+  function applyCustomFilter(id){
+    var f = findCustomFilter(id);
+    if(!f) return;
+    var base = (f.base==="none" || TONE_PARAMS[f.base]) ? f.base : "none";
+    var a = f.adj || {};
+    state.tone = base;
+    state.toneAdj = {
+      temp:      clampNum(a.temp,      -100, 100, 0),
+      tint:      clampNum(a.tint,      -100, 100, 0),
+      sat:       clampNum(a.sat,       -100, 100, 0),
+      intensity: clampNum(a.intensity,    0, 100, 100)
+    };
+    state.filterId = id;
+    syncTonePad();
+    markFilterActive(); updateFilterActions();
+    if(state.bitmap) draw();
+    savePrefs();
+  }
+  // 调色盘被拨动 / 滑杆改动 → 已不再等于任何已存滤镜,清掉选中态(变成"未保存的微调")
+  function clearFilterSel(){
+    state.filterId = null;
+    markFilterActive(); updateFilterActions();
+  }
+
+  // ---------- 智能配色 (v3.0 A1):端上分析这张照片 → 自动拨好调色盘。纯本地、不联网、照片不上传 ----------
+  // 采样:把照片缩到 48×48 离屏画布,统计平均色 / 亮度 / 平均饱和度。
+  function analyzePhoto(bmp){
+    if(!bmp) return null;
+    var N = 48, c, x;
+    try{
+      c = document.createElement("canvas"); c.width = N; c.height = N;
+      x = c.getContext("2d");
+      x.drawImage(bmp, 0, 0, N, N);
+      var data = x.getImageData(0, 0, N, N).data;     // 跨域会抛错;本地照片不会
+      var rs=0, gs=0, bs=0, ss=0, n=0;
+      for(var i=0;i<data.length;i+=4){
+        if(data[i+3] < 16) continue;                   // 跳过近透明像素
+        var r=data[i], g=data[i+1], b=data[i+2];
+        rs+=r; gs+=g; bs+=b; n++;
+        var mx = r>g?(r>b?r:b):(g>b?g:b), mn = r<g?(r<b?r:b):(g<b?g:b);
+        ss += mx>0 ? (mx-mn)/mx : 0;                    // 该像素的 HSV 饱和度 0..1
+      }
+      if(!n) return null;
+      var ar=rs/n, ag=gs/n, ab=bs/n;
+      return { r:ar, g:ag, b:ab, luma:0.299*ar+0.587*ag+0.114*ab, sat:ss/n };
+    }catch(e){ return null; }                          // 取像素失败(理论上不会):放弃,不影响其它功能
+  }
+  // 规则映射:把统计结果换算成一套调色盘参数(都在 ±100 的盘坐标系里,真正下手很克制)。
+  // 思路:偏冷→回暖(且回暖比压冷更积极,贴合"印迹"的暖调气质);去绿/品红偏色;暗淡→提饱和、过艳→收一点。
+  function suggestToneAdj(info){
+    if(!info) return null;
+    var warmth = info.r - info.b;                       // >0 偏暖, <0 偏冷
+    var tempFactor = warmth < 0 ? 0.8 : 0.35;           // 回暖更积极、压冷更保守
+    var temp = clampNum(Math.round(-warmth * tempFactor), -22, 35, 0);
+    var greenCast = info.g - (info.r + info.b)/2;        // >0 偏绿, <0 偏品红
+    var tint = clampNum(Math.round(-greenCast * 0.5), -18, 18, 0);
+    var sat;
+    if(info.sat < 0.18)      sat = 28;                  // 很灰 → 提一提
+    else if(info.sat > 0.55) sat = -12;                 // 很艳 → 收一点
+    else                     sat = 14;                  // 一般 → 轻提
+    var intensity = 72;
+    if(info.luma < 45 || info.luma > 215) intensity = 60;   // 太暗/太亮:平均色不太可信,下手更轻
+    return { temp:temp, tint:tint, sat:sat, intensity:clampNum(intensity,0,100,72) };
+  }
+  // 点「✨ 帮我配色」:分析当前照片 → 写进调色盘 → 立刻重绘。属于"未保存的微调",可一键复位或存成滤镜。
+  function smartColor(){
+    if(!state.bitmap){ toast("先选一张照片,再帮你配色 ✨"); return; }
+    var adj = suggestToneAdj(analyzePhoto(state.bitmap));
+    if(!adj){ toast("这张照片没法分析,换一张试试"); return; }
+    state.tone = "none";          // 从原图起步:这套色完全来自照片本身,不叠加预设
+    state.toneAdj = adj;
+    state.filterId = null;        // 变成"未保存的微调"(可一键复位 / 存为滤镜)
+    syncTonePad();                // 同步圆点位置 + 强度/饱和滑杆与数值
+    markFilterActive(); updateFilterActions();
+    draw();
+    savePrefs();
+    toast("已按这张照片配好色 ✨ 不满意点「复位调色盘」");
+  }
+
+  // ---------- 调色盘 (v2.13.0): 2D 拖动盘 + 强度/饱和滑杆 ----------
+  var _toneRaf = 0;
+  // 拖动 / 滑杆期间的重绘:用 rAF 节流,避免每个像素移动都整图重新调色
+  function scheduleToneDraw(){
+    if(!state.bitmap) return;
+    if(!window.requestAnimationFrame){ draw(); return; }
+    if(_toneRaf) return;
+    _toneRaf = window.requestAnimationFrame(function(){ _toneRaf = 0; draw(); });
+  }
+  // 把旋钮放到与 state.toneAdj.temp/tint 对应的位置(−100..100 → 0..100%)
+  function placeToneKnob(){
+    if(!toneKnob) return;
+    var a = state.toneAdj || { temp:0, tint:0 };
+    toneKnob.style.left = ((clampNum(a.temp,-100,100,0)+100)/2) + "%";   // 左冷 右暖
+    toneKnob.style.top  = ((clampNum(a.tint,-100,100,0)+100)/2) + "%";   // 上品红 下绿
+  }
+  // 把 state.toneAdj 完整同步回三个控件 + 数值标签(初始化 / 复位 / 展开时调用)
+  function syncTonePad(){
+    var a = state.toneAdj || { temp:0, tint:0, sat:0, intensity:100 };
+    var inten = clampNum(a.intensity,0,100,100), sv = clampNum(a.sat,-100,100,0);
+    if(toneIntensity) toneIntensity.value = inten;
+    if(toneSat) toneSat.value = sv;
+    if(toneIntensityVal) toneIntensityVal.textContent = inten + "%";
+    if(toneSatVal) toneSatVal.textContent = (sv>0?"+":"") + sv;
+    placeToneKnob();
+  }
+  // 把盘内坐标换算成 temp/tint 并写回 state(x:0冷→1暖, y:0品红→1绿)
+  function padPosToAdj(clientX, clientY){
+    var r = tonePad.getBoundingClientRect();
+    if(!r.width || !r.height) return;
+    var x = (clientX - r.left) / r.width, y = (clientY - r.top) / r.height;
+    x = x<0?0:x>1?1:x; y = y<0?0:y>1?1:y;
+    state.toneAdj.temp = Math.round(x*200 - 100);
+    state.toneAdj.tint = Math.round(y*200 - 100);
+  }
+  function bindTonePad(){
+    if(!tonePad) return;
+    // 折叠 / 展开
+    if(toneToggle && tonePanel){
+      toneToggle.addEventListener("click", function(){
+        var open = !tonePanel.classList.toggle("hidden");
+        toneToggle.setAttribute("aria-expanded", open ? "true" : "false");
+        toneToggle.textContent = open ? "调色盘 ▴" : "调色盘 ▾";
+        if(open) syncTonePad();   // 展开后盘可见,重新摆好旋钮
+      });
+    }
+    // 盘拖动
+    var dragging = false;
+    function down(cx, cy, e, pid){
+      dragging = true;
+      if(pid!=null && tonePad.setPointerCapture){ try{ tonePad.setPointerCapture(pid); }catch(_){} }
+      padPosToAdj(cx, cy); placeToneKnob(); clearFilterSel(); scheduleToneDraw();
+      if(e && e.preventDefault) e.preventDefault();
+    }
+    function move(cx, cy, e){
+      if(!dragging) return;
+      padPosToAdj(cx, cy); placeToneKnob(); scheduleToneDraw();
+      if(e && e.preventDefault) e.preventDefault();
+    }
+    function up(e, pid){
+      if(!dragging) return;
+      dragging = false;
+      if(pid!=null && tonePad.releasePointerCapture){ try{ tonePad.releasePointerCapture(pid); }catch(_){} }
+      savePrefs();
+    }
+    if(window.PointerEvent){
+      tonePad.addEventListener("pointerdown", function(e){ down(e.clientX, e.clientY, e, e.pointerId); });
+      tonePad.addEventListener("pointermove", function(e){ move(e.clientX, e.clientY, e); });
+      tonePad.addEventListener("pointerup",   function(e){ up(e, e.pointerId); });
+      tonePad.addEventListener("pointercancel", function(e){ up(e, e.pointerId); });
+    } else {
+      // 旧 Safari 兜底:touch + mouse
+      tonePad.addEventListener("touchstart", function(e){ var t=e.touches[0]; if(t) down(t.clientX, t.clientY, e, null); }, {passive:false});
+      tonePad.addEventListener("touchmove",  function(e){ var t=e.touches[0]; if(t) move(t.clientX, t.clientY, e); }, {passive:false});
+      tonePad.addEventListener("touchend",   function(){ up(null, null); });
+      tonePad.addEventListener("mousedown", function(e){ down(e.clientX, e.clientY, e, null); });
+      window.addEventListener("mousemove", function(e){ move(e.clientX, e.clientY, e); });
+      window.addEventListener("mouseup",   function(){ up(null, null); });
+    }
+    // 强度滑杆
+    if(toneIntensity){
+      toneIntensity.addEventListener("input", function(){
+        state.toneAdj.intensity = clampNum(toneIntensity.value,0,100,100);
+        if(toneIntensityVal) toneIntensityVal.textContent = state.toneAdj.intensity + "%";
+        clearFilterSel(); scheduleToneDraw();
+      });
+      toneIntensity.addEventListener("change", savePrefs);
+    }
+    // 饱和滑杆
+    if(toneSat){
+      toneSat.addEventListener("input", function(){
+        state.toneAdj.sat = clampNum(toneSat.value,-100,100,0);
+        if(toneSatVal){ var sv=state.toneAdj.sat; toneSatVal.textContent = (sv>0?"+":"") + sv; }
+        clearFilterSel(); scheduleToneDraw();
+      });
+      toneSat.addEventListener("change", savePrefs);
+    }
+    // 复位:回到中点 / 满强度(不动上面选中的一键色调)
+    if(toneReset){
+      toneReset.addEventListener("click", function(){
+        state.toneAdj = { temp:0, tint:0, sat:0, intensity:100 };
+        state.filterId = null;
+        syncTonePad();
+        markFilterActive(); updateFilterActions();
+        if(state.bitmap) draw();
+        savePrefs();
+      });
+    }
+    // 智能配色 (v3.0 A1):点一下,按这张照片自动拨好盘子
+    if(smartColorBtn){ smartColorBtn.addEventListener("click", smartColor); }
+    syncTonePad();   // 反映已恢复的偏好
   }
 
   // ================= mode switching =================
@@ -1939,52 +2339,160 @@
   // Grade the photo ONCE into a cached offscreen canvas; getSize() hands that canvas back as `bmp`,
   // so every style AND the export inherit the look with no per-style code. Manual pixel math
   // (getImageData/putImageData), NOT ctx.filter — iOS Safari doesn't apply ctx.filter color ops on canvas.
+  // 内置滤镜清单(v2.14.0 由 8 款扩到 20 款 + 原图,并带分类 cat;原图 cat 留空,渲染时永远排第一)
   var TONE_LIST = [
-    {id:"none",  name:"原图"},
-    {id:"bw",    name:"黑白"},
-    {id:"film",  name:"复古"},
-    {id:"warm",  name:"暖阳"},
-    {id:"cool",  name:"冷调"},
-    {id:"fresh", name:"清新"},
-    {id:"gray",  name:"高级灰"},
-    {id:"vivid", name:"鲜艳"}
+    {id:"none",  name:"原图",   cat:""},
+    // 胶片 film
+    {id:"film",      name:"复古", cat:"film"},
+    {id:"kodak",     name:"柯达", cat:"film"},
+    {id:"fade",      name:"褪色", cat:"film"},
+    {id:"fujiGreen", name:"富士", cat:"film"},
+    // 黑白 bw
+    {id:"bw",     name:"黑白",   cat:"bw"},
+    {id:"bwHigh", name:"高反差", cat:"bw"},
+    {id:"bwSoft", name:"柔黑白", cat:"bw"},
+    // 暖色 warm
+    {id:"warm",       name:"暖阳", cat:"warm"},
+    {id:"autumnWarm", name:"暖秋", cat:"warm"},
+    {id:"goldenHour", name:"落日", cat:"warm"},
+    // 冷色 cool
+    {id:"cool",     name:"冷调", cat:"cool"},
+    {id:"deepBlue", name:"冷蓝", cat:"cool"},
+    {id:"cyanLime", name:"青柠", cat:"cool"},
+    // 清新 fresh
+    {id:"fresh", name:"清新", cat:"fresh"},
+    {id:"japan", name:"日系", cat:"fresh"},
+    {id:"cream", name:"奶油", cat:"fresh"},
+    // 风格 mood
+    {id:"gray",      name:"高级灰", cat:"mood"},
+    {id:"vivid",     name:"鲜艳",   cat:"mood"},
+    {id:"cinematic", name:"电影感", cat:"mood"},
+    {id:"hkRetro",   name:"港风",   cat:"mood"}
   ];
   // each preset = saturation / contrast / brightness(×) / temp(+r −b) / tint(+g) / lift(raise blacks)
   var TONE_PARAMS = {
-    bw:    { sat:0,    con:1.06, bri:1.00, temp:0,   tint:0,  lift:0  },
-    film:  { sat:0.82, con:0.92, bri:1.03, temp:12,  tint:-4, lift:16 },
-    warm:  { sat:1.08, con:1.05, bri:1.02, temp:18,  tint:2,  lift:0  },
-    cool:  { sat:1.03, con:1.06, bri:1.00, temp:-16, tint:-2, lift:0  },
-    fresh: { sat:1.10, con:0.98, bri:1.06, temp:-4,  tint:4,  lift:8  },
-    gray:  { sat:0.45, con:0.93, bri:1.02, temp:2,   tint:0,  lift:12 },
-    vivid: { sat:1.35, con:1.12, bri:1.00, temp:2,   tint:0,  lift:0  }
+    film:       { sat:0.82, con:0.92, bri:1.03, temp:12,  tint:-4, lift:16 },
+    kodak:      { sat:0.98, con:0.96, bri:1.03, temp:16,  tint:3,  lift:12 },
+    fade:       { sat:0.70, con:0.86, bri:1.05, temp:6,   tint:-2, lift:30 },
+    fujiGreen:  { sat:1.04, con:0.98, bri:1.02, temp:-6,  tint:9,  lift:8  },
+    bw:         { sat:0,    con:1.06, bri:1.00, temp:0,   tint:0,  lift:0  },
+    bwHigh:     { sat:0,    con:1.24, bri:0.99, temp:0,   tint:0,  lift:0  },
+    bwSoft:     { sat:0,    con:0.94, bri:1.04, temp:0,   tint:0,  lift:20 },
+    warm:       { sat:1.08, con:1.05, bri:1.02, temp:18,  tint:2,  lift:0  },
+    autumnWarm: { sat:1.14, con:1.04, bri:1.00, temp:26,  tint:7,  lift:0  },
+    goldenHour: { sat:1.18, con:1.07, bri:1.02, temp:32,  tint:5,  lift:2  },
+    cool:       { sat:1.03, con:1.06, bri:1.00, temp:-16, tint:-2, lift:0  },
+    deepBlue:   { sat:1.02, con:1.09, bri:0.99, temp:-28, tint:-5, lift:0  },
+    cyanLime:   { sat:1.08, con:1.02, bri:1.02, temp:-12, tint:11, lift:4  },
+    fresh:      { sat:1.10, con:0.98, bri:1.06, temp:-4,  tint:4,  lift:8  },
+    japan:      { sat:0.94, con:0.94, bri:1.08, temp:-2,  tint:7,  lift:18 },
+    cream:      { sat:0.92, con:0.93, bri:1.07, temp:9,   tint:2,  lift:22 },
+    gray:       { sat:0.45, con:0.93, bri:1.02, temp:2,   tint:0,  lift:12 },
+    vivid:      { sat:1.35, con:1.12, bri:1.00, temp:2,   tint:0,  lift:0  },
+    cinematic:  { sat:0.92, con:1.14, bri:0.99, temp:-5,  tint:-3, lift:8  },
+    hkRetro:    { sat:1.06, con:1.10, bri:0.99, temp:-8,  tint:5,  lift:6  }
   };
-  var _gradeCache = { tone:null, w:0, h:0, src:null, canvas:null };
-  function invalidateGrade(){ _gradeCache = { tone:null, w:0, h:0, src:null, canvas:null }; }
+  // 滤镜分类(滤镜区上方的快速筛选 chip);"我的" 放用户自存的滤镜,其余放对应分类的内置滤镜
+  var FILTER_CATEGORIES = [
+    {key:"all",   label:"全部"},
+    {key:"film",  label:"胶片"},
+    {key:"bw",    label:"黑白"},
+    {key:"warm",  label:"暖色"},
+    {key:"cool",  label:"冷色"},
+    {key:"fresh", label:"清新"},
+    {key:"mood",  label:"风格"},
+    {key:"mine",  label:"我的"}
+  ];
+  var filterCat = "all";   // 当前选中的滤镜分类
+
+  // ---------- 自定义滤镜(我的滤镜):存当前底色调 + 调色盘微调,localStorage 持久 ----------
+  var FILTERS_STORAGE_KEY = "yinji.filters.v1";
+  var customFilters = [];  // [{id,name,base,adj:{temp,tint,sat,intensity}}]
+  function isValidCustomFilter(f){
+    return f && typeof f.id==="string" && typeof f.name==="string"
+      && f.adj && typeof f.adj==="object" && typeof f.base==="string";
+  }
+  function loadCustomFilters(){
+    var s=PLATFORM.getStorage(); if(!s) return;
+    try{
+      var raw=s.getItem(FILTERS_STORAGE_KEY);
+      if(raw){ var arr=JSON.parse(raw); if(arr && arr.length){ customFilters = arr.filter(isValidCustomFilter); } }
+    }catch(e){}
+  }
+  function persistCustomFilters(){
+    var s=PLATFORM.getStorage(); if(!s) return;
+    try{ s.setItem(FILTERS_STORAGE_KEY, JSON.stringify(customFilters)); }catch(e){}
+  }
+  function findCustomFilter(id){
+    for(var i=0;i<customFilters.length;i++) if(customFilters[i].id===id) return customFilters[i];
+    return null;
+  }
+  var _gradeCache = { sig:null, w:0, h:0, src:null, canvas:null };
+  function invalidateGrade(){ _gradeCache = { sig:null, w:0, h:0, src:null, canvas:null }; }
+
+  // 把任意输入夹紧到 [lo,hi];非数字时回退到 fallback
+  function clampNum(v, lo, hi, fallback){
+    v = (typeof v==="number" && v===v) ? v : Number(v);
+    if(!(v===v)) return fallback;            // NaN
+    return v<lo?lo : v>hi?hi : v;
+  }
 
   function applyTone(d, p){
     var sat=p.sat, con=p.con, bri=p.bri, temp=p.temp||0, tint=p.tint||0, lift=p.lift||0;
+    var K = (typeof p.intensity==="number") ? p.intensity : 1;   // 整体强度 0..1,与原像素混合
     var liftK=(255-lift)/255;   // remap so 0→lift, 255→255 (raised black point = faded look)
     for(var i=0;i<d.length;i+=4){
-      var r=d[i], g=d[i+1], b=d[i+2];
+      var r0=d[i], g0=d[i+1], b0=d[i+2], r=r0, g=g0, b=b0;
       if(sat!==1){ var gy=0.299*r+0.587*g+0.114*b; r=gy+(r-gy)*sat; g=gy+(g-gy)*sat; b=gy+(b-gy)*sat; }
       if(temp){ r+=temp; b-=temp; }
       if(tint){ g+=tint; }
       if(con!==1){ r=(r-128)*con+128; g=(g-128)*con+128; b=(b-128)*con+128; }
       if(bri!==1){ r*=bri; g*=bri; b*=bri; }
       if(lift){ r=r*liftK+lift; g=g*liftK+lift; b=b*liftK+lift; }
+      if(K!==1){ r=r0+(r-r0)*K; g=g0+(g-g0)*K; b=b0+(b-b0)*K; }   // 强度混合:K=0 还原, K=1 全效
       d[i]   = r<0?0:r>255?255:r;
       d[i+1] = g<0?0:g>255?255:g;
       d[i+2] = b<0?0:b>255?255:b;
     }
   }
 
-  // Graded offscreen canvas sized (w,h) — or the original bmp when tone="none" / on any failure
-  // (e.g. a tainted canvas). Cached so repeated draws (typing text) don't re-grade every keystroke.
+  // 调色盘微调层 (v2.13.0): 把所选预设与 state.toneAdj(冷暖/绿品/饱和/强度)合成成一套 applyTone 参数。
+  // 预设为底,盘做"加/减":冷暖盘叠加 temp、绿品盘叠加 tint(各 ±100 → ±40)、饱和滑杆乘 base.sat、强度统管全局混合。
+  function effectiveParams(){
+    var t = state.tone || "none";
+    var base = TONE_PARAMS[t] || { sat:1, con:1, bri:1, temp:0, tint:0, lift:0 };
+    var a = state.toneAdj || { temp:0, tint:0, sat:0, intensity:100 };
+    var satMul = 1 + clampNum(a.sat,-100,100,0)/100;   // 饱和滑杆: -100→0(灰), 0→原, +100→2×
+    return {
+      sat:  base.sat * satMul,
+      con:  base.con,
+      bri:  base.bri,
+      temp: (base.temp||0) + clampNum(a.temp,-100,100,0)*0.4,   // 冷暖盘 X: ±100 → ±40
+      tint: (base.tint||0) + clampNum(a.tint,-100,100,0)*0.4,   // 绿品盘 Y: ±100 → ±40
+      lift: base.lift||0,
+      intensity: clampNum(a.intensity,0,100,100)/100
+    };
+  }
+  // 是否需要调色:选了预设、或盘被拨离中点;且强度>0(强度=0 等于还原原图)。
+  function hasGrade(){
+    var a = state.toneAdj || {};
+    var presetOn = state.tone && state.tone!=="none" && !!TONE_PARAMS[state.tone];
+    var dialOn = clampNum(a.temp,-100,100,0)!==0 || clampNum(a.tint,-100,100,0)!==0 || clampNum(a.sat,-100,100,0)!==0;
+    return (presetOn || dialOn) && clampNum(a.intensity,0,100,100) > 0;
+  }
+  // 缓存指纹:任一调色项变化都会让指纹变、从而让离屏缓存失效、触发重新调色。
+  function gradeSig(){
+    var a = state.toneAdj || {};
+    return (state.tone||"none")+"|"+clampNum(a.temp,-100,100,0)+"|"+clampNum(a.tint,-100,100,0)
+      +"|"+clampNum(a.sat,-100,100,0)+"|"+clampNum(a.intensity,0,100,100);
+  }
+
+  // Graded offscreen canvas sized (w,h) — or the original bmp when nothing to grade / on any failure
+  // (e.g. a tainted canvas). Cached by gradeSig() so repeated draws (typing text) don't re-grade every keystroke.
   function gradedBitmap(bmp, w, h){
-    var tone = state.tone || "none";
-    if(tone==="none" || !TONE_PARAMS[tone]) return bmp;
-    if(_gradeCache.canvas && _gradeCache.tone===tone && _gradeCache.w===w && _gradeCache.h===h && _gradeCache.src===bmp){
+    if(!hasGrade()) return bmp;
+    var sig = gradeSig();
+    if(_gradeCache.canvas && _gradeCache.sig===sig && _gradeCache.w===w && _gradeCache.h===h && _gradeCache.src===bmp){
       return _gradeCache.canvas;
     }
     var off, octx, img;
@@ -1994,9 +2502,9 @@
       octx.drawImage(bmp,0,0,w,h);
       img=octx.getImageData(0,0,w,h);
     }catch(e){ return bmp; }   // tainted / OOM → silently fall back to ungraded
-    applyTone(img.data, TONE_PARAMS[tone]);
+    applyTone(img.data, effectiveParams());
     octx.putImageData(img,0,0);
-    _gradeCache = { tone:tone, w:w, h:h, src:bmp, canvas:off };
+    _gradeCache = { sig:sig, w:w, h:h, src:bmp, canvas:off };
     return off;
   }
 
@@ -3405,31 +3913,52 @@
     return SHARE_PREFIX + b64;
   }
 
-  function decodeTemplate(code){
+  // 滤镜分享码:与模板共用 SHARE_PREFIX + base64(JSON),靠 type 区分模板 / 滤镜
+  function encodeFilter(f){
+    var a = f.adj || {};
+    var clean = {
+      name: (f.name||"").toString().slice(0,12),
+      base: (f.base==="none" || TONE_PARAMS[f.base]) ? f.base : "none",
+      adj: {
+        temp:      clampNum(a.temp,      -100, 100, 0),
+        tint:      clampNum(a.tint,      -100, 100, 0),
+        sat:       clampNum(a.sat,       -100, 100, 0),
+        intensity: clampNum(a.intensity,    0, 100, 100)
+      }
+    };
+    var json = JSON.stringify({ v:1, type:"yinji-filter", flt:clean });
+    var b64;
+    try{ b64 = btoa(unescape(encodeURIComponent(json))); }  // UTF-8 safe (中文名)
+    catch(e){ b64 = btoa(json); }
+    return SHARE_PREFIX + b64;
+  }
+  // 解出分享码里的完整对象(不拆 tpl/flt),导入时按 type 分流到模板或滤镜
+  function decodeShareRaw(code){
     var s = String(code||"");
     var idx = s.indexOf(SHARE_PREFIX);
-    if(idx !== -1) s = s.slice(idx + SHARE_PREFIX.length);  // tolerate extra text around the code
-    s = s.replace(/\s+/g, "");                               // chat apps may inject spaces / newlines
+    if(idx !== -1) s = s.slice(idx + SHARE_PREFIX.length);
+    s = s.replace(/\s+/g, "");
     if(!s) throw new Error("empty");
     var json;
     try{ json = decodeURIComponent(escape(atob(s))); }
     catch(e){ try{ json = atob(s); }catch(e2){ throw new Error("bad-base64"); } }
-    var obj;
-    try{ obj = JSON.parse(json); }catch(e){ throw new Error("bad-json"); }
-    return (obj && obj.tpl) ? obj.tpl : obj;                 // tolerate a bare tpl object
+    try{ return JSON.parse(json); }catch(e){ throw new Error("bad-json"); }
   }
 
-  function openShare(mode, code){
+  var shareKind = "template";   // "template" | "filter" — 仅控制弹窗文案;导入按实际内容分流
+  function openShare(mode, code, kind){
+    shareKind = (kind === "filter") ? "filter" : "template";
+    var noun = (shareKind === "filter") ? "滤镜" : "模板";
     if(mode === "export"){
-      shareTitle.textContent = "分享模板";
-      shareSub.textContent = "把这段代码复制发给朋友,对方点「导入模板」粘贴就能用";
+      shareTitle.textContent = "分享" + noun;
+      shareSub.textContent = "把这段代码复制发给朋友,对方点「导入" + noun + "」粘贴就能用";
       shareText.value = code || "";
       shareText.readOnly = true;
       shareCopyBtn.style.display = "";
       shareImportBtn.style.display = "none";
     } else {
-      shareTitle.textContent = "导入模板";
-      shareSub.textContent = "把朋友发你的模板代码粘贴到下面,点「导入」";
+      shareTitle.textContent = "导入" + noun;
+      shareSub.textContent = "把朋友发你的" + noun + "代码粘贴到下面,点「导入」";
       shareText.value = "";
       shareText.readOnly = false;
       shareCopyBtn.style.display = "none";
@@ -3473,8 +4002,16 @@
 
   function doImport(){
     var raw;
-    try{ raw = decodeTemplate(shareText.value); }
+    try{ raw = decodeShareRaw(shareText.value); }
     catch(e){ toast("这段代码看不懂,确认完整复制了吗?"); return; }
+    // 按内容分流:滤镜码 → 导入滤镜;否则当模板处理(兼容旧的裸 tpl 对象)
+    if(raw && (raw.type === "yinji-filter" || raw.flt)){
+      importFilterObj(raw.flt || raw);
+    } else {
+      importTemplateObj((raw && raw.tpl) ? raw.tpl : raw);
+    }
+  }
+  function importTemplateObj(raw){
     var layout = (raw && (raw.layout==="bar"||raw.layout==="frame"||raw.layout==="overlay")) ? raw.layout : null;
     if(!layout || !isHexColor(raw.bg) || !isHexColor(raw.text)){
       toast("模板信息不完整,导入失败"); return;
@@ -3499,6 +4036,32 @@
     searchOverlay.classList.remove("show");
     toast("已导入「"+name+"」,顶部已加上按钮");
   }
+  // 导入滤镜:落到「我的」分类并立即套用
+  function importFilterObj(flt){
+    if(!flt || typeof flt!=="object"){ toast("滤镜信息不完整,导入失败"); return; }
+    var base = (flt.base==="none" || TONE_PARAMS[flt.base]) ? flt.base : "none";
+    var a = flt.adj || {};
+    var name = (typeof flt.name==="string" && flt.name.trim()) ? flt.name.trim().slice(0,12) : "导入的滤镜";
+    var f = {
+      id: "flt_"+Date.now().toString(36)+Math.floor(Math.random()*1296).toString(36),
+      name: name,
+      base: base,
+      adj: {
+        temp:      clampNum(a.temp,      -100, 100, 0),
+        tint:      clampNum(a.tint,      -100, 100, 0),
+        sat:       clampNum(a.sat,       -100, 100, 0),
+        intensity: clampNum(a.intensity,    0, 100, 100)
+      }
+    };
+    if(!isValidCustomFilter(f)){ toast("滤镜信息不完整,导入失败"); return; }
+    customFilters.push(f);
+    persistCustomFilters();
+    filterCat = "mine";
+    renderFilters();
+    applyCustomFilter(f.id);   // 立即套用 + 高亮
+    closeShare();
+    toast("已导入滤镜「"+name+"」,在「我的」里");
+  }
 
   shareCopyBtn.addEventListener("click", copyShareCode);
   shareImportBtn.addEventListener("click", doImport);
@@ -3509,8 +4072,82 @@
     openShare("import", "");
   });
 
+  // ================= 滤镜:存为 / 分享 / 导入 / 删除 + 🎲 随机一套 =================
+  function shareCustomFilter(id){
+    var f = findCustomFilter(id);
+    if(!f){ toast("找不到这个滤镜"); return; }
+    openShare("export", encodeFilter(f), "filter");
+  }
+  function openFilterSave(){
+    if(!hasGrade()){ toast("先选个滤镜或拨动调色盘,有效果了再保存"); return; }
+    if(filterName) filterName.value = "";
+    filterSaveOverlay.classList.add("show");
+    setTimeout(function(){ try{ filterName.focus(); }catch(e){} }, 120);
+  }
+  function closeFilterSave(){ filterSaveOverlay.classList.remove("show"); }
+  function doSaveFilter(){
+    var name = (filterName.value||"").trim();
+    if(!name){ toast("给滤镜起个名字吧"); filterName.focus(); return; }
+    var f = {
+      id: "flt_"+Date.now().toString(36)+Math.floor(Math.random()*1296).toString(36),
+      name: name.slice(0,12),
+      base: state.tone,
+      adj: {
+        temp:      clampNum(state.toneAdj.temp,      -100, 100, 0),
+        tint:      clampNum(state.toneAdj.tint,      -100, 100, 0),
+        sat:       clampNum(state.toneAdj.sat,       -100, 100, 0),
+        intensity: clampNum(state.toneAdj.intensity,    0, 100, 100)
+      }
+    };
+    customFilters.push(f);
+    persistCustomFilters();
+    closeFilterSave();
+    filterCat = "mine";
+    renderFilters();
+    applyCustomFilter(f.id);   // 选中刚存好的滤镜
+    toast("已存为滤镜「"+f.name+"」,在「我的」里");
+  }
+  // 🎲 随机一套:随机内置模板 + 随机内置滤镜(一起换一整套风格)
+  function randomLook(){
+    if(!state.bitmap){ toast("先选一张照片再随机"); return; }
+    var sid = state.style;
+    if(TEMPLATES && TEMPLATES.length){
+      sid = TEMPLATES[Math.floor(Math.random()*TEMPLATES.length)].id;
+    }
+    var pool = [];
+    TONE_LIST.forEach(function(t){ if(t.id!=="none") pool.push(t); });
+    var ft = pool.length ? pool[Math.floor(Math.random()*pool.length)] : null;
+    state.tone = ft ? ft.id : "none";
+    state.toneAdj = { temp:0, tint:0, sat:0, intensity:100 };
+    state.filterId = null;
+    filterCat = "all";
+    renderFilters();
+    syncTonePad();
+    setStyle(sid);   // 设 state.style + 高亮 + draw() + savePrefs()
+    toast("换了一套:" + (presetName(sid)||"样式") + " · " + (ft?ft.name:"原图"));
+  }
+  if(saveFilterBtn)   saveFilterBtn.addEventListener("click", openFilterSave);
+  if(filterSaveDo)    filterSaveDo.addEventListener("click", doSaveFilter);
+  if(filterSaveCancel)filterSaveCancel.addEventListener("click", closeFilterSave);
+  if(filterSaveOverlay)filterSaveOverlay.addEventListener("click", function(e){ if(e.target===filterSaveOverlay) closeFilterSave(); });
+  if(importFilterBtn) importFilterBtn.addEventListener("click", function(){ openShare("import", "", "filter"); });
+  if(shareFilterBtn)  shareFilterBtn.addEventListener("click", function(){ if(state.filterId) shareCustomFilter(state.filterId); });
+  if(delFilterBtn)    delFilterBtn.addEventListener("click", function(){
+    if(!state.filterId) return;
+    var f = findCustomFilter(state.filterId);
+    var nm = f ? f.name : "这个滤镜";
+    if(!window.confirm("删除滤镜「"+nm+"」?删了不能恢复。")) return;
+    customFilters = customFilters.filter(function(x){ return x.id !== state.filterId; });
+    persistCustomFilters();
+    setTone("none");     // 回到原图(内部已清 filterId + 刷新高亮/按钮 + 重绘)
+    renderFilters();
+    toast("已删除滤镜「"+nm+"」");
+  });
+  if(filterRandBtn)   filterRandBtn.addEventListener("click", randomLook);
+
   // load customs on startup, then build the style seg (presets + customs)
   loadCustomTemplates();
+  loadCustomFilters();
   renderStyleSeg();
 
   // restore last-used choices (style / text-mode / export quality) from a prior visit
@@ -3524,6 +4161,16 @@
         if(p.mode==="auto"||p.mode==="manual") prefMode=p.mode;
         if(p.quality) setExportQuality(p.quality);
         if(p.tone && (p.tone==="none"||TONE_PARAMS[p.tone])) state.tone=p.tone;
+        if(p.toneAdj && typeof p.toneAdj==="object"){   // 恢复调色盘微调,逐项夹紧到合法范围
+          var pa=p.toneAdj;
+          state.toneAdj = {
+            temp:      clampNum(pa.temp,      -100, 100, 0),
+            tint:      clampNum(pa.tint,      -100, 100, 0),
+            sat:       clampNum(pa.sat,       -100, 100, 0),
+            intensity: clampNum(pa.intensity,    0, 100, 100)
+          };
+        }
+        if(p.filterId && findCustomFilter(p.filterId)) state.filterId = p.filterId;   // 恢复上次选中的「我的滤镜」高亮
         if((st.defaultStyle||"last")==="last" && p.style && (DRAW_DISPATCH[p.style] || findCustomTemplate(p.style))) setStyle(p.style);
       }
     }
@@ -3531,7 +4178,8 @@
     var ds=st.defaultStyle;
     if(ds && ds!=="last" && (DRAW_DISPATCH[ds] || findCustomTemplate(ds))) setStyle(ds);
   })();
-  renderToneSeg();   // after initPrefs so the restored tone shows as the active chip
+  renderFilters();   // after initPrefs so the restored filter shows as the active chip
+  bindTonePad();     // 调色盘:绑定拖动盘 / 滑杆 / 复位 / 折叠,并把已恢复的微调同步到控件
 
   // inject version into the brand tag (so APP_VERSION constant is the single source)
   var verEl = document.getElementById('appVer');
@@ -3761,23 +4409,43 @@
     list: function(){ return this._features.slice(); },
     run: function(id){
       for(var i=0;i<this._features.length;i++){ if(this._features[i].id===id) return this._features[i].run(window.Yinji.getContext()); }
-      return false;                   // 2.x:没有任何功能注册,始终 no-op
+      return false;                   // 没有匹配的功能时:no-op
     }
   };
-  // 交给未来 AI 功能的只读上下文 —— 不含照片像素,照片数据留在本地
+  // v3.0 A1:把"智能配色"注册成第一个端上 AI 能力。
+  // 全程在本地跑:直接读已经加载在内存里的这张照片做统计,不联网、不上传、不写硬盘。
+  window.Yinji.ai.register({
+    id: "smartColor",
+    label: "智能配色(端上)",
+    onDevice: true,
+    run: function(){ return smartColor(); }
+  });
+  // 交给未来 AI 功能的只读上下文 —— 不含照片像素,照片数据留在本地。
+  // colorStats 只是整张图的"平均色 / 亮度 / 鲜艳度"几个数,是不可还原原图的聚合统计,不是像素。
   window.Yinji.getContext = window.Yinji.getContext || function(){
+    var cs = null;
+    if(state.bitmap){
+      var info = analyzePhoto(state.bitmap);
+      if(info) cs = {
+        r: Math.round(info.r), g: Math.round(info.g), b: Math.round(info.b),
+        luma: Math.round(info.luma),
+        sat: Math.round(info.sat*100)/100,
+        warm: info.r > info.b            // true=整体偏暖, false=偏冷
+      };
+    }
     return {
       version: APP_VERSION,
       hasPhoto: !!state.bitmap,
       style: state.style,
       mode: state.mode,
-      text: (typeof textInput!=="undefined" && textInput) ? textInput.value : ""
+      text: (typeof textInput!=="undefined" && textInput) ? textInput.value : "",
+      colorStats: cs                     // 无照片或分析失败时为 null
     };
   };
   // 设置面板里的 "AI · 即将推出" 占位入口(3.0 预告)
   var aiSoonBtn=$("aiSoonBtn");
   if(aiSoonBtn) aiSoonBtn.addEventListener("click", function(){
-    toast("AI 功能将在 3.0 版本加入,敬请期待 ✨");
+    toast("智能配色已上线 ✨ 在「调色盘」里点「帮我配色」试试;更多 AI 功能陆续加入");
   });
 
   // ================= PWA: register service worker for offline + 新版本提示 =================
