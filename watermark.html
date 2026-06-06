@@ -461,6 +461,9 @@
     transition:transform .12s var(--ease), opacity .14s var(--ease);
   }
   .cap-spark:active{transform:scale(.97);}
+  .cap-spark.hidden{display:none;}
+  .cap-spark-ai{background:var(--accent);color:#fff;border-color:var(--accent);}
+  .cap-loading{font-size:13px;color:var(--ink-soft);display:inline-block;margin-top:8px;}
   .cap-list{display:flex;flex-wrap:wrap;gap:7px;margin-top:8px;}
   .cap-list:empty{margin-top:0;}
   .cap-chip{
@@ -826,6 +829,8 @@
   .btn-ghost.btn-warn{color:#C5503E;}
   body[data-theme="dark"] .btn-ghost.btn-warn{color:#F08A78;}
   .privacy-note{font-size:12px;color:var(--ink-soft);line-height:1.65;margin:12px 2px 0;}
+  .ai-fields{margin-top:6px;}
+  .ai-fields.hidden{display:none;}
   .about-ver{text-align:center;font-size:13.5px;color:var(--ink-soft);margin:0 0 12px;}
   .about-ver b{color:var(--ink);font-weight:600;}
 
@@ -970,6 +975,7 @@
           <label class="lbl">水印文字</label>
           <input type="text" id="textInput" placeholder="输入想显示的文字" maxlength="40">
           <button class="cap-spark" id="captionBtn" type="button">✨ 来点灵感</button>
+          <button class="cap-spark cap-spark-ai hidden" id="captionAiBtn" type="button">🌐 联网 AI 灵感</button>
           <div class="cap-list" id="captionList" aria-live="polite"></div>
         </div>
 
@@ -1283,10 +1289,31 @@
     </div>
 
     <div class="set-sec">
-      <h4>AI · 即将推出</h4>
-      <div class="set-actions">
-        <button class="btn btn-ghost" id="aiSoonBtn">AI 功能抢先看 ✨</button>
+      <h4>AI · 联网文案</h4>
+      <div class="setting-row">
+        <div class="setting-text">
+          <div class="setting-lbl">联网 AI 文案</div>
+        </div>
+        <label class="switch">
+          <input type="checkbox" id="aiOnlineToggle">
+          <span class="slider"></span>
+        </label>
       </div>
+      <div id="aiOnlineFields" class="ai-fields hidden">
+        <div class="field" style="margin-top:8px;">
+          <label class="lbl">AI 地址</label>
+          <input type="text" id="aiBaseInput" placeholder="例：https://api.openai.com/v1" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false">
+        </div>
+        <div class="field">
+          <label class="lbl">模型</label>
+          <input type="text" id="aiModelInput" placeholder="例：gpt-4o-mini" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false">
+        </div>
+        <div class="field">
+          <label class="lbl">你的钥匙（API Key，自己粘进来）</label>
+          <input type="password" id="aiKeyInput" placeholder="把你自己的钥匙粘到这里" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false">
+        </div>
+      </div>
+      <div class="privacy-note">默认关着。打开后，去「水印 → 手动输入」点「🌐 联网 AI 灵感」才会用。只把时间 / 季节 / 色调 / 设备这些文字发给你填的 AI，绝不发照片。钥匙只存在你这台手机上。有些 AI 服务商不允许网页直接连（CORS），连不上时会自动给你端上的灵感。</div>
     </div>
 
     <div class="set-sec">
@@ -1331,7 +1358,7 @@
   "use strict";
 
   // ---------- version (single source of truth; bump on every release) ----------
-  var APP_VERSION = "v3.0.0-beta.13";
+  var APP_VERSION = "v3.0.0-beta.14";
 
   // ---------- state ----------
   var state = { bitmap:null, exif:null, exifApp1:null, mode:"manual", editTab:"watermark", style:"classic", exportQuality:"standard", tone:"none",
@@ -1365,7 +1392,11 @@
       defaultText: "date",
       fixedText: "",
       autoFields: { device:true, time:true, aperture:true, shutter:true, iso:true, focal:true },
-      maxEdge: 2200
+      maxEdge: 2200,
+      aiOnline: false,
+      aiBase: "",
+      aiModel: "",
+      aiKey: ""
     };
   }
   function loadSettings(){
@@ -2650,9 +2681,8 @@
     for(var i=0;i<pool.length && out.length<4;i++){ var t=(pool[i]||"").trim(); if(t && !seen[t]){ seen[t]=1; out.push(t); } }
     return out;
   }
-  function renderCaptions(){
+  function renderCaptionChips(list){
     var box = $("captionList"); if(!box) return;
-    var list = suggestCaptions();
     box.innerHTML = "";
     list.forEach(function(txt){
       var b = document.createElement("button");
@@ -2665,6 +2695,90 @@
       box.appendChild(b);
     });
   }
+  function renderCaptions(){ renderCaptionChips(suggestCaptions()); }
+
+  // ---------- v3.0 B1: 联网 AI 文案(BYOK,默认关,失败回退端上) ----------
+  var _aiConsentSession = false;
+  var captionAiBtn = $("captionAiBtn");
+  function aiOnlineReady(){
+    var st = ensureSettings();
+    return !!(st.aiOnline && st.aiBase && st.aiModel && st.aiKey);
+  }
+  function applyAiOnlineUI(){
+    var on = !!ensureSettings().aiOnline;
+    if(captionAiBtn) captionAiBtn.classList.toggle("hidden", !on);
+    var f = $("aiOnlineFields"); if(f) f.classList.toggle("hidden", !on);
+  }
+  function aiContextLine(){
+    var c = window.Yinji.getContext(), parts = [];
+    var sMap = {"春":"春天","夏":"夏天","秋":"秋天","冬":"冬天"};
+    var tMap = {"晨":"清晨","上午":"上午","午":"正午","午后":"午后","暮":"黄昏","夜":"夜晚"};
+    if(c.season && sMap[c.season]) parts.push(sMap[c.season]);
+    if(c.timeOfDay && tMap[c.timeOfDay]) parts.push(tMap[c.timeOfDay]);
+    var cs = c.colorStats;
+    if(cs){
+      if(cs.r - cs.b > 6) parts.push("暖色调"); else if(cs.b - cs.r > 6) parts.push("冷色调");
+      if(cs.luma < 70) parts.push("暗调"); else if(cs.luma > 188) parts.push("明亮");
+      if(cs.sat > 50) parts.push("色彩鲜明"); else if(cs.sat < 16) parts.push("淡雅");
+    }
+    if(c.lens === "长焦") parts.push("长焦"); else if(c.lens === "广角") parts.push("广角");
+    if(c.device) parts.push("用 " + c.device + " 拍摄");
+    if(c.text) parts.push("已有文字:" + c.text);
+    return parts.join("、");
+  }
+  function aiEndpoint(base){
+    var b = String(base || "").trim().replace(/\/+$/, "");
+    if(/\/chat\/completions$/.test(b)) return b;
+    return b + "/chat/completions";
+  }
+  function parseAiCaptions(txt){
+    var lines = String(txt || "").split(/[\n\r]+/), out = [], seen = {};
+    for(var i = 0; i < lines.length; i++){
+      var t = lines[i].replace(/^[\s\d①②③④⑤⑥⑦⑧⑨⑩\.\)、\-—·*]+/, "").replace(/["“”‘’「」]/g, "").trim();
+      if(t && t.length <= 24 && !seen[t]){ seen[t] = 1; out.push(t); }
+      if(out.length >= 4) break;
+    }
+    return out;
+  }
+  function aiCaptionOnline(){
+    if(!aiOnlineReady()){
+      toast("联网 AI 还没填好(地址/模型/钥匙),先给你端上的灵感");
+      renderCaptions(); return false;
+    }
+    var line = aiContextLine();
+    if(!_aiConsentSession){
+      var ok = window.confirm("要把下面这些文字发给你填的 AI 生成文案吗?\n\n" + (line || "(没读到拍摄信息)") + "\n\n只发这些文字,绝不发照片。");
+      if(!ok) return false;
+      _aiConsentSession = true;
+    }
+    var st = ensureSettings(), box = $("captionList");
+    if(box) box.innerHTML = '<span class="cap-loading">联网生成中…</span>';
+    var sys = "你是中文相册/朋友圈文案助手。根据拍摄信息写4条不同风格的短文案(诗意、生活、英文各来一点)。每条单独一行,不超过12个字,不要编号、不要引号、不要解释,直接输出4行。";
+    var usr = "拍摄信息:" + (line || "无") + "。请给我4条短文案。";
+    var ctrl = (typeof AbortController !== "undefined") ? new AbortController() : null;
+    var timer = ctrl ? setTimeout(function(){ try{ ctrl.abort(); }catch(e){} }, 20000) : 0;
+    fetch(aiEndpoint(st.aiBase), {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "Authorization": "Bearer " + st.aiKey },
+      body: JSON.stringify({ model: st.aiModel, messages: [{ role:"system", content:sys }, { role:"user", content:usr }], temperature: 0.9, max_tokens: 200 }),
+      signal: ctrl ? ctrl.signal : undefined
+    }).then(function(r){
+      if(!r.ok) throw new Error("HTTP " + r.status);
+      return r.json();
+    }).then(function(d){
+      if(timer) clearTimeout(timer);
+      var txt = d && d.choices && d.choices[0] && d.choices[0].message && d.choices[0].message.content;
+      var list = parseAiCaptions(txt);
+      if(list.length){ renderCaptionChips(list); toast("AI 给了你 " + list.length + " 条文案 ✨"); }
+      else { renderCaptions(); toast("AI 没给出能用的文案,先给你端上的灵感"); }
+    }).catch(function(err){
+      if(timer) clearTimeout(timer);
+      renderCaptions();
+      toast("连不上你的 AI(网络问题,或服务商不让网页直连),先给你端上的灵感");
+    });
+    return true;
+  }
+  if(captionAiBtn) captionAiBtn.addEventListener("click", aiCaptionOnline);
 
   // ---------- 调色盘 (v2.13.0): 2D 拖动盘 + 强度/饱和滑杆 ----------
   var _toneRaf = 0;
@@ -4638,12 +4752,14 @@
     if(stageHintEl) stageHintEl.style.display = ensureSettings().longPress ? "" : "none";
   }
   applyLongPressHint();
+  applyAiOnlineUI();
 
   // ================= Settings panel (v2.9.0) =================
   var settingsBtn=$("settingsBtn"), settingsOverlay=$("settingsOverlay"), closeSettings=$("closeSettings");
   var themeSeg=$("themeSeg"), accentSwatches=$("accentSwatches"), accentColorInput=$("accentColorInput"), rememberLastToggle=$("rememberLastToggle");
   var defModeSeg=$("defModeSeg"), defTextSeg=$("defTextSeg"), fixedTextWrap=$("fixedTextWrap"), fixedTextInput=$("fixedTextInput"), defStyleSel=$("defStyleSel");
   var autoFieldsGrid=$("autoFieldsGrid"), defQualSeg=$("defQualSeg"), maxEdgeSeg=$("maxEdgeSeg"), longPressToggle=$("longPressToggle");
+  var aiOnlineToggle=$("aiOnlineToggle"), aiBaseInput=$("aiBaseInput"), aiModelInput=$("aiModelInput"), aiKeyInput=$("aiKeyInput");
   var clearTplBtn=$("clearTplBtn"), resetSettingsBtn=$("resetSettingsBtn"), replayOnboardBtn=$("replayOnboardBtn"), aboutVer=$("aboutVer");
 
   function segSelect(segEl, attr, value){
@@ -4697,6 +4813,11 @@
     segSelect(defQualSeg, "data-q", st.defaultQuality);
     segSelect(maxEdgeSeg, "data-e", st.maxEdge);
     if(longPressToggle) longPressToggle.checked = !!st.longPress;
+    if(aiOnlineToggle) aiOnlineToggle.checked = !!st.aiOnline;
+    if(aiBaseInput) aiBaseInput.value = st.aiBase || "";
+    if(aiModelInput) aiModelInput.value = st.aiModel || "";
+    if(aiKeyInput) aiKeyInput.value = st.aiKey || "";
+    applyAiOnlineUI();
     if(glassToggle) glassToggle.checked = document.body.getAttribute("data-glass") !== "off";
     if(aboutVer) aboutVer.textContent = APP_VERSION;
   }
@@ -4736,6 +4857,10 @@
   segBind(defQualSeg, "data-q", function(v){ ensureSettings().defaultQuality=v; saveSettings(); });
   segBind(maxEdgeSeg, "data-e", function(v){ ensureSettings().maxEdge=parseInt(v,10)||2200; saveSettings(); if(state.bitmap) draw(); });
   if(longPressToggle) longPressToggle.addEventListener("change", function(){ ensureSettings().longPress=longPressToggle.checked; saveSettings(); applyLongPressHint(); });
+  if(aiOnlineToggle) aiOnlineToggle.addEventListener("change", function(){ ensureSettings().aiOnline=aiOnlineToggle.checked; saveSettings(); applyAiOnlineUI(); });
+  if(aiBaseInput) aiBaseInput.addEventListener("input", function(){ ensureSettings().aiBase=aiBaseInput.value.trim(); saveSettings(); });
+  if(aiModelInput) aiModelInput.addEventListener("input", function(){ ensureSettings().aiModel=aiModelInput.value.trim(); saveSettings(); });
+  if(aiKeyInput) aiKeyInput.addEventListener("input", function(){ ensureSettings().aiKey=aiKeyInput.value.trim(); saveSettings(); });
 
   if(clearTplBtn) clearTplBtn.addEventListener("click", function(){
     if(!customTemplates.length){ toast("还没有自定义水印"); return; }
@@ -4820,6 +4945,12 @@
     onDevice: true,
     run: function(){ return suggestCaptions(); }
   });
+  window.Yinji.ai.register({
+    id: "captionOnline",
+    label: "联网 AI 文案(BYOK)",
+    onDevice: false,
+    run: function(){ return aiCaptionOnline(); }
+  });
   window.Yinji.getContext = window.Yinji.getContext || function(){
     var cs = null;
     if(state.bitmap){
@@ -4843,10 +4974,6 @@
       timeOfDay: clue.time, season: clue.season, device: clue.device, lens: clue.lens
     };
   };
-  var aiSoonBtn=$("aiSoonBtn");
-  if(aiSoonBtn) aiSoonBtn.addEventListener("click", function(){
-    toast("已上线两个端上 AI ✨ 调色盘点「帮我配色」、手动文字下点「来点灵感」;更多陆续加入");
-  });
 
   // ================= PWA: register service worker for offline + 新版本提示 =================
   if('serviceWorker' in navigator){
