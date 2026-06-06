@@ -21,7 +21,7 @@
     --line:#E2DACC;
     --accent:#C2632D;
     --accent-soft:#F4E6D8;
-    --radius:22px;
+    --radius:18px;
     --shadow:0 10px 34px rgba(54,40,24,.10);
     --shadow-sm:0 4px 14px rgba(54,40,24,.07);
     --font:-apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Segoe UI",Roboto,sans-serif;
@@ -40,6 +40,8 @@
     --glass-blur-sm:blur(30px) saturate(170%) brightness(1.04);
     --glass-highlight:inset 0 1px 0 rgba(255,255,255,0.55), inset 0 -1px 0 rgba(28,24,20,0.04);
     --ease:cubic-bezier(.2,.8,.2,1);
+    /* 弹性缓动:入场/按压略带回弹,手感更"弹"(v3.0.0-beta.2) */
+    --spring:cubic-bezier(.34,1.5,.56,1);
   }
 
   /* "Glass off" mode — disables backdrop-filter for performance / preference.
@@ -145,8 +147,9 @@
     to{opacity:1;transform:translateY(0);}
   }
   @keyframes yj-scaleIn{
-    from{opacity:0;transform:scale(.96);}
-    to{opacity:1;transform:scale(1);}
+    0%{opacity:0;transform:scale(.93);}
+    55%{opacity:1;transform:scale(1.018);}
+    100%{opacity:1;transform:scale(1);}
   }
   @keyframes yj-fadeIn{ from{opacity:0;} to{opacity:1;} }
   @media (prefers-reduced-motion: reduce){
@@ -167,7 +170,7 @@
       radial-gradient(100% 60% at 50% 112%, rgba(194,99,45,.06), transparent 60%);
     background-attachment:fixed;
     min-height:100vh;
-    padding:0 0 calc(env(safe-area-inset-bottom) + 30px);
+    padding:0 0 calc(env(safe-area-inset-bottom) + 20px);
     -webkit-font-smoothing:antialiased;
     -moz-osx-font-smoothing:grayscale;
     text-rendering:optimizeLegibility;
@@ -177,21 +180,21 @@
   /* Header */
   header{
     display:flex;align-items:center;justify-content:space-between;
-    padding:calc(env(safe-area-inset-top) + 20px) 0 16px;
-    animation:yj-fadeUp .55s var(--ease) both;
+    padding:calc(env(safe-area-inset-top) + 13px) 0 10px;
+    animation:yj-fadeUp .55s var(--spring) both;
   }
   .brand{display:flex;flex-direction:column;line-height:1;}
-  .brand .name{font-size:27px;font-weight:600;letter-spacing:.04em;}
+  .brand .name{font-size:23px;font-weight:600;letter-spacing:.04em;}
   .brand .tag{
     font-family:var(--display);font-size:11px;letter-spacing:.28em;
-    text-transform:uppercase;color:var(--accent);margin-top:7px;font-weight:500;
+    text-transform:uppercase;color:var(--accent);margin-top:5px;font-weight:500;
   }
   .brand .tag #appVer{
     font-size:10px;letter-spacing:.04em;text-transform:lowercase;
     opacity:.7;font-weight:600;
   }
   .icon-btn{
-    width:44px;height:44px;border-radius:14px;
+    width:40px;height:40px;border-radius:13px;
     border:1px solid var(--glass-border);
     background:var(--glass-bg);
     -webkit-backdrop-filter:var(--glass-blur);
@@ -218,21 +221,84 @@
     background:var(--glass-bg-faint);
     -webkit-backdrop-filter:var(--glass-blur-sm);
     backdrop-filter:var(--glass-blur-sm);
-    padding:60px 26px;margin-top:6px;cursor:pointer;
+    padding:40px 24px;margin-top:4px;cursor:pointer;
     box-shadow:var(--glass-highlight);
     transition:border-color .25s var(--ease), background .25s var(--ease), transform .15s var(--ease);
-    animation:yj-fadeUp .65s var(--ease) .12s both;
+    animation:yj-fadeUp .65s var(--spring) .12s both;
   }
   .drop:hover{background:var(--glass-bg);border-color:var(--accent);}
   .drop:active{transform:scale(.99);}
   .drop .ring{
-    width:72px;height:72px;border-radius:50%;background:var(--accent-soft);
+    width:58px;height:58px;border-radius:50%;background:var(--accent-soft);
     display:flex;align-items:center;justify-content:center;
   }
-  .drop .ring svg{width:32px;height:32px;stroke:var(--accent);}
-  .drop h2{margin:0;font-size:18px;font-weight:600;}
+  .drop .ring svg{width:27px;height:27px;stroke:var(--accent);}
+  .drop h2{margin:0;font-size:17px;font-weight:600;}
   .drop p{margin:0;font-size:13.5px;color:var(--ink-soft);line-height:1.6;max-width:230px;}
   input[type=file]{display:none;}
+
+  /* 拼图入口按钮(空状态 drop 下方) v3.0.0-beta.3 */
+  .collage-entry{
+    display:flex;align-items:center;justify-content:center;gap:8px;
+    width:100%;margin-top:10px;padding:12px 0;
+    font:inherit;font-size:14.5px;font-weight:600;color:var(--accent);
+    background:var(--glass-bg-faint);
+    -webkit-backdrop-filter:var(--glass-blur-sm);backdrop-filter:var(--glass-blur-sm);
+    border:1px solid var(--glass-border);border-radius:var(--radius);
+    box-shadow:var(--glass-highlight);cursor:pointer;
+    transition:transform .16s var(--spring), background .2s var(--ease);
+    animation:yj-fadeUp .65s var(--spring) .18s both;
+  }
+  .collage-entry svg{width:19px;height:19px;stroke:var(--accent);}
+  .collage-entry:hover{background:var(--glass-bg);}
+  .collage-entry:active{transform:scale(.97);}
+  /* 拼图布局选择面板 */
+  .collage-preview-wrap{display:flex;align-items:center;justify-content:center;margin:4px 0 14px;}
+  #collagePreview{width:auto;max-width:62%;max-height:38vh;border-radius:14px;box-shadow:var(--shadow);background:#fff;touch-action:none;}
+  .collage-opts{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin:8px 0 4px;}
+  .collage-opt{
+    display:flex;flex-direction:column;align-items:center;gap:5px;
+    width:62px;padding:8px 4px;cursor:pointer;
+    background:transparent;border:1.5px solid var(--glass-border);border-radius:14px;
+    color:var(--ink-soft);font:inherit;font-size:11.5px;
+    transition:transform .16s var(--spring), border-color .2s var(--ease), color .2s var(--ease);
+  }
+  .collage-opt .diag{width:38px;height:38px;display:block;color:var(--ink-soft);}
+  .collage-opt .diag svg{width:100%;height:100%;display:block;}
+  .collage-opt:active{transform:scale(.95);}
+  .collage-opt.on{border-color:var(--accent);color:var(--accent);background:var(--accent-soft);}
+  .collage-opt.on .diag{color:var(--accent);}
+  /* 拼图加字 / 贴纸(v3.0.0-beta.6):预览上可拖动的文字 + emoji 贴纸,最后烤进大图 */
+  .collage-deco-bar{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;align-items:center;margin:2px 0 10px;}
+  .deco-add{
+    display:inline-flex;align-items:center;gap:4px;
+    padding:7px 14px;cursor:pointer;font:inherit;font-size:13px;font-weight:600;
+    background:var(--accent-soft);color:var(--accent);border:1.5px solid var(--accent);border-radius:999px;
+    transition:transform .15s var(--ease);
+  }
+  .deco-add:active{transform:scale(.93);}
+  .deco-sticker{
+    width:38px;height:38px;padding:0;cursor:pointer;font-size:21px;line-height:1;
+    background:var(--surface);border:1.5px solid var(--glass-border);border-radius:12px;
+    transition:transform .15s var(--ease),border-color .2s var(--ease);
+  }
+  .deco-sticker:active{transform:scale(.88);border-color:var(--accent);}
+  .collage-deco-edit{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;align-items:center;margin:0 0 12px;}
+  .collage-deco-edit.hidden{display:none;}
+  .collage-edit.hidden{display:none;}
+  .collage-empty{display:flex;flex-direction:column;align-items:center;gap:10px;padding:12px 6px 6px;}
+  .collage-empty.hidden{display:none;}
+  .collage-empty-tip{margin:0;font-size:13px;color:var(--ink-soft);text-align:center;line-height:1.5;}
+  .deco-ctl{
+    padding:7px 13px;cursor:pointer;font:inherit;font-size:12.5px;
+    background:var(--surface);color:var(--ink);border:1.5px solid var(--glass-border);border-radius:999px;
+    transition:transform .15s var(--ease);
+  }
+  .deco-ctl:active{transform:scale(.92);}
+  .deco-ctl.hidden{display:none;}
+  .deco-color{position:relative;overflow:hidden;}
+  .deco-color input[type=color]{position:absolute;inset:0;opacity:0;width:100%;height:100%;border:0;padding:0;margin:0;cursor:pointer;}
+  .deco-del{color:#c0392b;border-color:#e0a89f;}
 
   /* Editor */
   .editor{display:none;}
@@ -241,17 +307,17 @@
     -webkit-backdrop-filter:var(--glass-blur);
     backdrop-filter:var(--glass-blur);
     border:1px solid var(--glass-border);
-    border-radius:var(--radius);padding:18px;
-    margin-top:6px;
+    border-radius:var(--radius);padding:13px;
+    margin-top:4px;
     box-shadow:0 14px 44px rgba(28,24,20,.10), var(--glass-highlight);
-    animation:yj-scaleIn .42s var(--ease) both;
+    animation:yj-scaleIn .5s var(--ease) both;
   }
   canvas{display:block;width:100%;height:auto;border-radius:8px;
     box-shadow:0 4px 16px rgba(54,40,24,.14);
     transition:filter .35s var(--ease);
     -webkit-touch-callout:none;-webkit-user-select:none;user-select:none;cursor:zoom-in;}
   .stage-hint{
-    text-align:center;margin:9px 0 0;font-size:11.5px;color:var(--ink-soft);
+    text-align:center;margin:7px 0 0;font-size:11.5px;color:var(--ink-soft);
     letter-spacing:.02em;opacity:.62;
   }
 
@@ -262,8 +328,8 @@
     border:1px solid var(--glass-border);
     border-radius:var(--radius);
     box-shadow:0 14px 44px rgba(28,24,20,.08), var(--glass-highlight);
-    margin-top:16px;padding:18px;
-    animation:yj-fadeUp .5s var(--ease) .08s both;
+    margin-top:11px;padding:14px;
+    animation:yj-fadeUp .55s var(--spring) .08s both;
   }
   .seg{
     display:flex;
@@ -277,9 +343,9 @@
   }
   .seg::-webkit-scrollbar{display:none;}
   .seg button{
-    flex:1 0 auto;border:none;background:transparent;padding:11px 14px;border-radius:11px;
-    font-family:var(--font);font-size:14.5px;font-weight:500;color:var(--ink-soft);
-    cursor:pointer;transition:all .18s ease;white-space:nowrap;min-width:54px;
+    flex:1 0 auto;border:none;background:transparent;padding:9px 13px;border-radius:11px;
+    font-family:var(--font);font-size:14px;font-weight:500;color:var(--ink-soft);
+    cursor:pointer;transition:all .2s var(--spring);white-space:nowrap;min-width:54px;
     position:relative;
   }
   .seg button:hover{color:var(--ink);}
@@ -314,12 +380,21 @@
     display:flex;align-items:center;justify-content:center;
     font-size:16px;padding:15px 16px;border-radius:13px;letter-spacing:.02em;
   }
+  /* 编辑器「水印 / 调色」分页:把两组操作拆开,一次只看一组 */
+  .edit-tabs-row{display:flex;align-items:center;gap:8px;margin-bottom:2px;}
+  .edit-tabs{flex:1 1 auto;min-width:0;}
+  .edit-tabs button{font-weight:600;font-size:14.5px;}
+  .edit-tabs button.on{color:var(--accent);}
+  .edit-pane{margin-top:11px;}
+  .edit-pane.hidden{display:none;}
+  #colorPane .tone-block{margin-top:0;}
   /* 滤镜 (v2.14.0): 分类行 + 滤镜 chips(复用 .seg / .seg button)+ 操作按钮 + 随机一套 */
-  .tone-block{margin-top:14px;}
+  .tone-block{margin-top:10px;}
   .tone-head{display:flex;align-items:center;gap:8px;margin:0 0 7px 2px;}
   .tone-label{font-size:12.5px;color:var(--ink-soft);letter-spacing:.02em;}
   .filter-rand{
-    margin-left:auto;font-family:var(--font);font-size:12px;font-weight:600;color:var(--accent);
+    margin-left:auto;flex:0 0 auto;white-space:nowrap;
+    font-family:var(--font);font-size:12px;font-weight:600;color:var(--accent);
     background:var(--accent-soft);border:none;padding:5px 11px;border-radius:9px;cursor:pointer;
     letter-spacing:.02em;transition:transform .14s var(--ease), opacity .14s var(--ease);
   }
@@ -368,7 +443,7 @@
   .tone-dial.hidden{display:none;}
   /* 智能配色按钮 (v3.0 A1):端上分析这张照片,自动拨好下面的盘子 */
   .dial-smart{
-    display:block;width:100%;margin:2px 0 14px;padding:11px 14px;
+    display:block;width:100%;margin:2px 0 10px;padding:10px 13px;
     border:none;border-radius:13px;cursor:pointer;font-family:var(--font);
     background:var(--accent);color:#fff;font-size:15px;font-weight:600;letter-spacing:.02em;
     text-align:center;line-height:1.3;
@@ -376,8 +451,29 @@
     transition:transform .12s var(--ease), opacity .14s var(--ease);
   }
   .dial-smart:active{transform:scale(.97);}
-  .dial-smart .sub{display:block;margin-top:3px;font-size:11.5px;font-weight:400;opacity:.92;}
   .dial-smart[disabled]{opacity:.5;cursor:default;box-shadow:none;}
+  /* 文案灵感 (v3.0 A3):端上读 EXIF 派生(时段/季节/设备/镜头)+ 色调,套句式给候选;点候选填进文字框 */
+  .cap-spark{
+    display:block;width:100%;margin:8px 0 0;padding:9px 13px;
+    border:1px solid var(--accent);border-radius:12px;cursor:pointer;font-family:var(--font);
+    background:transparent;color:var(--accent);font-size:13.5px;font-weight:600;letter-spacing:.02em;
+    text-align:center;line-height:1.3;
+    transition:transform .12s var(--ease), opacity .14s var(--ease);
+  }
+  .cap-spark:active{transform:scale(.97);}
+  .cap-list{display:flex;flex-wrap:wrap;gap:7px;margin-top:8px;}
+  .cap-list:empty{margin-top:0;}
+  .cap-chip{
+    background:rgba(255,255,255,.4);
+    -webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);
+    border:1px solid rgba(255,255,255,.55);border-radius:11px;
+    padding:8px 12px;font-size:13.5px;color:var(--ink);cursor:pointer;font-family:var(--font);
+    box-shadow:var(--glass-highlight);
+    transition:transform .12s var(--ease);
+  }
+  .cap-chip:active{transform:scale(.96);}
+  body[data-glass="off"] .cap-chip{background:var(--bg);border-color:var(--line);}
+  body[data-theme="dark"] .cap-chip{background:rgba(255,255,255,.06);border-color:rgba(255,255,255,.12);color:var(--ink);}
   .dial-pad{
     position:relative;width:180px;height:180px;margin:2px auto 4px;
     border-radius:16px;touch-action:none;cursor:crosshair;
@@ -416,13 +512,12 @@
     transition:transform .12s var(--ease);
   }
   .dial-reset:active{transform:scale(.94);}
-  .dial-hint{margin:10px 2px 0;font-size:11.5px;color:var(--ink-soft);line-height:1.5;opacity:.85;}
 
-  .field{margin-top:16px;}
+  .field{margin-top:11px;}
   .field.hidden{display:none;}
   label.lbl{display:block;font-size:12.5px;color:var(--ink-soft);margin:0 0 8px 2px;letter-spacing:.02em;}
   input[type=text]{
-    width:100%;border:1px solid rgba(255,255,255,.6);border-radius:13px;padding:13px 15px;
+    width:100%;border:1px solid rgba(255,255,255,.6);border-radius:13px;padding:11px 14px;
     font-family:var(--font);font-size:16px;color:var(--ink);
     background:rgba(255,255,255,.45);
     -webkit-backdrop-filter:blur(14px);
@@ -456,10 +551,10 @@
     border:1px solid rgba(255,255,255,.5);
   }
 
-  .actions{display:flex;gap:10px;margin-top:20px;}
+  .actions{display:flex;gap:10px;margin-top:14px;}
   .btn{
-    border:none;border-radius:14px;padding:15px 0;font-family:var(--font);
-    font-size:15.5px;font-weight:600;cursor:pointer;transition:transform .12s, opacity .15s;
+    border:none;border-radius:14px;padding:13px 0;font-family:var(--font);
+    font-size:15.5px;font-weight:600;cursor:pointer;transition:transform .16s var(--spring), opacity .15s;
   }
   .btn:active{transform:scale(.97);}
   .btn-primary{
@@ -618,15 +713,6 @@
   }
   .template-item .share:active{background:rgba(0,0,0,.05);}
 
-  /* per-template "pin to 常用栏" toggle in search results */
-  .template-item .pin{
-    float:right;font-size:12px;color:var(--ink-soft);padding:2px 9px;
-    border:1px solid var(--line);border-radius:8px;background:transparent;
-    cursor:pointer;margin-left:8px;font-family:inherit;
-  }
-  .template-item .pin.on{color:var(--accent);border-color:var(--accent);background:var(--accent-soft);}
-  .template-item .pin:active{transform:scale(.95);}
-
   /* share / import textarea */
   .share-text{
     width:100%;box-sizing:border-box;margin-top:6px;resize:none;
@@ -669,8 +755,6 @@
   }
   .setting-text{flex:1;min-width:0;}
   .setting-lbl{font-size:14.5px;color:var(--ink);font-weight:500;}
-  .setting-hint{font-size:12px;color:var(--ink-soft);margin-top:2px;line-height:1.4;}
-
   /* iOS-style switch */
   .switch{position:relative;display:inline-block;width:48px;height:28px;flex-shrink:0;}
   .switch input{opacity:0;width:0;height:0;}
@@ -701,8 +785,20 @@
     margin:0 0 4px;font-size:12px;font-weight:700;
     color:var(--accent);letter-spacing:.08em;
   }
-  .set-lbl{font-size:13.5px;color:var(--ink);font-weight:500;margin:14px 2px 8px;}
-  .set-hint{font-size:12px;color:var(--ink-soft);margin:8px 2px 0;line-height:1.5;}
+  .set-lbl{font-size:13.5px;color:var(--ink);font-weight:500;margin:14px 2px 8px;}  /* 主题色色板(v3.0.0-beta.5):一排圆点 + 自定义取色,只改 UI 点缀色,不动水印成图 */
+  .accent-swatches{display:flex;gap:11px;flex-wrap:wrap;align-items:center;margin-top:4px;}
+  .accent-sw{
+    width:30px;height:30px;border-radius:50%;padding:0;cursor:pointer;
+    background:var(--sw,#ccc);border:2px solid var(--surface);
+    box-shadow:0 0 0 1px var(--line);position:relative;
+    transition:transform .15s var(--ease),box-shadow .15s var(--ease);
+  }
+  .accent-sw:active{transform:scale(.9);}
+  .accent-sw.on{box-shadow:0 0 0 2px var(--accent);transform:scale(1.08);}
+  .accent-sw.on::after{content:"";position:absolute;inset:1px;border-radius:50%;border:2px solid #fff;}
+  .accent-custom{overflow:hidden;display:flex;align-items:center;justify-content:center;
+    background:conic-gradient(from 90deg,#e2001a,#e8841a,#f2c200,#4fa877,#3e86d6,#7a6a9a,#e2001a);}
+  .accent-custom input[type=color]{opacity:0;width:200%;height:200%;border:0;padding:0;margin:0;cursor:pointer;}
   /* native dropdown for 默认打开模板 — themed via CSS vars so it flips with dark mode; OS draws the picker */
   .set-select{
     width:100%;margin-top:2px;padding:11px 12px;border-radius:11px;
@@ -790,15 +886,9 @@
   <header>
     <div class="brand">
       <span class="name">印迹</span>
-      <span class="tag">Photo&nbsp;Watermark · <span id="appVer">v3.0.0-beta.1</span></span>
+      <span class="tag">Photo&nbsp;Watermark · <span id="appVer">v3.0.0-beta.6</span></span>
     </div>
     <div class="header-actions">
-      <button class="icon-btn more-btn" id="searchBtn" aria-label="更多模板">
-        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <rect x="3.5" y="3.5" width="7" height="7" rx="1.6"></rect><rect x="13.5" y="3.5" width="7" height="7" rx="1.6"></rect><rect x="3.5" y="13.5" width="7" height="7" rx="1.6"></rect><rect x="13.5" y="13.5" width="7" height="7" rx="1.6"></rect>
-        </svg>
-        <span>更多模板</span>
-      </button>
       <button class="icon-btn" id="settingsBtn" aria-label="设置">
         <!-- symmetric 8-tooth gear (v2.9.2): teeth are one shape rotated by 45°, so it's perfectly balanced -->
         <svg viewBox="0 0 24 24" fill="none" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
@@ -820,6 +910,7 @@
   </header>
 
   <!-- Empty state -->
+  <div id="startView">
   <label class="drop" id="drop" for="fileInput">
     <span class="ring">
       <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
@@ -831,7 +922,13 @@
     <h2>选择照片 · 拍照</h2>
     <p>从相册选一张，或直接拍一张</p>
   </label>
+  <button type="button" class="collage-entry" id="collageEntry">
+    <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="8" height="8" rx="1.6"></rect><rect x="13" y="3" width="8" height="8" rx="1.6"></rect><rect x="3" y="13" width="8" height="8" rx="1.6"></rect><rect x="13" y="13" width="8" height="8" rx="1.6"></rect></svg>
+    拼贴 · 把 2–4 张拼成一张
+  </button>
   <input type="file" id="fileInput" accept="image/*">
+  <input type="file" id="collageInput" accept="image/*" multiple>
+  </div>
 
   <!-- Editor -->
   <div class="editor" id="editor">
@@ -841,57 +938,120 @@
     <p class="stage-hint">长按图片可看原图对比</p>
 
     <div class="panel">
-      <div class="seg" id="styleSeg"><!-- buttons rendered by renderStyleSeg() --></div>
+      <div class="edit-tabs-row">
+        <div class="seg edit-tabs" id="editTabs">
+          <button data-tab="watermark" class="on" type="button">水印</button>
+          <button data-tab="color" type="button">滤镜</button>
+          <button data-tab="collage" type="button">拼贴</button>
+        </div>
+        <button class="filter-rand" id="filterRandBtn" type="button">🎲 随机一套</button>
+      </div>
 
-      <div class="tone-block" id="toneBlock">
-        <div class="tone-head">
-          <span class="tone-label">滤镜</span>
-          <button class="filter-rand" id="filterRandBtn" type="button">🎲 随机一套</button>
-          <button class="dial-toggle" id="toneToggle" type="button" aria-expanded="false" aria-controls="tonePanel">调色盘 ▾</button>
-        </div>
-        <div class="filter-cats" id="filterCats"><!-- category chips rendered by renderFilterCats() --></div>
-        <div class="seg tone-seg" id="toneSeg"><!-- filter chips rendered by renderFilterChips() --></div>
-        <p class="filter-mine-hint hidden" id="filterMineHint">还没有「我的滤镜」。调出满意的效果后，点下面「＋ 存为滤镜」就能收藏到这里。</p>
-        <div class="filter-actions" id="filterActions">
-          <button class="flt-act" id="saveFilterBtn" type="button">＋ 存为滤镜</button>
-          <button class="flt-act" id="importFilterBtn" type="button">导入滤镜</button>
-          <button class="flt-act" id="shareFilterBtn" type="button">分享</button>
-          <button class="flt-act danger" id="delFilterBtn" type="button">删除</button>
-        </div>
-        <div class="tone-dial hidden" id="tonePanel">
-          <button class="dial-smart" id="smartColorBtn" type="button">✨ 帮我配色<span class="sub">看一眼这张照片,自动拨好下面的盘子</span></button>
-          <div class="dial-pad" id="tonePad" role="slider" aria-label="色调微调盘:左右调冷暖,上下调绿与品红" tabindex="0">
-            <div class="dial-knob" id="toneKnob"></div>
+      <div class="edit-pane" id="watermarkPane">
+        <div class="tone-block" id="styleBlock">
+          <div class="tone-head"><span class="tone-label">水印</span></div>
+          <div class="filter-cats" id="styleCats"><!-- category chips rendered by renderStyleCats() --></div>
+          <div class="seg tone-seg" id="styleSeg"><!-- template chips rendered by renderStyleChips() --></div>
+          <p class="filter-mine-hint hidden" id="styleMineHint">还没有「我的水印」。点下面「＋ 新建我的水印」做一个,就会收藏到这里。</p>
+          <div class="filter-actions" id="styleActions">
+            <button class="flt-act" id="newTplInline" type="button">＋ 新建我的水印</button>
+            <button class="flt-act" id="importTplInline" type="button">导入水印</button>
+            <button class="flt-act hidden" id="shareTplInline" type="button">分享</button>
+            <button class="flt-act danger hidden" id="delTplInline" type="button">删除</button>
           </div>
-          <div class="dial-axis"><span>← 冷</span><span>暖 →</span></div>
-          <div class="dial-sliders">
-            <label class="dial-sl">
-              <span>强度<b id="toneIntensityVal">100%</b></span>
-              <input type="range" id="toneIntensity" min="0" max="100" step="1" value="100">
-            </label>
-            <label class="dial-sl">
-              <span>饱和<b id="toneSatVal">0</b></span>
-              <input type="range" id="toneSat" min="-100" max="100" step="1" value="0">
-            </label>
-          </div>
-          <button class="dial-reset" id="toneReset" type="button">复位调色盘</button>
-          <p class="dial-hint">拖动圆点:左右调冷暖、上下调绿/品红;「强度」控整体深浅,「饱和」控鲜艳度。可叠加在上面一排一键色调之上。所有调整只改这张照片、随成图保存,不上传。</p>
+        </div>
+
+        <div class="seg" id="seg" style="margin-top:8px;">
+          <button data-mode="manual">手动输入</button>
+          <button data-mode="auto">自动读取</button>
+        </div>
+
+        <div class="field" id="manualField">
+          <label class="lbl">水印文字</label>
+          <input type="text" id="textInput" placeholder="输入想显示的文字" maxlength="40">
+          <button class="cap-spark" id="captionBtn" type="button">✨ 来点灵感</button>
+          <div class="cap-list" id="captionList" aria-live="polite"></div>
+        </div>
+
+        <div class="field hidden" id="autoField">
+          <label class="lbl">从照片读取到的拍摄信息</label>
+          <div id="autoBody"></div>
         </div>
       </div>
 
-      <div class="seg" id="seg" style="margin-top:10px;">
-        <button data-mode="manual">手动输入</button>
-        <button data-mode="auto">自动读取</button>
+      <div class="edit-pane hidden" id="colorPane">
+        <div class="tone-block" id="toneBlock">
+          <div class="tone-head">
+            <span class="tone-label">滤镜</span>
+            <button class="dial-toggle" id="toneToggle" type="button" aria-expanded="false" aria-controls="tonePanel">调色盘 ▾</button>
+          </div>
+          <div class="filter-cats" id="filterCats"><!-- category chips rendered by renderFilterCats() --></div>
+          <div class="seg tone-seg" id="toneSeg"><!-- filter chips rendered by renderFilterChips() --></div>
+          <p class="filter-mine-hint hidden" id="filterMineHint">还没有「我的滤镜」。调出满意的效果后，点下面「＋ 新建我的滤镜」就能收藏到这里。</p>
+          <div class="filter-actions" id="filterActions">
+            <button class="flt-act" id="saveFilterBtn" type="button">＋ 新建我的滤镜</button>
+            <button class="flt-act" id="importFilterBtn" type="button">导入滤镜</button>
+            <button class="flt-act" id="shareFilterBtn" type="button">分享</button>
+            <button class="flt-act danger" id="delFilterBtn" type="button">删除</button>
+          </div>
+          <div class="tone-dial hidden" id="tonePanel">
+            <button class="dial-smart" id="smartColorBtn" type="button">✨ 帮我配色</button>
+            <div class="dial-pad" id="tonePad" role="slider" aria-label="色调微调盘:左右调冷暖,上下调绿与品红" tabindex="0">
+              <div class="dial-knob" id="toneKnob"></div>
+            </div>
+            <div class="dial-axis"><span>← 冷</span><span>暖 →</span></div>
+            <div class="dial-sliders">
+              <label class="dial-sl">
+                <span>强度<b id="toneIntensityVal">100%</b></span>
+                <input type="range" id="toneIntensity" min="0" max="100" step="1" value="100">
+              </label>
+              <label class="dial-sl">
+                <span>饱和<b id="toneSatVal">0</b></span>
+                <input type="range" id="toneSat" min="-100" max="100" step="1" value="0">
+              </label>
+            </div>
+            <button class="dial-reset" id="toneReset" type="button">复位调色盘</button>
+          </div>
+        </div>
       </div>
 
-      <div class="field" id="manualField">
-        <label class="lbl">水印文字</label>
-        <input type="text" id="textInput" placeholder="输入想显示的文字" maxlength="40">
-      </div>
-
-      <div class="field hidden" id="autoField">
-        <label class="lbl">从照片读取到的拍摄信息</label>
-        <div id="autoBody"></div>
+      <div class="edit-pane hidden" id="collagePane">
+        <div class="tone-block">
+          <div class="tone-head"><span class="tone-label">拼贴</span></div>
+          <div class="collage-empty" id="collageEmpty">
+            <p class="collage-empty-tip">选 2–4 张照片拼成一张。拼好后，水印 / 滤镜照样能加。</p>
+            <button class="flt-act" id="collagePickBtn" type="button">＋ 选 2–4 张照片拼一张</button>
+          </div>
+          <div class="collage-edit hidden" id="collageEditWrap">
+            <div class="collage-preview-wrap">
+              <canvas id="collagePreview" width="600" height="600"></canvas>
+            </div>
+            <div class="collage-opts" id="collageLayouts"><!-- rendered by renderCollageLayouts() --></div>
+            <div class="collage-deco-bar" id="collageDecoBar">
+              <button type="button" class="deco-add" id="collageAddText">＋ 文字</button>
+              <button type="button" class="deco-sticker" data-emoji="❤️">❤️</button>
+              <button type="button" class="deco-sticker" data-emoji="⭐">⭐</button>
+              <button type="button" class="deco-sticker" data-emoji="✨">✨</button>
+              <button type="button" class="deco-sticker" data-emoji="🌸">🌸</button>
+              <button type="button" class="deco-sticker" data-emoji="🌿">🌿</button>
+              <button type="button" class="deco-sticker" data-emoji="📷">📷</button>
+              <button type="button" class="deco-sticker" data-emoji="🎀">🎀</button>
+              <button type="button" class="deco-sticker" data-emoji="☀️">☀️</button>
+              <button type="button" class="deco-sticker" data-emoji="🌈">🌈</button>
+              <button type="button" class="deco-sticker" data-emoji="👍">👍</button>
+            </div>
+            <div class="collage-deco-edit hidden" id="collageDecoEdit">
+              <button type="button" class="deco-ctl" id="decoSmaller">小一点</button>
+              <button type="button" class="deco-ctl" id="decoBigger">大一点</button>
+              <button type="button" class="deco-ctl deco-text-only" id="decoEditText">改文字</button>
+              <label class="deco-ctl deco-color deco-text-only" id="decoColorBtn">颜色<input type="color" id="decoColorInput" value="#ffffff"></label>
+              <button type="button" class="deco-ctl deco-del" id="decoDelete">删除</button>
+            </div>
+            <div class="filter-actions">
+              <button class="flt-act" id="collageRepick" type="button">换照片</button>
+            </div>
+          </div>
+        </div>
       </div>
 
       <div class="actions">
@@ -946,7 +1106,7 @@
 <!-- Custom template editor sheet -->
 <div class="overlay" id="customOverlay">
   <div class="sheet">
-    <h3 id="customTitle">新建模板</h3>
+    <h3 id="customTitle">新建水印</h3>
     <p class="sub">挑一个布局,选颜色,起个名,保存到本机</p>
 
     <label class="lbl">布局</label>
@@ -972,7 +1132,7 @@
       </span>
     </div>
 
-    <label class="lbl" style="margin-top:14px;">模板名字</label>
+    <label class="lbl" style="margin-top:14px;">水印名字</label>
     <input type="text" id="customName" class="search-input" placeholder="例:我的徕卡黑" maxlength="14">
 
     <div class="row">
@@ -985,8 +1145,8 @@
 <!-- Share / import template sheet -->
 <div class="overlay" id="shareOverlay">
   <div class="sheet">
-    <h3 id="shareTitle">分享模板</h3>
-    <p class="sub" id="shareSub">把这段代码复制发给朋友,对方点「导入模板」粘贴就能用</p>
+    <h3 id="shareTitle">分享水印</h3>
+    <p class="sub" id="shareSub">把这段代码复制发给朋友,对方点「导入水印」粘贴就能用</p>
     <textarea id="shareText" class="share-text" spellcheck="false" autocomplete="off" autocapitalize="off"></textarea>
     <div class="row">
       <button class="btn btn-primary" id="shareCopyBtn">复制代码</button>
@@ -1023,10 +1183,21 @@
         <button data-theme="light">浅色</button>
         <button data-theme="dark">深色</button>
       </div>
+      <div class="set-lbl">主题色</div>
+      <div class="accent-swatches" id="accentSwatches" role="group" aria-label="主题色">
+        <button class="accent-sw" data-accent="default" style="--sw:#C2632D" title="赤陶（默认）" aria-label="赤陶（默认）"></button>
+        <button class="accent-sw" data-accent="#2E6F95" style="--sw:#2E6F95" title="海蓝" aria-label="海蓝"></button>
+        <button class="accent-sw" data-accent="#3E7A5E" style="--sw:#3E7A5E" title="松绿" aria-label="松绿"></button>
+        <button class="accent-sw" data-accent="#7A6A9A" style="--sw:#7A6A9A" title="黛紫" aria-label="黛紫"></button>
+        <button class="accent-sw" data-accent="#B65069" style="--sw:#B65069" title="胭脂" aria-label="胭脂"></button>
+        <button class="accent-sw" data-accent="#5A6168" style="--sw:#5A6168" title="墨灰" aria-label="墨灰"></button>
+        <label class="accent-sw accent-custom" title="自定义颜色" aria-label="自定义颜色">
+          <input type="color" id="accentColorInput" value="#C2632D">
+        </label>
+      </div>
       <div class="setting-row">
         <div class="setting-text">
           <div class="setting-lbl">液态玻璃</div>
-          <div class="setting-hint">关掉可减少 GPU 占用,旧设备建议关</div>
         </div>
         <label class="switch">
           <input type="checkbox" id="glassToggle">
@@ -1040,16 +1211,14 @@
       <div class="setting-row">
         <div class="setting-text">
           <div class="setting-lbl">记住上次选择</div>
-          <div class="setting-hint">下次打开自动用回上次的样式 / 模式 / 画质</div>
         </div>
         <label class="switch">
           <input type="checkbox" id="rememberLastToggle">
           <span class="slider"></span>
         </label>
       </div>
-      <div class="set-lbl">默认打开模板</div>
-      <select id="defStyleSel" class="set-select" aria-label="默认打开模板"></select>
-      <div class="set-hint">每次打开照片默认套用的样式。选「用上次用的」就接着上回那款来。</div>
+      <div class="set-lbl">默认打开水印</div>
+      <select id="defStyleSel" class="set-select" aria-label="默认打开水印"></select>
       <div class="set-lbl">默认文字模式</div>
       <div class="seg" id="defModeSeg" role="group" aria-label="默认文字模式">
         <button data-m="last" class="on">用上次的</button>
@@ -1077,7 +1246,6 @@
         <label class="set-check"><input type="checkbox" data-f="iso">ISO</label>
         <label class="set-check"><input type="checkbox" data-f="focal">焦段</label>
       </div>
-      <div class="set-hint">只在「自动读取」模式下生效;取消勾选的项不会出现在水印里。</div>
     </div>
 
     <div class="set-sec">
@@ -1094,11 +1262,9 @@
         <button data-e="2200" class="on">标准</button>
         <button data-e="3200">高清</button>
       </div>
-      <div class="set-hint">指照片最长边的像素上限。越大越清晰、文件也越大。</div>
       <div class="setting-row">
         <div class="setting-text">
           <div class="setting-lbl">长按看原图</div>
-          <div class="setting-hint">编辑时长按预览图,临时显示无水印原图</div>
         </div>
         <label class="switch">
           <input type="checkbox" id="longPressToggle">
@@ -1110,16 +1276,14 @@
     <div class="set-sec">
       <h4>数据与隐私</h4>
       <div class="set-actions">
-        <button class="btn btn-ghost" id="resetPinsBtn">重置主样式条常用栏</button>
-        <button class="btn btn-ghost btn-warn" id="clearTplBtn">清空我的自定义模板</button>
+        <button class="btn btn-ghost btn-warn" id="clearTplBtn">清空我的自定义水印</button>
         <button class="btn btn-ghost btn-warn" id="resetSettingsBtn">恢复默认设置</button>
       </div>
-      <div class="privacy-note">印迹所有照片处理都在你的设备本地完成,绝不上传任何服务器。上面这些数据(模板 / 偏好 / 设置)只存在本机浏览器里,清除浏览器数据或换设备就会消失。</div>
+      <div class="privacy-note">照片只在你的设备本地处理,绝不上传任何服务器。</div>
     </div>
 
     <div class="set-sec">
       <h4>AI · 即将推出</h4>
-      <div class="set-hint" style="margin-top:0;">3.0 版本将加入 AI 能力(如智能文案、自动排版等)。所有 AI 处理都会守住「照片不上传」的底线——需要联网的能力会单独、明确征得你同意后才用。</div>
       <div class="set-actions">
         <button class="btn btn-ghost" id="aiSoonBtn">AI 功能抢先看 ✨</button>
       </div>
@@ -1127,7 +1291,7 @@
 
     <div class="set-sec">
       <h4>关于</h4>
-      <div class="about-ver">印迹 · 照片水印 &nbsp;<b id="aboutVer">v3.0.0-beta.1</b></div>
+      <div class="about-ver">印迹 · 照片水印 &nbsp;<b id="aboutVer">v3.0.0-beta.6</b></div>
       <div class="set-actions">
         <button class="btn btn-ghost" id="replayOnboardBtn">重看新手引导</button>
       </div>
@@ -1167,18 +1331,16 @@
   "use strict";
 
   // ---------- version (single source of truth; bump on every release) ----------
-  var APP_VERSION = "v3.0.0-beta.1";
+  var APP_VERSION = "v3.0.0-beta.13";
 
   // ---------- state ----------
-  var state = { bitmap:null, exif:null, exifApp1:null, mode:"manual", style:"classic", exportQuality:"standard", tone:"none",
-    // 调色盘微调层 (v2.13.0): 叠加在所选 tone 预设之上。temp 冷暖, tint 绿品, sat 饱和(-100..100), intensity 整体强度(0..100)
+  var state = { bitmap:null, exif:null, exifApp1:null, mode:"manual", editTab:"watermark", style:"classic", exportQuality:"standard", tone:"none",
     toneAdj:{ temp:0, tint:0, sat:0, intensity:100 },
-    // 当前选中的「我的滤镜」id (v2.14.0);为 null 表示用的是内置滤镜或未保存的临时微调
     filterId:null };
 
   // ---------- remember last choices (style / text-mode / export quality) ----------
   var PREFS_KEY = "yinji.prefs.v1";
-  var prefMode = null;  // user's chosen text-mode intent ("auto"/"manual"); survives EXIF auto→manual fallback
+  var prefMode = null;
   function savePrefs(){
     var s=PLATFORM.getStorage(); if(!s) return;
     try{ s.setItem(PREFS_KEY, JSON.stringify({ style:state.style, mode:prefMode||state.mode, quality:state.exportQuality, tone:state.tone, toneAdj:state.toneAdj, filterId:state.filterId })); }catch(e){}
@@ -1189,22 +1351,21 @@
   }
 
   // ---------- user settings (consolidated, persisted in localStorage) ----------
-  // One object so adding new toggles later is cheap. Read lazily via ensureSettings()
-  // because some consumers (date prefill, getSize) run before bootstrap.
   var SETTINGS_KEY = "yinji.settings.v1";
   var settings = null;
   function defaultSettings(){
     return {
-      theme: "auto",               // "auto"(跟随系统) | "light" | "dark"
-      rememberLast: true,          // restore last style/mode/quality on open
-      defaultStyle: "last",        // "last"(用上次的) | a preset id | a custom-template id
-      defaultTextMode: "last",     // "last" | "manual" | "auto"
-      defaultQuality: "standard",  // "standard" | "high" | "png"
-      longPress: true,             // long-press canvas to peek original
-      defaultText: "date",         // "date"(今天日期) | "blank" | "fixed"
-      fixedText: "",               // used when defaultText === "fixed"
+      theme: "auto",
+      accent: "default",
+      rememberLast: true,
+      defaultStyle: "last",
+      defaultTextMode: "last",
+      defaultQuality: "standard",
+      longPress: true,
+      defaultText: "date",
+      fixedText: "",
       autoFields: { device:true, time:true, aperture:true, shutter:true, iso:true, focal:true },
-      maxEdge: 2200                // longest-edge cap: 1600(省流) | 2200(标准) | 3200(高清)
+      maxEdge: 2200
     };
   }
   function loadSettings(){
@@ -1248,45 +1409,39 @@
     cinemaBlack:       "#000000"
   };
 
-  // Seasonal palettes — one shared renderer (drawSeasonStyle) tinted four ways.
-  // bg = soft tinted bar, text = deep readable ink, soft = muted, accent = thin hairline.
   var SEASON = {
     spring: { bg:"#FBEAF0", text:"#A8456E", soft:"#C98AA4", accent:"#E59CB6" },
     summer: { bg:"#E1F0F5", text:"#2B6C89", soft:"#73A7BD", accent:"#6FB7D4" },
     autumn: { bg:"#F7E7D2", text:"#9A5A22", soft:"#C0936A", accent:"#D98A45" },
     winter: { bg:"#E9EDF0", text:"#445561", soft:"#8FA1AD", accent:"#9FB0BC" },
-    // —— v2.9.1 新增三款(共用同一渲染器,只换调色)——
-    grad:     { bg:"#E8EBF3", text:"#2C3C68", soft:"#808DB0", accent:"#C6A24A" }, // 毕业季:藏青字 + 金线,学院风
-    morandi:  { bg:"#ECE6E1", text:"#6E5D55", soft:"#A99B91", accent:"#BBA08C" }, // 莫兰迪:低饱和灰玫
-    solarTerm:{ bg:"#E5EDE4", text:"#3F6B4C", soft:"#85A48E", accent:"#79AC85" }, // 节气·青:青瓷绿
-    // —— v2.10.0 新增:中秋 + 三款柔色(共用 drawSeasonStyle,只加调色)——
-    midAutumn:   { bg:"#F6ECD6", text:"#8A5A1E", soft:"#BFA06A", accent:"#C99A3C" }, // 中秋·月:暖金团圆
-    mistBlue:    { bg:"#E5ECF0", text:"#3C5666", soft:"#8AA0AD", accent:"#7C9DB0" }, // 雾蓝:莫兰迪雾蓝
-    duskMountain:{ bg:"#EFE7DC", text:"#6E4B33", soft:"#AD927B", accent:"#9C6B45" }, // 暮山:沉静暖褐
-    daiPurple:   { bg:"#EAE5EF", text:"#534563", soft:"#9387A3", accent:"#8A77A0" }  // 黛紫:藕紫黛色
+    grad:     { bg:"#E8EBF3", text:"#2C3C68", soft:"#808DB0", accent:"#C6A24A" },
+    morandi:  { bg:"#ECE6E1", text:"#6E5D55", soft:"#A99B91", accent:"#BBA08C" },
+    solarTerm:{ bg:"#E5EDE4", text:"#3F6B4C", soft:"#85A48E", accent:"#79AC85" },
+    midAutumn:   { bg:"#F6ECD6", text:"#8A5A1E", soft:"#BFA06A", accent:"#C99A3C" },
+    mistBlue:    { bg:"#E5ECF0", text:"#3C5666", soft:"#8AA0AD", accent:"#7C9DB0" },
+    duskMountain:{ bg:"#EFE7DC", text:"#6E4B33", soft:"#AD927B", accent:"#9C6B45" },
+    daiPurple:   { bg:"#EAE5EF", text:"#534563", soft:"#9387A3", accent:"#8A77A0" },
+    matcha:    { bg:"#EBF0DC", text:"#5C6E2E", soft:"#9AA876", accent:"#8DA24A" },
+    milkTea:   { bg:"#F1E6D6", text:"#9A6B33", soft:"#BFA079", accent:"#CBA15C" },
+    lotusPink: { bg:"#F2E7EA", text:"#9A6373", soft:"#C2A0AB", accent:"#C99AAA" },
+    oatCream:  { bg:"#F4EEDF", text:"#80714F", soft:"#B5A684", accent:"#C9B68A" }
   };
-  // Camera-brand palettes — one shared renderer (drawBrandStyle), dark bar + brand accent.
   var BRAND = {
     fuji:  { bg:"#16241D", accent:"#4FA877", text:"#7FCBA0", soft:"#6E8E7C" },
     sony:  { bg:"#141414", accent:"#E8841A", text:"#F0A055", soft:"#9A8470" },
     nikon: { bg:"#1A1712", accent:"#F2C200", text:"#F3D24A", soft:"#A0936A" },
-    canon: { bg:"#1B1311", accent:"#D8262C", text:"#EC6A6E", soft:"#A07473" }, // v2.9.1 新增:佳能红
-    night: { bg:"#0F1A28", accent:"#3E86D6", text:"#6FB0EE", soft:"#7C8CA0" }  // v2.10.0 新增:暗夜蓝
+    canon: { bg:"#1B1311", accent:"#D8262C", text:"#EC6A6E", soft:"#A07473" },
+    night: { bg:"#0F1A28", accent:"#3E86D6", text:"#6FB0EE", soft:"#7C8CA0" },
+    silver:{ bg:"#1C1E20", accent:"#B8C0C6", text:"#D6DCE0", soft:"#8A9298" },
+    kodak: { bg:"#1C1408", accent:"#E8A12A", text:"#F0C268", soft:"#A98A52" }
   };
 
   // ---------- platform interface ----------
-  // Native wrappers (Tauri / Capacitor / etc.) can replace these implementations
-  // to use real file system / photo gallery APIs. Web fallback uses overlay sheet.
   window.Yinji = window.Yinji || {};
   window.Yinji.platform = window.Yinji.platform || {
     name: "web",
-    // saveDataUrl(dataUrl, suggestedName): persist a JPEG. Return Promise.
-    //   null = use default in-browser flow (overlay + download link).
     saveDataUrl: null,
-    // pickPhoto(): trigger file picker. Return Promise<File>.
-    //   null = use default <input type=file> flow.
     pickPhoto: null,
-    // getStorage(): key-value store. Default = window.localStorage.
     getStorage: function(){
       try{ return window.localStorage; }catch(e){ return null; }
     }
@@ -1295,29 +1450,32 @@
 
   // ---------- elements ----------
   var $ = function(id){ return document.getElementById(id); };
-  var fileInput=$("fileInput"), drop=$("drop"), editor=$("editor");
+  var fileInput=$("fileInput"), drop=$("drop"), editor=$("editor"), startView=$("startView");
   var canvas=$("canvas"), ctx=canvas.getContext("2d");
   var seg=$("seg"), styleSeg=$("styleSeg"), toneSeg=$("toneSeg"), manualField=$("manualField"), autoField=$("autoField"), autoBody=$("autoBody");
   var toneToggle=$("toneToggle"), tonePanel=$("tonePanel"), tonePad=$("tonePad"), toneKnob=$("toneKnob"),
       toneIntensity=$("toneIntensity"), toneIntensityVal=$("toneIntensityVal"),
       toneSat=$("toneSat"), toneSatVal=$("toneSatVal"), toneReset=$("toneReset"),
       smartColorBtn=$("smartColorBtn");
-  // 滤镜 (v2.14.0): 分类行 / 随机 / 操作按钮 / 空态提示 / 存为滤镜弹窗
   var filterCats=$("filterCats"), filterRandBtn=$("filterRandBtn"),
       saveFilterBtn=$("saveFilterBtn"), importFilterBtn=$("importFilterBtn"),
       shareFilterBtn=$("shareFilterBtn"), delFilterBtn=$("delFilterBtn"),
       filterMineHint=$("filterMineHint"),
       filterSaveOverlay=$("filterSaveOverlay"), filterName=$("filterName"),
       filterSaveDo=$("filterSaveDo"), filterSaveCancel=$("filterSaveCancel");
+  var styleCats=$("styleCats"), styleMineHint=$("styleMineHint"),
+      newTplInline=$("newTplInline"), importTplInline=$("importTplInline"),
+      shareTplInline=$("shareTplInline"), delTplInline=$("delTplInline");
   var textInput=$("textInput"), saveBtn=$("saveBtn"), resetBtn=$("resetBtn");
+  var editTabs=$("editTabs"), watermarkPane=$("watermarkPane"), colorPane=$("colorPane");
   var overlay=$("overlay"), resultImg=$("resultImg"), downloadLink=$("downloadLink"), closeSheet=$("closeSheet");
   var copyImgBtn=$("copyImgBtn");
   var searchBtn=$("searchBtn"), toastEl=$("toast");
   var searchOverlay=$("searchOverlay"), searchInput=$("searchInput"), searchResults=$("searchResults"), closeSearch=$("closeSearch");
   var catRow=$("catRow");
-  var searchCat="all";   // active category filter in the 更多模板 panel
+  var searchCat="all";
 
-  // ---------- template registry (30 presets + user-defined customs at runtime) ----------
+  // ---------- template registry (42 presets + user-defined customs at runtime) ----------
   var TEMPLATES = [
     {id:"classic",       name:"经典",         desc:"白底栏黑字,最克制简洁。", tags:["简洁","默认","白","黑字","底栏","clean"]},
     {id:"polaroid",      name:"拍立得",       desc:"照片四周白边,底部更厚。复古文艺。", tags:["白边","复古","文艺","拍立得","白框"]},
@@ -1334,37 +1492,36 @@
     {id:"hasselblad",    name:"哈苏风",       desc:"深色底栏 + 橙色细条 + 橙字,致敬哈苏。", tags:["哈苏","橙","暗","hasselblad","深色"]},
     {id:"minimalFrame",  name:"极简框",       desc:"照片加一圈细白边 + 下方小字,几乎隐形。", tags:["极简","细框","clean","简","边框","纤细"]},
     {id:"magazineLight", name:"杂志浅版",     desc:"杂志封面的白底版本:白色面板 + 黑字大标题。", tags:["杂志","浅","白底","magazine","light","干净"]},
-    // —— 季节 / 节气款(共用 drawSeasonStyle)——
     {id:"springCherry",  name:"春·樱",        desc:"春日樱粉色调,柔和清新的底栏 + 细线。", tags:["春","樱","粉","季节","清新","spring","season"]},
     {id:"summerSea",     name:"夏·海",        desc:"夏日海蓝色调,清凉底栏 + 细线。", tags:["夏","海","蓝","季节","清凉","summer","season"]},
     {id:"autumnMaple",   name:"秋·枫",        desc:"秋日枫橙色调,温暖底栏 + 细线。", tags:["秋","枫","橙","季节","温暖","autumn","season"]},
     {id:"winterSnow",    name:"冬·雪",        desc:"冬日雪青色调,清冷底栏 + 细线。", tags:["冬","雪","青","灰","季节","winter","season"]},
-    // —— 相机品牌风(共用 drawBrandStyle)——
     {id:"fujiFilm",      name:"富士绿",       desc:"墨绿深色底栏 + 绿色细条 + 绿字,富士胶片风。", tags:["富士","绿","胶片","相机","fuji","film"]},
     {id:"sonyAlpha",     name:"索尼橙",       desc:"深黑底栏 + 橙色细条 + 橙字,索尼 α 风。", tags:["索尼","橙","黑","相机","sony","alpha"]},
     {id:"nikonGold",     name:"尼康黄",       desc:"深褐底栏 + 明黄细条 + 黄字,尼康风。", tags:["尼康","黄","金","相机","nikon"]},
     {id:"canonRed",      name:"佳能红",       desc:"深黑底栏 + 佳能红细条 + 红字,佳能 EOS 风。", tags:["佳能","红","黑","相机","canon","eos"]},
-    // —— v2.9.1 新增:学院 / 莫兰迪 / 节气(共用 drawSeasonStyle)——
     {id:"graduation",    name:"毕业季",       desc:"藏青字 + 金色细线,学院风,毕业 / 答辩留念。", tags:["毕业","学院","藏青","金","纪念","graduation","季"]},
     {id:"morandi",       name:"莫兰迪",       desc:"莫兰迪灰玫调,低饱和高级感底栏 + 细线。", tags:["莫兰迪","灰","高级","低饱和","morandi","柔"]},
     {id:"solarTerm",     name:"节气·青",      desc:"青瓷绿调底栏 + 细线,二十四节气清雅风。", tags:["节气","青","绿","青瓷","清雅","solar","term"]},
-    // —— 玻璃质感水印 ——
     {id:"glassBar",      name:"玻璃底栏",     desc:"照片底部一条磨砂玻璃,半透明 + 高光,液态玻璃质感。", tags:["玻璃","磨砂","液态","透明","glass","ios","质感"]},
     {id:"glassCard",     name:"玻璃卡片",     desc:"底部悬浮一块磨砂玻璃圆角卡片放文字,最有 iOS 质感。", tags:["玻璃","卡片","悬浮","液态","glass","chip","ios"]},
     {id:"glassFrame",    name:"玻璃四周",     desc:"四周磨砂玻璃边框,底部一条放文字,液态玻璃相框质感。", tags:["玻璃","四周","边框","相框","液态","frame","glass","ios","质感"]},
-    // —— 生日 / 纪念日 ——
     {id:"birthday",      name:"生日快乐",     desc:"暖色底栏 + 彩色纸屑,生日 / 派对专用。", tags:["生日","派对","彩带","纸屑","birthday","庆","气球"]},
     {id:"anniversary",   name:"纪念日",       desc:"白色底栏 + 一颗小红心,纪念日 / 情侣款。", tags:["纪念","情侣","爱心","心","anniversary","love","结婚"]},
-    // —— v2.10.0 新增:中秋 + 柔色三款 + 暗夜蓝(全部复用现有渲染器,无新绘制代码)——
     {id:"midAutumn",     name:"中秋·月",      desc:"暖金浅底栏 + 金色细线,中秋 / 团圆 / 赏月节日款。", tags:["中秋","团圆","月","金","节日","秋","midautumn","赏月"]},
     {id:"mistBlue",      name:"雾蓝",         desc:"莫兰迪雾蓝调,柔和清冷的底栏 + 细线,日常文艺。", tags:["雾蓝","蓝","莫兰迪","柔","清冷","mist","季节"]},
     {id:"duskMountain",  name:"暮山",         desc:"沉静暖褐大地色底栏 + 细线,旅行 / 风景照耐看。", tags:["暮山","褐","赭","大地","沉静","dusk","季节"]},
     {id:"daiPurple",     name:"黛紫",         desc:"藕紫黛色调底栏 + 细线,柔雅有气质。", tags:["黛","紫","藕","柔雅","气质","purple","季节"]},
-    {id:"nightBlue",     name:"暗夜蓝",       desc:"深蓝底栏 + 亮蓝细条 + 蓝字,夜景 / 科技感相机风。", tags:["暗夜","蓝","深色","夜景","科技","night","相机"]}
+    {id:"nightBlue",     name:"暗夜蓝",       desc:"深蓝底栏 + 亮蓝细条 + 蓝字,夜景 / 科技感相机风。", tags:["暗夜","蓝","深色","夜景","科技","night","相机"]},
+    {id:"matchaGreen",   name:"抹茶",         desc:"温润抹茶奶绿调,柔和清新的底栏 + 细线,日系奶系色。", tags:["抹茶","奶绿","绿","奶系","柔","季节","matcha","清新"]},
+    {id:"milkTea",       name:"奶茶",         desc:"焦糖奶茶暖棕调,温润底栏 + 细线,温暖耐看的奶系色。", tags:["奶茶","焦糖","棕","奶系","暖","柔","季节","milktea"]},
+    {id:"lotusPink",     name:"藕粉",         desc:"低饱和藕粉雾玫调,柔雅气质底栏 + 细线,比樱粉更含蓄。", tags:["藕粉","粉","藕荷","莫兰迪","柔","季节","lotus","气质"]},
+    {id:"oatCream",      name:"燕麦",         desc:"温润燕麦奶油色,百搭中性底栏 + 细线,极简耐看。", tags:["燕麦","奶油","米","中性","百搭","柔","季节","oat","极简"]},
+    {id:"silverMono",    name:"银盐",         desc:"炭灰深色底栏 + 银灰细条 + 银字,黑白 / 银盐胶片质感。", tags:["银盐","银","灰","黑白","单色","mono","相机","胶片"]},
+    {id:"kodakGold",     name:"柯达金",       desc:"暖棕深色底栏 + 琥珀金细条 + 金字,经典柯达胶片暖调。", tags:["柯达","金","琥珀","暖","胶片","film","kodak","相机"]}
   ];
 
   // ---------- categories (quick-filter chips in the 更多模板 panel) ----------
-  // "all" shows everything (presets + customs); a specific category shows only its presets.
   var CATEGORIES = [
     {key:"all",      label:"全部"},
     {key:"base",     label:"基础"},
@@ -1379,18 +1536,17 @@
     base:     ["classic","polaroid","polaroidPlus","minimalFrame","magazineLight","minimalCorner"],
     dark:     ["darkBar","cinema","magazine","hasselblad","nightBlue"],
     color:    ["leica","filmStrip","checkIn","bigDate","morandi"],
-    season:   ["springCherry","summerSea","autumnMaple","winterSnow","solarTerm","mistBlue","duskMountain","daiPurple"],
-    brand:    ["fujiFilm","sonyAlpha","nikonGold","canonRed"],
+    season:   ["springCherry","summerSea","autumnMaple","winterSnow","solarTerm","mistBlue","duskMountain","daiPurple","matchaGreen","milkTea","lotusPink","oatCream"],
+    brand:    ["fujiFilm","sonyAlpha","nikonGold","canonRed","silverMono","kodakGold"],
     glass:    ["glassBar","glassCard","glassFrame"],
     festival: ["festivalRed","birthday","anniversary","graduation","midAutumn"]
   };
-  // reverse lookup: preset id -> category key
   var CAT_OF = {};
   (function(){ for(var k in CAT_IDS){ if(CAT_IDS.hasOwnProperty(k)){ for(var i=0;i<CAT_IDS[k].length;i++){ CAT_OF[CAT_IDS[k][i]]=k; } } } })();
 
   // ---------- custom templates (user-defined, stored in localStorage) ----------
   var CUSTOM_STORAGE_KEY = "yinji.customTemplates.v1";
-  var customTemplates = [];  // populated from storage on init
+  var customTemplates = [];
 
   function loadCustomTemplates(){
     var s = PLATFORM.getStorage();
@@ -1413,7 +1569,6 @@
     return null;
   }
   function allTemplates(){
-    // presets followed by user customs
     return TEMPLATES.concat(customTemplates.map(function(c){
       return { id:c.id, name:c.name, desc:c.desc||("基于「"+(presetName(c.base)||"经典")+"」的自定义款"), tags:(c.tags||[]).concat(["自定义","custom","我的"]), _custom:true };
     }));
@@ -1423,7 +1578,6 @@
     return null;
   }
 
-  // default manual text depends on the 默认水印文字 setting (今天日期 / 留空 / 固定文字)
   function applyDefaultText(){
     var st=ensureSettings();
     if(st.defaultText==="blank"){ textInput.value=""; return; }
@@ -1434,12 +1588,10 @@
   }
   applyDefaultText();
 
-  // decide the text mode to start a freshly-loaded photo in, per the 默认文字模式 setting
   function chooseInitialMode(){
     var st=ensureSettings();
     if(st.defaultTextMode==="manual") return "manual";
     if(st.defaultTextMode==="auto")   return state.exif ? "auto" : "manual";
-    // "last": follow the remembered intent when 记住上次 is on, else smart default
     return (st.rememberLast && prefMode) ? prefMode : (state.exif ? "auto" : "manual");
   }
 
@@ -1452,18 +1604,12 @@
   }
 
   // ================= EXIF parsing =================
-  // Dispatches by file format:
-  //   - JPEG (FF D8 ...)       → parseJpegExif: walks APP1 segments for "Exif\0\0"
-  //   - HEIC / HEIF / AVIF     → parseHeicExif: walks ISOBMFF boxes (ftyp / meta / iinf / iloc)
-  // Returns the same tags object regardless of source format.
   function parseExif(buffer){
     try{
       var view=new DataView(buffer);
-      // JPEG path (most common)
       if(view.byteLength>=2 && view.getUint16(0)===0xFFD8){
         return parseJpegExif(view);
       }
-      // ISOBMFF path (HEIC / HEIF / AVIF) — top-level box at offset 4 is "ftyp"
       if(view.byteLength>=12 && view.getUint32(4)===0x66747970){
         return parseHeicExif(view);
       }
@@ -1476,9 +1622,9 @@
       var len=view.byteLength, off=2;
       while(off+4<len){
         var marker=view.getUint16(off);
-        if(marker===0xFFE1){ // APP1
-          if(view.getUint32(off+4)===0x45786966){ // "Exif"
-            return readTiff(view, off+10); // skip "Exif\0\0"
+        if(marker===0xFFE1){
+          if(view.getUint32(off+4)===0x45786966){
+            return readTiff(view, off+10);
           }
         }
         if((marker & 0xFF00)!==0xFF00) break;
@@ -1493,34 +1639,22 @@
   }
 
   // ===== HEIC / HEIF / AVIF EXIF parsing =====
-  // ISOBMFF (ISO/IEC 14496-12) container; HEIF spec ISO/IEC 23008-12 puts Exif as an item.
-  // Steps:
-  //   1) Check ftyp brand is HEIC-family (heic/heix/hevc/mif1/avif/heif/...)
-  //   2) Find top-level 'meta' box (a FullBox; skip 4-byte version+flags)
-  //   3) In meta, find 'iinf' (item info) → walk 'infe' entries → find one with item_type == 'Exif'
-  //   4) In meta, find 'iloc' (item location) → look up that item_id → get file offset + length
-  //   5) Item data layout: [u32 exif_tiff_header_offset][...optional "Exif\0\0"...][TIFF]
-  //      Compute tiffStart = exifOffset + 4 + exif_tiff_header_offset, then reuse readTiff()
   function parseHeicExif(view){
     var loc=locateHeicExif(view);
     if(!loc) return null;
     return readTiff(view, loc.tiffStart);
   }
 
-  // Walk the ISOBMFF boxes to find where the embedded Exif TIFF block lives.
-  // Returns {tiffStart, exifOffset, itemLen} or null. Shared by the tag reader
-  // (parseHeicExif) and the APP1 builder (buildHeicApp1, used for export).
   function locateHeicExif(view){
     try{
       if(!isHeicLike(view)) return null;
       var len=view.byteLength;
 
-      var meta=findBox(view, 0, len, 0x6D657461 /* 'meta' */);
+      var meta=findBox(view, 0, len, 0x6D657461 );
       if(!meta) return null;
-      var mStart=meta.contentStart+4, mEnd=meta.end; // skip FullBox header
+      var mStart=meta.contentStart+4, mEnd=meta.end;
 
-      // -- find Exif item id via iinf / infe --
-      var iinf=findBox(view, mStart, mEnd, 0x69696E66 /* 'iinf' */);
+      var iinf=findBox(view, mStart, mEnd, 0x69696E66 );
       if(!iinf) return null;
       var iinfP=iinf.contentStart;
       var iinfVer=view.getUint8(iinfP);
@@ -1534,7 +1668,7 @@
         var entrySize=view.getUint32(p);
         var entryType=view.getUint32(p+4);
         if(entrySize<8) break;
-        if(entryType===0x696E6665 /* 'infe' */){
+        if(entryType===0x696E6665 ){
           var infeVer=view.getUint8(p+8);
           var infeP=p+12;
           var itemId=0, itemType=0;
@@ -1545,14 +1679,13 @@
             itemId=view.getUint32(infeP);
             itemType=view.getUint32(infeP+6);
           }
-          if(itemType===0x45786966 /* 'Exif' */) exifItemId=itemId;
+          if(itemType===0x45786966 ) exifItemId=itemId;
         }
         p+=entrySize;
       }
       if(exifItemId===null) return null;
 
-      // -- find offset+length via iloc --
-      var iloc=findBox(view, mStart, mEnd, 0x696C6F63 /* 'iloc' */);
+      var iloc=findBox(view, mStart, mEnd, 0x696C6F63 );
       if(!iloc) return null;
       var ilocP=iloc.contentStart;
       var ilocVer=view.getUint8(ilocP);
@@ -1574,8 +1707,8 @@
         var iid;
         if(ilocVer<2){ iid=view.getUint16(ilocP); ilocP+=2; }
         else         { iid=view.getUint32(ilocP); ilocP+=4; }
-        if(ilocVer>=1) ilocP+=2; // construction_method + reserved
-        ilocP+=2; // data_reference_index
+        if(ilocVer>=1) ilocP+=2;
+        ilocP+=2;
         var baseOff=readVarSize(view, ilocP, baseOffsetSize);
         ilocP+=baseOffsetSize;
         var extCount=view.getUint16(ilocP);
@@ -1595,8 +1728,6 @@
 
       if(exifOffset===null || exifOffset+4>len) return null;
 
-      // Item data starts with a u32 (big-endian) tiff_header_offset.
-      // Typically 6 (= length of "Exif\0\0"), pointing past that header to actual TIFF.
       var tiffHdrOff=view.getUint32(exifOffset);
       var tiffStart=exifOffset+4+tiffHdrOff;
       if(tiffStart>=len) return null;
@@ -1607,26 +1738,23 @@
 
   function isHeicLike(view){
     if(view.byteLength<12) return false;
-    if(view.getUint32(4)!==0x66747970 /* 'ftyp' */) return false;
-    if(isHeicBrand(view.getUint32(8))) return true; // major brand
+    if(view.getUint32(4)!==0x66747970 ) return false;
+    if(isHeicBrand(view.getUint32(8))) return true;
     var ftypSize=view.getUint32(0);
-    // walk compatible_brands list
     for(var i=16; i+4<=ftypSize && i<view.byteLength; i+=4){
       if(isHeicBrand(view.getUint32(i))) return true;
     }
     return false;
   }
   function isHeicBrand(b){
-    // HEIC family brands per ISO/IEC 23008-12 + AVIF
-    return b===0x68656963 /*heic*/ || b===0x68656978 /*heix*/ ||
-           b===0x68657663 /*hevc*/ || b===0x68657678 /*hevx*/ ||
-           b===0x6865696D /*heim*/ || b===0x68656973 /*heis*/ ||
-           b===0x6865766D /*hevm*/ || b===0x68657673 /*hevs*/ ||
-           b===0x6D696631 /*mif1*/ || b===0x6D736631 /*msf1*/ ||
-           b===0x61766966 /*avif*/ || b===0x68656966 /*heif*/;
+    return b===0x68656963  || b===0x68656978  ||
+           b===0x68657663  || b===0x68657678  ||
+           b===0x6865696D  || b===0x68656973  ||
+           b===0x6865766D  || b===0x68657673  ||
+           b===0x6D696631  || b===0x6D736631  ||
+           b===0x61766966  || b===0x68656966 ;
   }
 
-  // Generic ISOBMFF box walker. Returns {start, contentStart, end} or null.
   function findBox(view, start, end, target4cc){
     var off=start;
     while(off+8<=end){
@@ -1650,7 +1778,6 @@
     return null;
   }
 
-  // Read a variable-size big-endian unsigned int (0/1/2/4/8 bytes).
   function readVarSize(view, offset, size){
     if(size===0) return 0;
     if(size===4) return view.getUint32(offset);
@@ -1675,7 +1802,6 @@
       readIFD(view, tiff, ifd0, little, tags);
       if(tags.__exif){ readIFD(view, tiff, tiff+tags.__exif, little, tags); }
       delete tags.__exif;
-      // keep only if something useful exists
       if(tags.model||tags.make||tags.date||tags.fnumber||tags.exposure||tags.iso||tags.focal) return tags;
       return null;
     }catch(e){ return null; }
@@ -1691,9 +1817,9 @@
       switch(tag){
         case 0x010F: out.make = ascii(view,tiff,vo,num,little); break;
         case 0x0110: out.model = ascii(view,tiff,vo,num,little); break;
-        case 0x8769: out.__exif = get32(vo); break;       // Exif IFD pointer
-        case 0x9003: out.date = ascii(view,tiff,vo,num,little); break;  // DateTimeOriginal
-        case 0x0132: if(!out.date) out.date = ascii(view,tiff,vo,num,little); break; // fallback
+        case 0x8769: out.__exif = get32(vo); break;
+        case 0x9003: out.date = ascii(view,tiff,vo,num,little); break;
+        case 0x0132: if(!out.date) out.date = ascii(view,tiff,vo,num,little); break;
         case 0x829D: out.fnumber = rational(view,tiff,vo,little); break;
         case 0x829A: out.exposure = rational(view,tiff,vo,little); break;
         case 0x8827: out.iso = (type===3)? get16(vo) : get32(vo); break;
@@ -1723,14 +1849,6 @@
   }
 
   // ================= EXIF re-injection (for export) =================
-  // The canvas export strips all metadata. To keep the photo's shooting info
-  // (device / time / aperture / shutter / ISO / focal length, plus GPS etc.),
-  // we grab a ready-to-splice APP1 (Exif) segment from the ORIGINAL file and
-  // re-insert it right after the JPEG SOI marker on export.
-  //   - JPEG source : copy the original APP1 segment verbatim.
-  //   - HEIC source : wrap the embedded TIFF block in a fresh APP1.
-  // Orientation is forced to 1 because loadBitmap already rendered upright pixels
-  // (imageOrientation:"from-image"); re-embedding the original would rotate twice.
   function extractExifApp1(buffer){
     try{
       var view=new DataView(buffer);
@@ -1744,9 +1862,9 @@
     var len=view.byteLength, off=2;
     while(off+4<len){
       var marker=view.getUint16(off);
-      if(marker===0xFFE1 && view.getUint32(off+4)===0x45786966){ // APP1 + "Exif"
+      if(marker===0xFFE1 && view.getUint32(off+4)===0x45786966){
         var segLen=view.getUint16(off+2);
-        var total=2+segLen; // marker(2) + length-field+payload(segLen)
+        var total=2+segLen;
         if(off+total>len) return null;
         var copy=new Uint8Array(total);
         copy.set(new Uint8Array(view.buffer, view.byteOffset+off, total));
@@ -1772,23 +1890,22 @@
       if(tiffEnd>len) tiffEnd=len;
       var tiffLen=tiffEnd-loc.tiffStart;
       if(tiffLen<=8) return null;
-      var segLen=2+6+tiffLen; // length-field(2) + "Exif\0\0"(6) + TIFF
-      if(segLen>0xFFFF) return null; // APP1 length field is a u16
+      var segLen=2+6+tiffLen;
+      if(segLen>0xFFFF) return null;
       var app1=new Uint8Array(2+segLen);
       app1[0]=0xFF; app1[1]=0xE1;
       app1[2]=(segLen>>8)&0xFF; app1[3]=segLen&0xFF;
-      app1[4]=0x45; app1[5]=0x78; app1[6]=0x69; app1[7]=0x66; app1[8]=0; app1[9]=0; // "Exif\0\0"
+      app1[4]=0x45; app1[5]=0x78; app1[6]=0x69; app1[7]=0x66; app1[8]=0; app1[9]=0;
       app1.set(new Uint8Array(view.buffer, view.byteOffset+loc.tiffStart, tiffLen), 10);
       neutralizeOrientation(app1);
       return app1;
     }catch(e){ return null; }
   }
 
-  // In a finished APP1 segment (TIFF starts at byte 10), set Orientation (0x0112) to 1.
   function neutralizeOrientation(app1){
     try{
       var dv=new DataView(app1.buffer, app1.byteOffset, app1.byteLength);
-      var tiff=10; // FFE1(2) + length(2) + "Exif\0\0"(6)
+      var tiff=10;
       var bo=dv.getUint16(tiff), little;
       if(bo===0x4949) little=true; else if(bo===0x4D4D) little=false; else return;
       if(dv.getUint16(tiff+2, little)!==0x002A) return;
@@ -1803,7 +1920,6 @@
     }catch(e){}
   }
 
-  // Insert an APP1 segment immediately after the SOI (FFD8) of a JPEG byte array.
   function spliceApp1(jpegBytes, app1){
     if(!app1 || jpegBytes.length<2 || jpegBytes[0]!==0xFF || jpegBytes[1]!==0xD8) return jpegBytes;
     var out=new Uint8Array(2+app1.length+(jpegBytes.length-2));
@@ -1823,7 +1939,7 @@
 
   // ---------- format exif into display fields ----------
   function buildInfo(ex){
-    var af = ensureSettings().autoFields;   // per-field show/hide from 设置
+    var af = ensureSettings().autoFields;
     var device = af.device ? (ex.model || ex.make || "") : "";
     var date = af.time ? formatDate(ex.date) : "";
     var parts=[];
@@ -1871,7 +1987,6 @@
       isHeic=detectHeic(buf, file.name);
     }, function(){ state.exif=null; state.exifApp1=null; })
     .then(function(){
-      // Wrap loadBitmap so HEIC decode failures (common on non-Safari) get a friendly message.
       return loadBitmap(file).catch(function(){
         if(isHeic){
           throw new Error("HEIC 格式,当前浏览器解不开。请用 iPhone Safari 打开,或先转成 JPEG。");
@@ -1887,15 +2002,16 @@
         throw new Error("照片解码失败");
       }
       state.bitmap=bmp;
+      clearCollageState();
       setMode(chooseInitialMode(), true);
-      drop.style.display="none";
+      setEditTab("watermark");
+      startView.style.display="none";
       editor.style.display="block";
       renderAutoPanel();
       draw();
     });
   }
 
-  // True if file is HEIC/HEIF/AVIF (by name extension or magic bytes).
   function detectHeic(buf, name){
     if(name){
       var n=name.toLowerCase();
@@ -1934,8 +2050,307 @@
     });
   }
 
+  // ================= 拼图 (collage) v3.0.0-beta.3 =================
+  var collageInput=$("collageInput"), collageEntry=$("collageEntry"),
+      collagePane=$("collagePane"), collageEmpty=$("collageEmpty"), collageEditWrap=$("collageEditWrap"),
+      collagePickBtn=$("collagePickBtn"), collagePreview=$("collagePreview"),
+      collageLayouts=$("collageLayouts"), collageRepick=$("collageRepick");
+  var COLLAGE_SIZE=1500;
+  var collageCanvas=null;
+  var collagePhotos=[];
+  var collageLayoutId=null;
+
+  var collageDecoBar=$("collageDecoBar"), collageAddTextBtn=$("collageAddText"),
+      collageDecoEdit=$("collageDecoEdit"),
+      decoSmaller=$("decoSmaller"), decoBigger=$("decoBigger"),
+      decoEditTextBtn=$("decoEditText"), decoColorInput=$("decoColorInput"), decoDelete=$("decoDelete");
+  var collageDecos=[];
+  var collageSelected=-1;
+  var collageDrag=null;
+  var DECO_FONT='-apple-system,"PingFang SC","Microsoft YaHei","Helvetica Neue",sans-serif';
+
+  function _isLightColor(hex){
+    var c=_hexToRgb(hex||"#ffffff");
+    return (0.299*c[0]+0.587*c[1]+0.114*c[2])>150;
+  }
+  function decoMetrics(ctx, d, size){
+    var fs=Math.max(8, d.size*size);
+    ctx.save();
+    ctx.font=(d.type==="text"?"600 ":"")+fs+"px "+DECO_FONT;
+    var w=ctx.measureText(d.content||"").width;
+    ctx.restore();
+    return { cx:d.x*size, cy:d.y*size, w:w, h:fs*1.18, fs:fs };
+  }
+  function drawCollageDecos(ctx, size, decos, selIndex){
+    if(!decos || !decos.length) return;
+    if(selIndex==null) selIndex=-1;
+    for(var i=0;i<decos.length;i++){
+      var d=decos[i], m=decoMetrics(ctx, d, size);
+      ctx.save();
+      ctx.textAlign="center"; ctx.textBaseline="middle";
+      if(d.type==="text"){
+        ctx.font="600 "+m.fs+"px "+DECO_FONT;
+        ctx.lineJoin="round";
+        ctx.lineWidth=Math.max(2, m.fs*0.16);
+        ctx.strokeStyle=_isLightColor(d.color)?"rgba(0,0,0,.5)":"rgba(255,255,255,.85)";
+        ctx.strokeText(d.content||"", m.cx, m.cy);
+        ctx.fillStyle=d.color||"#ffffff";
+        ctx.fillText(d.content||"", m.cx, m.cy);
+      } else {
+        ctx.font=m.fs+"px "+DECO_FONT;
+        ctx.fillText(d.content||"", m.cx, m.cy);
+      }
+      ctx.restore();
+      if(i===selIndex){
+        ctx.save();
+        ctx.strokeStyle="#3e86d6";
+        ctx.lineWidth=Math.max(2, size*0.004);
+        ctx.setLineDash([size*0.02, size*0.014]);
+        var pad=m.fs*0.18+size*0.012;
+        ctx.strokeRect(m.cx-m.w/2-pad, m.cy-m.h/2-pad, m.w+pad*2, m.h+pad*2);
+        ctx.restore();
+      }
+    }
+  }
+
+  var COLLAGE_LAYOUTS={
+    2:[
+      {id:"2lr", label:"左右", cells:[{x:0,y:0,w:.5,h:1},{x:.5,y:0,w:.5,h:1}]},
+      {id:"2tb", label:"上下", cells:[{x:0,y:0,w:1,h:.5},{x:0,y:.5,w:1,h:.5}]}
+    ],
+    3:[
+      {id:"3v",  label:"竖排三", cells:[{x:0,y:0,w:1,h:1/3},{x:0,y:1/3,w:1,h:1/3},{x:0,y:2/3,w:1,h:1/3}]},
+      {id:"3h",  label:"横排三", cells:[{x:0,y:0,w:1/3,h:1},{x:1/3,y:0,w:1/3,h:1},{x:2/3,y:0,w:1/3,h:1}]},
+      {id:"3lr", label:"1大2小", cells:[{x:0,y:0,w:.6,h:1},{x:.6,y:0,w:.4,h:.5},{x:.6,y:.5,w:.4,h:.5}]}
+    ],
+    4:[
+      {id:"4grid", label:"田字格", cells:[{x:0,y:0,w:.5,h:.5},{x:.5,y:0,w:.5,h:.5},{x:0,y:.5,w:.5,h:.5},{x:.5,y:.5,w:.5,h:.5}]},
+      {id:"4v",    label:"竖排四", cells:[{x:0,y:0,w:1,h:.25},{x:0,y:.25,w:1,h:.25},{x:0,y:.5,w:1,h:.25},{x:0,y:.75,w:1,h:.25}]},
+      {id:"4h",    label:"横排四", cells:[{x:0,y:0,w:.25,h:1},{x:.25,y:0,w:.25,h:1},{x:.5,y:0,w:.25,h:1},{x:.75,y:0,w:.25,h:1}]}
+    ]
+  };
+
+  function collageLayoutsFor(n){ return COLLAGE_LAYOUTS[n] || null; }
+  function findCollageLayout(n, id){
+    var arr=collageLayoutsFor(n); if(!arr) return null;
+    for(var i=0;i<arr.length;i++) if(arr[i].id===id) return arr[i];
+    return arr[0];
+  }
+
+  function collageRoundRect(ctx,x,y,w,h,r){
+    r=Math.max(0, Math.min(r, w/2, h/2));
+    ctx.beginPath();
+    ctx.moveTo(x+r,y);
+    ctx.arcTo(x+w,y,x+w,y+h,r);
+    ctx.arcTo(x+w,y+h,x,y+h,r);
+    ctx.arcTo(x,y+h,x,y,r);
+    ctx.arcTo(x,y,x+w,y,r);
+    ctx.closePath();
+  }
+  function coverDraw(ctx,img,dx,dy,dw,dh){
+    var iw=img.width||img.naturalWidth, ih=img.height||img.naturalHeight;
+    if(!iw||!ih) return;
+    var s=Math.max(dw/iw, dh/ih);
+    var rw=iw*s, rh=ih*s;
+    ctx.drawImage(img, dx+(dw-rw)/2, dy+(dh-rh)/2, rw, rh);
+  }
+  function drawCollageInto(canvas, layout, photos, decos, selIndex){
+    var size=canvas.width;
+    var ctx=canvas.getContext("2d");
+    var gap=Math.max(2, Math.round(size*0.012));
+    var rad=Math.round(gap*1.4);
+    ctx.clearRect(0,0,size,size);
+    ctx.fillStyle="#ffffff"; ctx.fillRect(0,0,size,size);
+    var cells=layout.cells;
+    for(var i=0;i<cells.length;i++){
+      var c=cells[i];
+      var dx=c.x*size+gap/2, dy=c.y*size+gap/2, dw=c.w*size-gap, dh=c.h*size-gap;
+      ctx.save();
+      collageRoundRect(ctx,dx,dy,dw,dh,rad);
+      ctx.clip();
+      if(photos[i]){ coverDraw(ctx,photos[i],dx,dy,dw,dh); }
+      else { ctx.fillStyle="#EDE7DC"; ctx.fillRect(dx,dy,dw,dh); }
+      ctx.restore();
+    }
+    drawCollageDecos(ctx, size, decos, selIndex);
+  }
+  function layoutSvg(layout){
+    var s='<svg viewBox="0 0 100 100" aria-hidden="true">';
+    var cells=layout.cells;
+    for(var i=0;i<cells.length;i++){
+      var c=cells[i];
+      s+='<rect x="'+(c.x*100+5)+'" y="'+(c.y*100+5)+'" width="'+(c.w*100-10)+'" height="'+(c.h*100-10)+'" rx="7" fill="currentColor"/>';
+    }
+    return s+'</svg>';
+  }
+
+  function renderCollagePreview(){
+    var layout=findCollageLayout(collagePhotos.length, collageLayoutId);
+    if(!layout) return;
+    collageLayoutId=layout.id;
+    drawCollageInto(collagePreview, layout, collagePhotos, collageDecos, collageSelected);
+  }
+  function renderCollageLayouts(){
+    var arr=collageLayoutsFor(collagePhotos.length)||[];
+    collageLayouts.innerHTML="";
+    for(var i=0;i<arr.length;i++){
+      (function(layout){
+        var b=document.createElement("button");
+        b.type="button";
+        b.className="collage-opt"+(layout.id===collageLayoutId?" on":"");
+        b.setAttribute("data-id", layout.id);
+        b.innerHTML='<span class="diag">'+layoutSvg(layout)+'</span><span>'+layout.label+'</span>';
+        b.addEventListener("click", function(){
+          collageLayoutId=layout.id;
+          renderCollageLayouts();
+          syncCollage();
+        });
+        collageLayouts.appendChild(b);
+      })(arr[i]);
+    }
+  }
+
+  // 把当前拼贴合成进 state.bitmap(不带选中高亮),再让主画布连同滤镜/水印一起重画
+  function applyCollageToMain(){
+    if(collagePhotos.length<2) return;
+    var layout=findCollageLayout(collagePhotos.length, collageLayoutId);
+    if(!layout) return;
+    collageLayoutId=layout.id;
+    if(!collageCanvas){ collageCanvas=document.createElement("canvas"); collageCanvas.width=COLLAGE_SIZE; collageCanvas.height=COLLAGE_SIZE; }
+    drawCollageInto(collageCanvas, layout, collagePhotos, collageDecos, -1);
+    state.bitmap=collageCanvas; state.exif=null; state.exifApp1=null;
+    invalidateGrade();
+    draw();
+  }
+  // 拼贴有改动:小预览 + 主画布一起更新
+  function syncCollage(){ renderCollagePreview(); applyCollageToMain(); }
+  // 切到「拼贴」标签时,根据有没有拼贴在编辑,显示空状态或编辑区
+  function refreshCollagePane(){
+    var active=collagePhotos.length>=2;
+    if(collageEmpty) collageEmpty.classList.toggle("hidden", active);
+    if(collageEditWrap) collageEditWrap.classList.toggle("hidden", !active);
+    if(active){ renderCollageLayouts(); renderCollagePreview(); }
+  }
+  function clearCollageState(){ collagePhotos=[]; collageLayoutId=null; resetCollageDecos(); }
+
+  collageEntry.addEventListener("click", function(){ try{ collageInput.click(); }catch(e){} });
+  if(collagePickBtn) collagePickBtn.addEventListener("click", function(){ try{ collageInput.click(); }catch(e){} });
+  collageInput.addEventListener("change", function(ev){
+    var files=ev.target.files ? Array.prototype.slice.call(ev.target.files) : [];
+    try{ collageInput.value=""; }catch(e){}
+    if(files.length<2){ toast("拼图至少要选 2 张照片"); return; }
+    var trimmedMsg="";
+    if(files.length>4){ files=files.slice(0,4); trimmedMsg="最多 4 张,已用前 4 张"; }
+    toast("正在读取照片…");
+    var jobs=[]; for(var i=0;i<files.length;i++){ jobs.push(loadBitmap(files[i])); }
+    Promise.all(jobs).then(function(bmps){
+      var ok=[];
+      for(var k=0;k<bmps.length;k++){
+        var b=bmps[k];
+        if(b && (b.width||b.naturalWidth) && (b.height||b.naturalHeight)) ok.push(b);
+      }
+      if(ok.length<2){ toast("有照片打不开,至少要 2 张能用的"); return; }
+      collagePhotos=ok;
+      collageLayoutId=null;
+      resetCollageDecos();
+      startView.style.display="none";
+      editor.style.display="block";
+      applyCollageToMain();
+      setMode("manual", true);
+      renderAutoPanel();
+      setEditTab("collage");
+      toast(trimmedMsg || "拼好啦,水印 / 滤镜照常加 ✨");
+    }).catch(function(){ toast("读取照片失败,换几张再试"); });
+  });
+
+  if(collageRepick) collageRepick.addEventListener("click", function(){ try{ collageInput.click(); }catch(e){} });
+
+  function resetCollageDecos(){ collageDecos=[]; collageSelected=-1; collageDrag=null; syncCollageDecoEdit(); }
+  function syncCollageDecoEdit(){
+    if(!collageDecoEdit) return;
+    var d=(collageSelected>=0)?collageDecos[collageSelected]:null;
+    collageDecoEdit.classList.toggle("hidden", !d);
+    if(d){
+      var isText=(d.type==="text");
+      var only=collageDecoEdit.querySelectorAll(".deco-text-only");
+      for(var i=0;i<only.length;i++) only[i].classList.toggle("hidden", !isText);
+      if(isText && decoColorInput) decoColorInput.value=d.color||"#ffffff";
+    }
+  }
+  function addCollageDeco(d){
+    if(collageDecos.length>=12){ toast("贴的有点多啦,先删掉几个"); return; }
+    collageDecos.push(d);
+    collageSelected=collageDecos.length-1;
+    syncCollageDecoEdit();
+    syncCollage();
+  }
+  function addCollageText(){
+    var t=window.prompt("输入要加的文字", "");
+    if(t==null) return;
+    t=String(t).trim(); if(!t) return; if(t.length>30) t=t.slice(0,30);
+    addCollageDeco({type:"text", x:0.5, y:0.5, content:t, size:0.09, color:"#ffffff"});
+  }
+  function collageEventPos(ev){
+    var r=collagePreview.getBoundingClientRect();
+    return { x:(ev.clientX-r.left)/r.width, y:(ev.clientY-r.top)/r.height };
+  }
+  function collageHit(nx, ny){
+    var ctx=collagePreview.getContext("2d"), size=collagePreview.width;
+    for(var i=collageDecos.length-1;i>=0;i--){
+      var m=decoMetrics(ctx, collageDecos[i], size);
+      var hw=m.w/2+size*0.03, hh=m.h/2+size*0.03;
+      if(Math.abs(nx*size-m.cx)<=hw && Math.abs(ny*size-m.cy)<=hh) return i;
+    }
+    return -1;
+  }
+  collageAddTextBtn.addEventListener("click", addCollageText);
+  collageDecoBar.addEventListener("click", function(ev){
+    var b=ev.target.closest ? ev.target.closest(".deco-sticker") : null;
+    if(!b) return;
+    var emoji=b.getAttribute("data-emoji");
+    if(emoji) addCollageDeco({type:"sticker", x:0.5, y:0.5, content:emoji, size:0.16, color:null});
+  });
+  decoSmaller.addEventListener("click", function(){ var d=collageDecos[collageSelected]; if(!d) return; d.size=Math.max(0.03, d.size*0.85); syncCollage(); });
+  decoBigger.addEventListener("click", function(){ var d=collageDecos[collageSelected]; if(!d) return; d.size=Math.min(0.6, d.size*1.18); syncCollage(); });
+  decoEditTextBtn.addEventListener("click", function(){
+    var d=collageDecos[collageSelected]; if(!d || d.type!=="text") return;
+    var t=window.prompt("改文字", d.content||"");
+    if(t==null) return; t=String(t).trim(); if(!t) return; if(t.length>30) t=t.slice(0,30);
+    d.content=t; syncCollage();
+  });
+  decoColorInput.addEventListener("input", function(){
+    var d=collageDecos[collageSelected]; if(!d || d.type!=="text") return;
+    d.color=decoColorInput.value; syncCollage();
+  });
+  decoDelete.addEventListener("click", function(){
+    if(collageSelected<0) return;
+    collageDecos.splice(collageSelected,1);
+    collageSelected=-1; syncCollageDecoEdit(); syncCollage();
+  });
+  collagePreview.addEventListener("pointerdown", function(ev){
+    var p=collageEventPos(ev), hit=collageHit(p.x, p.y);
+    collageSelected=hit;
+    if(hit>=0){
+      var d=collageDecos[hit];
+      collageDrag={ dx:p.x-d.x, dy:p.y-d.y };
+      try{ collagePreview.setPointerCapture(ev.pointerId); }catch(e){}
+      ev.preventDefault();
+    }
+    syncCollageDecoEdit();
+    renderCollagePreview();
+  });
+  collagePreview.addEventListener("pointermove", function(ev){
+    if(!collageDrag || collageSelected<0) return;
+    var p=collageEventPos(ev), d=collageDecos[collageSelected];
+    d.x=Math.max(0, Math.min(1, p.x-collageDrag.dx));
+    d.y=Math.max(0, Math.min(1, p.y-collageDrag.dy));
+    ev.preventDefault();
+    renderCollagePreview();
+  });
+  function endCollageDrag(ev){ if(collageDrag){ collageDrag=null; try{ collagePreview.releasePointerCapture(ev.pointerId); }catch(e){} applyCollageToMain(); } }
+  collagePreview.addEventListener("pointerup", endCollageDrag);
+  collagePreview.addEventListener("pointercancel", endCollageDrag);
   // ================= style switching =================
-  // 5 presets always shown in the seg; user customs appended after them.
   var SEG_PRESETS = ['classic', 'polaroid', 'leica', 'glassBar', 'magazine', 'polaroidPlus'];
 
   function presetById(id){
@@ -1943,70 +2358,70 @@
     return null;
   }
 
-  // ---------- "常用栏" pins: which templates show in the top quick-pick bar (user-chosen, persisted) ----------
-  var SEG_PINS_KEY = "yinji.segPins.v2";   // v2 (v2.9.2): default is now an EMPTY bar (was preset quick-picks)
-  var segPins = null;   // ordered array of pinned template ids; lazy-loaded on first use
-  function defaultPins(){
-    // v2.9.2: default bar starts EMPTY — top shows just the big "选择模板" button.
-    // user grows it by pinning (☆常用) in 更多模板, or by creating / importing a template (auto-pins).
-    return [];
-  }
-  function loadSegPins(){
-    var s=PLATFORM.getStorage();
-    if(s){
-      try{ var raw=s.getItem(SEG_PINS_KEY); if(raw){ var arr=JSON.parse(raw); if(Array.isArray(arr)){ segPins=arr; return; } } }catch(e){}
-    }
-    segPins = defaultPins();
-  }
-  function saveSegPins(){ var s=PLATFORM.getStorage(); if(!s) return; try{ s.setItem(SEG_PINS_KEY, JSON.stringify(segPins)); }catch(e){} }
-  function isPinned(id){ if(!segPins) loadSegPins(); return segPins.indexOf(id)!==-1; }
-  function addPin(id){ if(!segPins) loadSegPins(); if(segPins.indexOf(id)===-1){ segPins.push(id); saveSegPins(); } }
-  function removePin(id){ if(!segPins) loadSegPins(); var i=segPins.indexOf(id); if(i!==-1){ segPins.splice(i,1); saveSegPins(); } }
-  function togglePin(id){
-    if(!segPins) loadSegPins();
-    if(segPins.indexOf(id)===-1){ addPin(id); toast("已加到常用栏，编辑页顶部能直接点"); }
-    else {
-      // v2.9.2: allow emptying the bar fully — default is empty, so un-pinning the last one is fine.
-      removePin(id); toast("已从常用栏移除");
-    }
-    renderStyleSeg();
-    renderSearchResults(searchInput.value);
-  }
-
-  function renderStyleSeg(){
-    if(!segPins) loadSegPins();
-    var html = '';
-    // "选择模板" button at the FRONT (leftmost) — opens the 更多模板 picker to browse all & pin.
-    // When no templates are pinned, it stands alone as one big, centered button (v2.9.2).
-    var solo = !segPins || segPins.length === 0;
-    html += '<button class="new-tpl-btn'+(solo?' solo':'')+'" title="选择模板" aria-label="选择模板">选择模板</button>';
-    // then the user's pinned templates (presets + customs), in pin order
-    segPins.forEach(function(id){
-      var p = presetById(id);
-      if(p){
-        var cls = (state.style === id) ? 'on' : '';
-        html += '<button data-style="'+id+'"'+(cls?' class="'+cls+'"':'')+'>'+escapeHtml(p.name)+'</button>';
-        return;
-      }
-      var c = findCustomTemplate(id);
-      if(c){
-        var cls2 = 'custom-tpl' + (state.style === c.id ? ' on' : '');
-        html += '<button data-style="'+c.id+'" class="'+cls2+'" title="我的模板">'+escapeHtml(c.name)+'</button>';
-      }
-      // stale id (e.g. a deleted custom) → silently skip
+  // ---------- 水印模板区(v3.0.0-beta.9):像滤镜一样,分类行 + 模板 chips 直接内嵌在「水印」页 ----------
+  var STYLE_CATEGORIES = [
+    {key:"all",      label:"全部"},
+    {key:"base",     label:"经典"},
+    {key:"dark",     label:"深色"},
+    {key:"color",    label:"彩色"},
+    {key:"season",   label:"季节"},
+    {key:"brand",    label:"品牌"},
+    {key:"glass",    label:"玻璃"},
+    {key:"festival", label:"节日"},
+    {key:"mine",     label:"我的"}
+  ];
+  var styleCat = "all";
+  function renderStyleCats(){
+    if(!styleCats) return;
+    styleCats.innerHTML = STYLE_CATEGORIES.map(function(c){
+      return '<button data-scat="'+c.key+'"'+(c.key===styleCat?' class="on"':'')+'>'+escapeHtml(c.label)+'</button>';
+    }).join("");
+    Array.prototype.forEach.call(styleCats.querySelectorAll("button[data-scat]"), function(b){
+      b.addEventListener("click", function(){
+        styleCat = b.getAttribute("data-scat");
+        renderStyleCats(); renderStyleChips();
+      });
     });
-    styleSeg.innerHTML = html;
-    // bind preset/custom buttons → setStyle
+  }
+  function stylesForCat(){
+    var out = [];
+    if(styleCat==="mine"){
+      customTemplates.forEach(function(t){ out.push({kind:"custom", id:t.id, name:t.name}); });
+      return out;
+    }
+    var keys = (styleCat==="all") ? ["base","dark","color","season","brand","glass","festival"] : [styleCat];
+    keys.forEach(function(k){
+      (CAT_IDS[k]||[]).forEach(function(id){
+        var p = presetById(id);
+        if(p) out.push({kind:"builtin", id:id, name:p.name});
+      });
+    });
+    return out;
+  }
+  function renderStyleChips(){
+    if(!styleSeg) return;
+    styleSeg.innerHTML = stylesForCat().map(function(t){
+      return '<button data-style="'+t.id+'"'+(t.kind==="custom"?' class="custom-tpl"':'')+'>'+escapeHtml(t.name)+'</button>';
+    }).join("");
     Array.prototype.forEach.call(styleSeg.querySelectorAll("button[data-style]"), function(b){
       b.addEventListener("click", function(){ setStyle(b.getAttribute("data-style")); });
     });
-    // bind "选择模板" button → open the 更多模板 picker (browse all presets + pin favorites).
-    // (Creating your own template lives inside that picker, as "+ 新建我的模板".)
-    var newBtn = styleSeg.querySelector("button.new-tpl-btn");
-    if(newBtn){
-      newBtn.addEventListener("click", function(){ openTemplatePicker(); });
-    }
+    markStyleActive();
+    updateStyleActions();
   }
+  function markStyleActive(){
+    if(!styleSeg) return;
+    Array.prototype.forEach.call(styleSeg.querySelectorAll("button[data-style]"), function(b){
+      b.classList.toggle("on", b.getAttribute("data-style")===state.style);
+    });
+  }
+  function updateStyleActions(){
+    var isCustom = !!findCustomTemplate(state.style);
+    if(shareTplInline) shareTplInline.classList.toggle("hidden", !isCustom);
+    if(delTplInline) delTplInline.classList.toggle("hidden", !isCustom);
+    if(styleMineHint) styleMineHint.classList.toggle("hidden", !(styleCat==="mine" && customTemplates.length===0));
+  }
+  function renderStyleSeg(){ renderStyleCats(); renderStyleChips(); }
 
   function setStyle(style){
     state.style = style;
@@ -2016,13 +2431,13 @@
       b.classList.toggle("on", on);
       if(on) found = b;
     });
-    // Auto-scroll active button into the seg's visible area (horizontal only).
     if(found){
       var bL = found.offsetLeft, bW = found.offsetWidth;
       var sW = styleSeg.clientWidth, sS = styleSeg.scrollLeft;
       if(bL < sS + 6) styleSeg.scrollLeft = Math.max(0, bL - 6);
       else if(bL + bW > sS + sW - 6) styleSeg.scrollLeft = bL + bW - sW + 6;
     }
+    updateStyleActions();
     draw();
     savePrefs();
   }
@@ -2033,7 +2448,6 @@
     return clampNum(a.temp,-100,100,0)===0 && clampNum(a.tint,-100,100,0)===0
       && clampNum(a.sat,-100,100,0)===0 && clampNum(a.intensity,0,100,100)===100;
   }
-  // 滤镜分类 chip 行
   function renderFilterCats(){
     if(!filterCats) return;
     filterCats.innerHTML = FILTER_CATEGORIES.map(function(c){
@@ -2046,7 +2460,6 @@
       });
     });
   }
-  // 当前分类下应展示的滤镜 → [{kind:"builtin"|"custom", id, name}]。原图永远排第一,当"关闭"开关。
   function filtersForCat(){
     var out = [{kind:"builtin", id:"none", name:"原图"}];
     if(filterCat==="mine"){
@@ -2075,7 +2488,6 @@
     updateFilterActions();
   }
   function renderFilters(){ renderFilterCats(); renderFilterChips(); }
-  // 高亮当前生效的滤镜:内置 = 没选我的滤镜 且 tone 匹配 且 调色盘中性;我的 = filterId 匹配
   function markFilterActive(){
     if(!toneSeg) return;
     Array.prototype.forEach.call(toneSeg.querySelectorAll("button[data-fid]"), function(b){
@@ -2085,15 +2497,12 @@
       b.classList.toggle("on", on);
     });
   }
-  // 滤镜操作按钮(存为滤镜 / 分享 / 删除 / 空态提示)的显隐
   function updateFilterActions(){
-    var canSave = hasGrade() && !state.filterId;   // 有效果、且不是正用着某个已存滤镜 → 可存为新滤镜
-    if(saveFilterBtn) saveFilterBtn.classList.toggle("hidden", !canSave);
+    if(saveFilterBtn) saveFilterBtn.classList.remove("hidden");
     if(shareFilterBtn) shareFilterBtn.classList.toggle("hidden", !state.filterId);
     if(delFilterBtn) delFilterBtn.classList.toggle("hidden", !state.filterId);
     if(filterMineHint) filterMineHint.classList.toggle("hidden", !(filterCat==="mine" && customFilters.length===0));
   }
-  // 选内置滤镜:整套覆盖(重置调色盘到中性 + 清掉我的滤镜选中)。内置滤镜 = 一个干净完整的效果。
   function setTone(tone){
     if(tone!=="none" && !TONE_PARAMS[tone]) tone="none";
     state.tone = tone;
@@ -2101,10 +2510,9 @@
     state.toneAdj = { temp:0, tint:0, sat:0, intensity:100 };
     syncTonePad();
     markFilterActive(); updateFilterActions();
-    if(state.bitmap) draw();   // re-grade (cache misses on tone change) + redraw current style
+    if(state.bitmap) draw();
     savePrefs();
   }
-  // 选我的滤镜:载入它的底色调 + 调色盘微调,记住 filterId 用于高亮
   function applyCustomFilter(id){
     var f = findCustomFilter(id);
     if(!f) return;
@@ -2123,14 +2531,12 @@
     if(state.bitmap) draw();
     savePrefs();
   }
-  // 调色盘被拨动 / 滑杆改动 → 已不再等于任何已存滤镜,清掉选中态(变成"未保存的微调")
   function clearFilterSel(){
     state.filterId = null;
     markFilterActive(); updateFilterActions();
   }
 
   // ---------- 智能配色 (v3.0 A1):端上分析这张照片 → 自动拨好调色盘。纯本地、不联网、照片不上传 ----------
-  // 采样:把照片缩到 48×48 离屏画布,统计平均色 / 亮度 / 平均饱和度。
   function analyzePhoto(bmp){
     if(!bmp) return null;
     var N = 48, c, x;
@@ -2138,69 +2544,142 @@
       c = document.createElement("canvas"); c.width = N; c.height = N;
       x = c.getContext("2d");
       x.drawImage(bmp, 0, 0, N, N);
-      var data = x.getImageData(0, 0, N, N).data;     // 跨域会抛错;本地照片不会
+      var data = x.getImageData(0, 0, N, N).data;
       var rs=0, gs=0, bs=0, ss=0, n=0;
       for(var i=0;i<data.length;i+=4){
-        if(data[i+3] < 16) continue;                   // 跳过近透明像素
+        if(data[i+3] < 16) continue;
         var r=data[i], g=data[i+1], b=data[i+2];
         rs+=r; gs+=g; bs+=b; n++;
         var mx = r>g?(r>b?r:b):(g>b?g:b), mn = r<g?(r<b?r:b):(g<b?g:b);
-        ss += mx>0 ? (mx-mn)/mx : 0;                    // 该像素的 HSV 饱和度 0..1
+        ss += mx>0 ? (mx-mn)/mx : 0;
       }
       if(!n) return null;
       var ar=rs/n, ag=gs/n, ab=bs/n;
       return { r:ar, g:ag, b:ab, luma:0.299*ar+0.587*ag+0.114*ab, sat:ss/n };
-    }catch(e){ return null; }                          // 取像素失败(理论上不会):放弃,不影响其它功能
+    }catch(e){ return null; }
   }
-  // 规则映射:把统计结果换算成一套调色盘参数(都在 ±100 的盘坐标系里,真正下手很克制)。
-  // 思路:偏冷→回暖(且回暖比压冷更积极,贴合"印迹"的暖调气质);去绿/品红偏色;暗淡→提饱和、过艳→收一点。
   function suggestToneAdj(info){
     if(!info) return null;
-    var warmth = info.r - info.b;                       // >0 偏暖, <0 偏冷
-    var tempFactor = warmth < 0 ? 0.8 : 0.35;           // 回暖更积极、压冷更保守
+    var warmth = info.r - info.b;
+    var tempFactor = warmth < 0 ? 0.8 : 0.35;
     var temp = clampNum(Math.round(-warmth * tempFactor), -22, 35, 0);
-    var greenCast = info.g - (info.r + info.b)/2;        // >0 偏绿, <0 偏品红
+    var greenCast = info.g - (info.r + info.b)/2;
     var tint = clampNum(Math.round(-greenCast * 0.5), -18, 18, 0);
     var sat;
-    if(info.sat < 0.18)      sat = 28;                  // 很灰 → 提一提
-    else if(info.sat > 0.55) sat = -12;                 // 很艳 → 收一点
-    else                     sat = 14;                  // 一般 → 轻提
+    if(info.sat < 0.18)      sat = 28;
+    else if(info.sat > 0.55) sat = -12;
+    else                     sat = 14;
     var intensity = 72;
-    if(info.luma < 45 || info.luma > 215) intensity = 60;   // 太暗/太亮:平均色不太可信,下手更轻
+    if(info.luma < 45 || info.luma > 215) intensity = 60;
     return { temp:temp, tint:tint, sat:sat, intensity:clampNum(intensity,0,100,72) };
   }
-  // 点「✨ 帮我配色」:分析当前照片 → 写进调色盘 → 立刻重绘。属于"未保存的微调",可一键复位或存成滤镜。
   function smartColor(){
     if(!state.bitmap){ toast("先选一张照片,再帮你配色 ✨"); return; }
     var adj = suggestToneAdj(analyzePhoto(state.bitmap));
     if(!adj){ toast("这张照片没法分析,换一张试试"); return; }
-    state.tone = "none";          // 从原图起步:这套色完全来自照片本身,不叠加预设
+    state.tone = "none";
     state.toneAdj = adj;
-    state.filterId = null;        // 变成"未保存的微调"(可一键复位 / 存为滤镜)
-    syncTonePad();                // 同步圆点位置 + 强度/饱和滑杆与数值
+    state.filterId = null;
+    syncTonePad();
     markFilterActive(); updateFilterActions();
     draw();
     savePrefs();
     toast("已按这张照片配好色 ✨ 不满意点「复位调色盘」");
   }
 
+  // ---------- v3.0 A3: 文案灵感(端上规则版) ----------
+  function aiPick(a){ return a[Math.floor(Math.random()*a.length)]; }
+  function aiNowDate(){ var d=new Date(), z=function(n){return (n<10?"0":"")+n;}; return d.getFullYear()+"."+z(d.getMonth()+1)+"."+z(d.getDate()); }
+  function exifClues(ex){
+    var c = { time:"", season:"", device:"", bigAperture:false, lens:"" };
+    if(ex){
+      if(ex.date){
+        var m = /^(\d{4})\D(\d{1,2})\D(\d{1,2})\D+(\d{1,2})/.exec(ex.date);
+        if(m){
+          var mon = parseInt(m[2],10), hr = parseInt(m[4],10);
+          if(mon>=1 && mon<=12) c.season = (mon>=3&&mon<=5)?"春":(mon>=6&&mon<=8)?"夏":(mon>=9&&mon<=11)?"秋":"冬";
+          if(hr>=0 && hr<=23) c.time = (hr>=5&&hr<8)?"晨":(hr>=8&&hr<11)?"上午":(hr>=11&&hr<14)?"午":(hr>=14&&hr<17)?"午后":(hr>=17&&hr<20)?"暮":"夜";
+        }
+      }
+      c.device = ex.model || ex.make || "";
+      if(ex.fnumber && ex.fnumber<=2.2) c.bigAperture = true;
+      if(ex.focal){ c.lens = ex.focal>=85 ? "长焦" : ex.focal<=24 ? "广角" : ""; }
+    }
+    return c;
+  }
+  var CAP_POETIC=["光阴一隅","时光正好","岁月温柔","人间值得","慢煮生活","心之所向","且听风吟","浮生半日闲","万物可爱","温柔以待","保持热爱","奔赴山海","小满即安","得闲饮茶","顺其自然","眼里有光","不慌不忙","热气腾腾的生活","把平凡过得闪光","活在当下"];
+  var CAP_DAILY=["今天也要好好生活","记录平凡的小确幸","生活碎片","日常一帧","把日子过成诗","存一点小美好","这一刻想记住","柴米油盐的浪漫","认真生活的人","值得纪念的一天","随手一拍","碎片收集中","又是元气满满的一天","好好吃饭好好睡"];
+  var CAP_EN=["Golden Hour","Soft Light","Quiet Moment","Slow Living","Sunny Day","Stay Warm","Catch the Light","Little Things","Be Here Now","Good Vibes","Daydream","Keep Going","Less is More","Save the Moment","Hello World"];
+  var CAP_TIME={"晨":["清晨好","晨光熹微","早安新一天","清晨第一缕光","晨间序曲","赶早的人"],"上午":["上午好光景","明亮的上午","光线正好"],"午":["正午时分","当头日光","晌午小记"],"午后":["慵懒午后","午后的光","下午茶时间","偷得浮生半日闲"],"暮":["日落收集者","暮色四合","把晚霞收进相册","黄昏限定","落日余晖","向晚的风"],"夜":["夜色温柔","今夜星光","深夜碎语","晚安世界","夜的呼吸","华灯初上"]};
+  var CAP_SEASON={"春":["春日限定","花开有时","春天来了","人间四月天","春和景明","与春天撞个满怀"],"夏":["夏日限定","盛夏光年","西瓜与海","夏天的风","蝉鸣阵阵","清凉一夏"],"秋":["秋日私语","落叶知秋","秋天第一杯","秋意渐浓","一叶知秋","秋天的限定"],"冬":["冬日暖阳","围炉煮茶","初雪可期","冬天的温柔","藏进暖冬","凛冬序曲"]};
+  var CAP_WARM=["暖意融融","被温柔包裹","和煦时光","暖暖的","橘子味下午","暖色调心情"];
+  var CAP_COLD=["清冷时刻","安静的蓝","微凉的风","澄澈如初","冷淡风","蓝调时刻"];
+  var CAP_DARK=["藏在光里","微光时刻","暗处的温柔","夜的呼吸","低调情绪"];
+  var CAP_BRIGHT=["满满的光","向阳而生","亮晶晶的一天","通透明亮","明媚"];
+  var CAP_VIVID=["色彩鲜活","明媚生动","浓墨重彩","高饱和快乐"];
+  var CAP_MUTED=["淡淡的就好","低饱和温柔","素淡","莫兰迪心情"];
+  var CAP_BOKEH=["焦点之外都是温柔","浅焦小景","虚化的浪漫"];
+  var CAP_TELE=["把远方拉近","远处的风景","长焦视角"];
+  var CAP_WIDE=["装下整片天空","天地辽阔","广角里的世界"];
+  function aiShuffle(a){ a=a.slice(); for(var i=a.length-1;i>0;i--){ var j=Math.floor(Math.random()*(i+1)), t=a[i]; a[i]=a[j]; a[j]=t; } return a; }
+  function suggestCaptions(){
+    var ex = state.exif, clue = exifClues(ex);
+    var cs = state.bitmap ? analyzePhoto(state.bitmap) : null;
+    var warm  = cs ? (cs.r - cs.b > 6) : false, cold = cs ? (cs.b - cs.r > 6) : false;
+    var dark  = cs ? cs.luma < 70 : false, bright = cs ? cs.luma > 188 : false;
+    var vivid = cs ? cs.sat > 0.5 : false, muted = cs ? cs.sat < 0.16 : false;
+    var dateStr = (ex && ex.date) ? (formatDate(ex.date).split("  ")[0]) : aiNowDate();
+
+    var ctx = [];
+    if(clue.season && CAP_SEASON[clue.season]) ctx.push(aiPick(CAP_SEASON[clue.season]));
+    if(clue.time && CAP_TIME[clue.time])       ctx.push(aiPick(CAP_TIME[clue.time]));
+    if(warm) ctx.push(aiPick(CAP_WARM)); else if(cold) ctx.push(aiPick(CAP_COLD));
+    if(dark) ctx.push(aiPick(CAP_DARK)); else if(bright) ctx.push(aiPick(CAP_BRIGHT));
+    if(vivid) ctx.push(aiPick(CAP_VIVID)); else if(muted) ctx.push(aiPick(CAP_MUTED));
+    if(clue.bigAperture) ctx.push(aiPick(CAP_BOKEH));
+    else if(clue.lens==="长焦") ctx.push(aiPick(CAP_TELE));
+    else if(clue.lens==="广角") ctx.push(aiPick(CAP_WIDE));
+    var sShort=({"春":"春日","夏":"盛夏","秋":"秋日","冬":"冬日"})[clue.season];
+    var tShort=({"晨":"清晨","上午":"上午","午":"正午","午后":"午后","暮":"暮色","夜":"夜色"})[clue.time];
+    if(sShort && tShort) ctx.push(sShort + tShort);
+    if(clue.device) ctx.push("Shot on " + clue.device);
+
+    var uni = CAP_POETIC.concat(CAP_DAILY, CAP_EN, [dateStr + " 记", dateStr + " 的光", "就是今天"]);
+    var pool = aiShuffle(ctx).concat(aiShuffle(uni));
+    var seen = {}, out = [];
+    for(var i=0;i<pool.length && out.length<4;i++){ var t=(pool[i]||"").trim(); if(t && !seen[t]){ seen[t]=1; out.push(t); } }
+    return out;
+  }
+  function renderCaptions(){
+    var box = $("captionList"); if(!box) return;
+    var list = suggestCaptions();
+    box.innerHTML = "";
+    list.forEach(function(txt){
+      var b = document.createElement("button");
+      b.type = "button"; b.className = "cap-chip"; b.textContent = txt;
+      b.addEventListener("click", function(){
+        textInput.value = txt;
+        if(state.mode!=="manual") setMode("manual"); else draw();
+        toast("已填入「" + txt + "」,可继续改字 ✎");
+      });
+      box.appendChild(b);
+    });
+  }
+
   // ---------- 调色盘 (v2.13.0): 2D 拖动盘 + 强度/饱和滑杆 ----------
   var _toneRaf = 0;
-  // 拖动 / 滑杆期间的重绘:用 rAF 节流,避免每个像素移动都整图重新调色
   function scheduleToneDraw(){
     if(!state.bitmap) return;
     if(!window.requestAnimationFrame){ draw(); return; }
     if(_toneRaf) return;
     _toneRaf = window.requestAnimationFrame(function(){ _toneRaf = 0; draw(); });
   }
-  // 把旋钮放到与 state.toneAdj.temp/tint 对应的位置(−100..100 → 0..100%)
   function placeToneKnob(){
     if(!toneKnob) return;
     var a = state.toneAdj || { temp:0, tint:0 };
-    toneKnob.style.left = ((clampNum(a.temp,-100,100,0)+100)/2) + "%";   // 左冷 右暖
-    toneKnob.style.top  = ((clampNum(a.tint,-100,100,0)+100)/2) + "%";   // 上品红 下绿
+    toneKnob.style.left = ((clampNum(a.temp,-100,100,0)+100)/2) + "%";
+    toneKnob.style.top  = ((clampNum(a.tint,-100,100,0)+100)/2) + "%";
   }
-  // 把 state.toneAdj 完整同步回三个控件 + 数值标签(初始化 / 复位 / 展开时调用)
   function syncTonePad(){
     var a = state.toneAdj || { temp:0, tint:0, sat:0, intensity:100 };
     var inten = clampNum(a.intensity,0,100,100), sv = clampNum(a.sat,-100,100,0);
@@ -2210,7 +2689,6 @@
     if(toneSatVal) toneSatVal.textContent = (sv>0?"+":"") + sv;
     placeToneKnob();
   }
-  // 把盘内坐标换算成 temp/tint 并写回 state(x:0冷→1暖, y:0品红→1绿)
   function padPosToAdj(clientX, clientY){
     var r = tonePad.getBoundingClientRect();
     if(!r.width || !r.height) return;
@@ -2221,16 +2699,14 @@
   }
   function bindTonePad(){
     if(!tonePad) return;
-    // 折叠 / 展开
     if(toneToggle && tonePanel){
       toneToggle.addEventListener("click", function(){
         var open = !tonePanel.classList.toggle("hidden");
         toneToggle.setAttribute("aria-expanded", open ? "true" : "false");
         toneToggle.textContent = open ? "调色盘 ▴" : "调色盘 ▾";
-        if(open) syncTonePad();   // 展开后盘可见,重新摆好旋钮
+        if(open) syncTonePad();
       });
     }
-    // 盘拖动
     var dragging = false;
     function down(cx, cy, e, pid){
       dragging = true;
@@ -2255,7 +2731,6 @@
       tonePad.addEventListener("pointerup",   function(e){ up(e, e.pointerId); });
       tonePad.addEventListener("pointercancel", function(e){ up(e, e.pointerId); });
     } else {
-      // 旧 Safari 兜底:touch + mouse
       tonePad.addEventListener("touchstart", function(e){ var t=e.touches[0]; if(t) down(t.clientX, t.clientY, e, null); }, {passive:false});
       tonePad.addEventListener("touchmove",  function(e){ var t=e.touches[0]; if(t) move(t.clientX, t.clientY, e); }, {passive:false});
       tonePad.addEventListener("touchend",   function(){ up(null, null); });
@@ -2263,7 +2738,6 @@
       window.addEventListener("mousemove", function(e){ move(e.clientX, e.clientY, e); });
       window.addEventListener("mouseup",   function(){ up(null, null); });
     }
-    // 强度滑杆
     if(toneIntensity){
       toneIntensity.addEventListener("input", function(){
         state.toneAdj.intensity = clampNum(toneIntensity.value,0,100,100);
@@ -2272,7 +2746,6 @@
       });
       toneIntensity.addEventListener("change", savePrefs);
     }
-    // 饱和滑杆
     if(toneSat){
       toneSat.addEventListener("input", function(){
         state.toneAdj.sat = clampNum(toneSat.value,-100,100,0);
@@ -2281,7 +2754,6 @@
       });
       toneSat.addEventListener("change", savePrefs);
     }
-    // 复位:回到中点 / 满强度(不动上面选中的一键色调)
     if(toneReset){
       toneReset.addEventListener("click", function(){
         state.toneAdj = { temp:0, tint:0, sat:0, intensity:100 };
@@ -2292,9 +2764,8 @@
         savePrefs();
       });
     }
-    // 智能配色 (v3.0 A1):点一下,按这张照片自动拨好盘子
     if(smartColorBtn){ smartColorBtn.addEventListener("click", smartColor); }
-    syncTonePad();   // 反映已恢复的偏好
+    syncTonePad();
   }
 
   // ================= mode switching =================
@@ -2303,7 +2774,7 @@
   });
 
   function setMode(mode, silent){
-    if(!silent){ prefMode = mode; savePrefs(); }   // record the user's intent before any auto→manual fallback
+    if(!silent){ prefMode = mode; savePrefs(); }
     if(mode==="auto" && !state.exif){
       if(!silent) toast("这张照片没有拍摄信息，已切回手动输入");
       mode="manual";
@@ -2315,6 +2786,23 @@
     manualField.classList.toggle("hidden", mode!=="manual");
     autoField.classList.toggle("hidden", mode!=="auto");
     draw();
+  }
+
+  // ================= 编辑器分页:水印 / 调色 (6.5) =================
+  Array.prototype.forEach.call(editTabs.querySelectorAll("button"), function(b){
+    b.addEventListener("click", function(){ setEditTab(b.getAttribute("data-tab")); });
+  });
+
+  function setEditTab(tab){
+    if(tab!=="color" && tab!=="collage") tab="watermark";
+    state.editTab=tab;
+    Array.prototype.forEach.call(editTabs.querySelectorAll("button"), function(b){
+      b.classList.toggle("on", b.getAttribute("data-tab")===tab);
+    });
+    watermarkPane.classList.toggle("hidden", tab!=="watermark");
+    colorPane.classList.toggle("hidden", tab!=="color");
+    if(collagePane) collagePane.classList.toggle("hidden", tab!=="collage");
+    if(tab==="collage" && typeof refreshCollagePane==="function") refreshCollagePane();
   }
 
   function renderAutoPanel(){
@@ -2334,42 +2822,32 @@
   function escapeHtml(s){ return String(s).replace(/[&<>"]/g,function(m){return({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[m]);}); }
 
   textInput.addEventListener("input", function(){ if(state.mode==="manual") draw(); });
+  (function(){ var cb=$("captionBtn"); if(cb) cb.addEventListener("click", renderCaptions); })();
 
   // ================= color grading (色调影调 · Beta, v2.12.0) =================
-  // Grade the photo ONCE into a cached offscreen canvas; getSize() hands that canvas back as `bmp`,
-  // so every style AND the export inherit the look with no per-style code. Manual pixel math
-  // (getImageData/putImageData), NOT ctx.filter — iOS Safari doesn't apply ctx.filter color ops on canvas.
-  // 内置滤镜清单(v2.14.0 由 8 款扩到 20 款 + 原图,并带分类 cat;原图 cat 留空,渲染时永远排第一)
   var TONE_LIST = [
     {id:"none",  name:"原图",   cat:""},
-    // 胶片 film
     {id:"film",      name:"复古", cat:"film"},
     {id:"kodak",     name:"柯达", cat:"film"},
     {id:"fade",      name:"褪色", cat:"film"},
     {id:"fujiGreen", name:"富士", cat:"film"},
-    // 黑白 bw
     {id:"bw",     name:"黑白",   cat:"bw"},
     {id:"bwHigh", name:"高反差", cat:"bw"},
     {id:"bwSoft", name:"柔黑白", cat:"bw"},
-    // 暖色 warm
     {id:"warm",       name:"暖阳", cat:"warm"},
     {id:"autumnWarm", name:"暖秋", cat:"warm"},
     {id:"goldenHour", name:"落日", cat:"warm"},
-    // 冷色 cool
     {id:"cool",     name:"冷调", cat:"cool"},
     {id:"deepBlue", name:"冷蓝", cat:"cool"},
     {id:"cyanLime", name:"青柠", cat:"cool"},
-    // 清新 fresh
     {id:"fresh", name:"清新", cat:"fresh"},
     {id:"japan", name:"日系", cat:"fresh"},
     {id:"cream", name:"奶油", cat:"fresh"},
-    // 风格 mood
     {id:"gray",      name:"高级灰", cat:"mood"},
     {id:"vivid",     name:"鲜艳",   cat:"mood"},
     {id:"cinematic", name:"电影感", cat:"mood"},
     {id:"hkRetro",   name:"港风",   cat:"mood"}
   ];
-  // each preset = saturation / contrast / brightness(×) / temp(+r −b) / tint(+g) / lift(raise blacks)
   var TONE_PARAMS = {
     film:       { sat:0.82, con:0.92, bri:1.03, temp:12,  tint:-4, lift:16 },
     kodak:      { sat:0.98, con:0.96, bri:1.03, temp:16,  tint:3,  lift:12 },
@@ -2392,7 +2870,6 @@
     cinematic:  { sat:0.92, con:1.14, bri:0.99, temp:-5,  tint:-3, lift:8  },
     hkRetro:    { sat:1.06, con:1.10, bri:0.99, temp:-8,  tint:5,  lift:6  }
   };
-  // 滤镜分类(滤镜区上方的快速筛选 chip);"我的" 放用户自存的滤镜,其余放对应分类的内置滤镜
   var FILTER_CATEGORIES = [
     {key:"all",   label:"全部"},
     {key:"film",  label:"胶片"},
@@ -2403,11 +2880,11 @@
     {key:"mood",  label:"风格"},
     {key:"mine",  label:"我的"}
   ];
-  var filterCat = "all";   // 当前选中的滤镜分类
+  var filterCat = "all";
 
   // ---------- 自定义滤镜(我的滤镜):存当前底色调 + 调色盘微调,localStorage 持久 ----------
   var FILTERS_STORAGE_KEY = "yinji.filters.v1";
-  var customFilters = [];  // [{id,name,base,adj:{temp,tint,sat,intensity}}]
+  var customFilters = [];
   function isValidCustomFilter(f){
     return f && typeof f.id==="string" && typeof f.name==="string"
       && f.adj && typeof f.adj==="object" && typeof f.base==="string";
@@ -2430,17 +2907,16 @@
   var _gradeCache = { sig:null, w:0, h:0, src:null, canvas:null };
   function invalidateGrade(){ _gradeCache = { sig:null, w:0, h:0, src:null, canvas:null }; }
 
-  // 把任意输入夹紧到 [lo,hi];非数字时回退到 fallback
   function clampNum(v, lo, hi, fallback){
     v = (typeof v==="number" && v===v) ? v : Number(v);
-    if(!(v===v)) return fallback;            // NaN
+    if(!(v===v)) return fallback;
     return v<lo?lo : v>hi?hi : v;
   }
 
   function applyTone(d, p){
     var sat=p.sat, con=p.con, bri=p.bri, temp=p.temp||0, tint=p.tint||0, lift=p.lift||0;
-    var K = (typeof p.intensity==="number") ? p.intensity : 1;   // 整体强度 0..1,与原像素混合
-    var liftK=(255-lift)/255;   // remap so 0→lift, 255→255 (raised black point = faded look)
+    var K = (typeof p.intensity==="number") ? p.intensity : 1;
+    var liftK=(255-lift)/255;
     for(var i=0;i<d.length;i+=4){
       var r0=d[i], g0=d[i+1], b0=d[i+2], r=r0, g=g0, b=b0;
       if(sat!==1){ var gy=0.299*r+0.587*g+0.114*b; r=gy+(r-gy)*sat; g=gy+(g-gy)*sat; b=gy+(b-gy)*sat; }
@@ -2449,46 +2925,40 @@
       if(con!==1){ r=(r-128)*con+128; g=(g-128)*con+128; b=(b-128)*con+128; }
       if(bri!==1){ r*=bri; g*=bri; b*=bri; }
       if(lift){ r=r*liftK+lift; g=g*liftK+lift; b=b*liftK+lift; }
-      if(K!==1){ r=r0+(r-r0)*K; g=g0+(g-g0)*K; b=b0+(b-b0)*K; }   // 强度混合:K=0 还原, K=1 全效
+      if(K!==1){ r=r0+(r-r0)*K; g=g0+(g-g0)*K; b=b0+(b-b0)*K; }
       d[i]   = r<0?0:r>255?255:r;
       d[i+1] = g<0?0:g>255?255:g;
       d[i+2] = b<0?0:b>255?255:b;
     }
   }
 
-  // 调色盘微调层 (v2.13.0): 把所选预设与 state.toneAdj(冷暖/绿品/饱和/强度)合成成一套 applyTone 参数。
-  // 预设为底,盘做"加/减":冷暖盘叠加 temp、绿品盘叠加 tint(各 ±100 → ±40)、饱和滑杆乘 base.sat、强度统管全局混合。
   function effectiveParams(){
     var t = state.tone || "none";
     var base = TONE_PARAMS[t] || { sat:1, con:1, bri:1, temp:0, tint:0, lift:0 };
     var a = state.toneAdj || { temp:0, tint:0, sat:0, intensity:100 };
-    var satMul = 1 + clampNum(a.sat,-100,100,0)/100;   // 饱和滑杆: -100→0(灰), 0→原, +100→2×
+    var satMul = 1 + clampNum(a.sat,-100,100,0)/100;
     return {
       sat:  base.sat * satMul,
       con:  base.con,
       bri:  base.bri,
-      temp: (base.temp||0) + clampNum(a.temp,-100,100,0)*0.4,   // 冷暖盘 X: ±100 → ±40
-      tint: (base.tint||0) + clampNum(a.tint,-100,100,0)*0.4,   // 绿品盘 Y: ±100 → ±40
+      temp: (base.temp||0) + clampNum(a.temp,-100,100,0)*0.4,
+      tint: (base.tint||0) + clampNum(a.tint,-100,100,0)*0.4,
       lift: base.lift||0,
       intensity: clampNum(a.intensity,0,100,100)/100
     };
   }
-  // 是否需要调色:选了预设、或盘被拨离中点;且强度>0(强度=0 等于还原原图)。
   function hasGrade(){
     var a = state.toneAdj || {};
     var presetOn = state.tone && state.tone!=="none" && !!TONE_PARAMS[state.tone];
     var dialOn = clampNum(a.temp,-100,100,0)!==0 || clampNum(a.tint,-100,100,0)!==0 || clampNum(a.sat,-100,100,0)!==0;
     return (presetOn || dialOn) && clampNum(a.intensity,0,100,100) > 0;
   }
-  // 缓存指纹:任一调色项变化都会让指纹变、从而让离屏缓存失效、触发重新调色。
   function gradeSig(){
     var a = state.toneAdj || {};
     return (state.tone||"none")+"|"+clampNum(a.temp,-100,100,0)+"|"+clampNum(a.tint,-100,100,0)
       +"|"+clampNum(a.sat,-100,100,0)+"|"+clampNum(a.intensity,0,100,100);
   }
 
-  // Graded offscreen canvas sized (w,h) — or the original bmp when nothing to grade / on any failure
-  // (e.g. a tainted canvas). Cached by gradeSig() so repeated draws (typing text) don't re-grade every keystroke.
   function gradedBitmap(bmp, w, h){
     if(!hasGrade()) return bmp;
     var sig = gradeSig();
@@ -2501,7 +2971,7 @@
       octx=off.getContext("2d");
       octx.drawImage(bmp,0,0,w,h);
       img=octx.getImageData(0,0,w,h);
-    }catch(e){ return bmp; }   // tainted / OOM → silently fall back to ungraded
+    }catch(e){ return bmp; }
     applyTone(img.data, effectiveParams());
     octx.putImageData(img,0,0);
     _gradeCache = { sig:sig, w:w, h:h, src:bmp, canvas:off };
@@ -2519,7 +2989,6 @@
     return { bmp:gradedBitmap(bmp, w, h), w:w, h:h };
   }
 
-  // Dispatch table: state.style -> draw function
   var DRAW_DISPATCH = {
     classic:        drawClassic,
     polaroid:       drawPolaroid,
@@ -2536,51 +3005,48 @@
     hasselblad:     drawHasselblad,
     minimalFrame:   drawMinimalFrame,
     magazineLight:  drawMagazineLight,
-    // seasonal — shared renderer bound to a palette
     springCherry:   function(){ drawSeasonStyle(SEASON.spring); },
     summerSea:      function(){ drawSeasonStyle(SEASON.summer); },
     autumnMaple:    function(){ drawSeasonStyle(SEASON.autumn); },
     winterSnow:     function(){ drawSeasonStyle(SEASON.winter); },
-    // v2.9.1 — same seasonal renderer, three more palettes
     graduation:     function(){ drawSeasonStyle(SEASON.grad); },
     morandi:        function(){ drawSeasonStyle(SEASON.morandi); },
     solarTerm:      function(){ drawSeasonStyle(SEASON.solarTerm); },
-    // camera-brand — shared renderer bound to a palette
     fujiFilm:       function(){ drawBrandStyle(BRAND.fuji); },
     sonyAlpha:      function(){ drawBrandStyle(BRAND.sony); },
     nikonGold:      function(){ drawBrandStyle(BRAND.nikon); },
     canonRed:       function(){ drawBrandStyle(BRAND.canon); },
-    // liquid glass
     glassBar:       drawGlassBar,
     glassCard:      drawGlassCard,
     glassFrame:     drawGlassFrame,
-    // birthday / anniversary
     birthday:       drawBirthday,
     anniversary:    drawAnniversary,
-    // v2.10.0 — more palettes on the shared renderers (no new draw code)
     midAutumn:      function(){ drawSeasonStyle(SEASON.midAutumn); },
     mistBlue:       function(){ drawSeasonStyle(SEASON.mistBlue); },
     duskMountain:   function(){ drawSeasonStyle(SEASON.duskMountain); },
     daiPurple:      function(){ drawSeasonStyle(SEASON.daiPurple); },
-    nightBlue:      function(){ drawBrandStyle(BRAND.night); }
+    nightBlue:      function(){ drawBrandStyle(BRAND.night); },
+    matchaGreen:    function(){ drawSeasonStyle(SEASON.matcha); },
+    milkTea:        function(){ drawSeasonStyle(SEASON.milkTea); },
+    lotusPink:      function(){ drawSeasonStyle(SEASON.lotusPink); },
+    oatCream:       function(){ drawSeasonStyle(SEASON.oatCream); },
+    silverMono:     function(){ drawBrandStyle(BRAND.silver); },
+    kodakGold:      function(){ drawBrandStyle(BRAND.kodak); }
   };
 
   function draw(){
     if(!state.bitmap) return;
-    // Custom template? Render by recipe (see drawCustom).
     var custom = findCustomTemplate(state.style);
     if(custom){ drawCustom(custom); return; }
     var fn = DRAW_DISPATCH[state.style] || drawClassic;
     fn();
   }
 
-  // Press-and-hold the canvas to peek at the original photo (no watermark); release restores.
-  // Timer-based (220ms) so a quick tap does nothing; a >10px move cancels so page scroll still works.
   function drawOriginalOnly(){
     var s=getSize(); if(!s) return;
     canvas.width=s.w; canvas.height=s.h;
     ctx.clearRect(0,0,s.w,s.h);
-    ctx.drawImage(state.bitmap,0,0,s.w,s.h);   // truly original — no color grading, no watermark
+    ctx.drawImage(state.bitmap,0,0,s.w,s.h);
   }
   (function(){
     var holdTimer=null, holding=false, sx=0, sy=0;
@@ -2606,7 +3072,6 @@
     ctx.fillRect(0,0,canvas.width,canvas.height);
     ctx.drawImage(s.bmp,0,0,w,h);
 
-    // thin separator line above the bar
     ctx.strokeStyle="rgba(0,0,0,.06)";
     ctx.lineWidth=Math.max(1,w*0.001);
     ctx.beginPath(); ctx.moveTo(0,h+0.5); ctx.lineTo(w,h+0.5); ctx.stroke();
@@ -2624,7 +3089,6 @@
     ctx.fillRect(0,0,canvas.width,canvas.height);
     ctx.drawImage(s.bmp,0,0,w,h);
 
-    // Leica red strip at top of bar (thick + obvious, the iconic Leica cue)
     var redH=Math.max(6, Math.round(barH*0.14));
     ctx.fillStyle=COLORS.leicaRed;
     ctx.fillRect(0, h, w, redH);
@@ -2646,19 +3110,16 @@
     ctx.fillStyle="#FFFFFF";
     ctx.fillRect(0,0,cw,ch);
 
-    // subtle soft shadow under the photo
     ctx.shadowColor="rgba(0,0,0,.18)";
     ctx.shadowBlur=Math.max(6, Math.round(w*0.012));
     ctx.shadowOffsetY=Math.max(2, Math.round(w*0.004));
     ctx.drawImage(s.bmp, side, side, w, h);
     ctx.shadowColor="transparent"; ctx.shadowBlur=0; ctx.shadowOffsetY=0;
 
-    // crisp hairline around the photo
     ctx.strokeStyle="rgba(0,0,0,.08)";
     ctx.lineWidth=Math.max(1,w*0.001);
     ctx.strokeRect(side+0.5, side+0.5, w-1, h-1);
 
-    // text band sits centered in the lower white area, slightly above midline
     var effectiveBarH=Math.max(64, Math.round(bottom*0.55));
     var textOy=side+h+Math.round((bottom-effectiveBarH)*0.45);
     drawText(side, textOy, w, effectiveBarH);
@@ -2670,7 +3131,6 @@
     canvas.width=w; canvas.height=h;
     ctx.drawImage(s.bmp,0,0,w,h);
 
-    // top subtle dark gradient
     var topH=Math.round(h*0.16);
     var topG=ctx.createLinearGradient(0,0,0,topH);
     topG.addColorStop(0,"rgba(0,0,0,.42)");
@@ -2678,7 +3138,6 @@
     ctx.fillStyle=topG;
     ctx.fillRect(0,0,w,topH);
 
-    // bottom dark gradient for title + caption
     var botStart=Math.round(h*0.5);
     var botG=ctx.createLinearGradient(0,botStart,0,h);
     botG.addColorStop(0,"rgba(0,0,0,0)");
@@ -2689,14 +3148,12 @@
 
     var pad=Math.round(w*0.055);
 
-    // top brand tag
     var tagPx=Math.max(13, Math.round(w*0.024));
     ctx.font="500 "+tagPx+'px '+FONT;
     ctx.fillStyle="rgba(255,255,255,.9)";
     ctx.textAlign="left"; ctx.textBaseline="top";
     ctx.fillText("印迹  ·  PHOTO", pad, Math.round(pad*0.7));
 
-    // gather title + caption based on mode
     var title, caption;
     if(state.mode==="manual"){
       title = ((textInput.value||"").trim() || "MOMENT").toUpperCase();
@@ -2736,32 +3193,26 @@
     var cw=w+side*2, ch=h+side+bottom;
     canvas.width=cw; canvas.height=ch;
 
-    // cream paper background
     ctx.fillStyle="#FAF6EE";
     ctx.fillRect(0,0,cw,ch);
 
-    // photo with soft drop shadow
     ctx.shadowColor="rgba(0,0,0,.22)";
     ctx.shadowBlur=Math.max(10, Math.round(w*0.016));
     ctx.shadowOffsetY=Math.max(3, Math.round(w*0.006));
     ctx.drawImage(s.bmp, side, side, w, h);
     ctx.shadowColor="transparent"; ctx.shadowBlur=0; ctx.shadowOffsetY=0;
 
-    // warm vintage tint over the photo
     ctx.fillStyle="rgba(194,99,45,.09)";
     ctx.fillRect(side, side, w, h);
 
-    // hairline border
     ctx.strokeStyle="rgba(0,0,0,.12)";
     ctx.lineWidth=Math.max(1, w*0.0012);
     ctx.strokeRect(side+0.5, side+0.5, w-1, h-1);
 
-    // centered text band
     var effectiveBarH=Math.max(64, Math.round(bottom*0.5));
     var textOy=side+h+Math.round((bottom-effectiveBarH)*0.4);
     drawText(side, textOy, w, effectiveBarH);
 
-    // italic serif annotation at lower-right corner of frame
     var hwPx=Math.max(15, Math.round(w*0.025));
     ctx.font="italic 500 "+hwPx+'px '+SERIF;
     ctx.fillStyle="rgba(28,24,20,.55)";
@@ -2834,14 +3285,11 @@
     var bot=Math.max(80, Math.round(w*0.11));
     canvas.width=w+stripW*2; canvas.height=h+bot;
 
-    // film body color (dark warm brown)
     ctx.fillStyle="#1F1B16";
     ctx.fillRect(0,0,canvas.width,canvas.height);
 
-    // photo
     ctx.drawImage(s.bmp, stripW, 0, w, h);
 
-    // perforations on both vertical strips
     var pw=Math.round(stripW*0.55);
     var ph=Math.round(pw*0.65);
     var spacing=Math.round(ph*2.2);
@@ -2869,7 +3317,6 @@
     ctx.fillRect(0,0,canvas.width,canvas.height);
     ctx.drawImage(s.bmp, bw, bw, w, h);
 
-    // gold inner border around photo
     ctx.strokeStyle=COLORS.festivalGold;
     ctx.lineWidth=Math.max(2, w*0.0035);
     ctx.strokeRect(bw+0.5, bw+0.5, w-1, h-1);
@@ -2891,21 +3338,18 @@
     ctx.fillRect(0,0,canvas.width,canvas.height);
     ctx.drawImage(s.bmp, 0, 0, w, h);
 
-    // soft gradient on bar
     var g=ctx.createLinearGradient(0,h,0,h+barH);
     g.addColorStop(0, "#F4E6D8");
     g.addColorStop(1, "#FFFFFF");
     ctx.fillStyle=g;
     ctx.fillRect(0, h, w, barH);
 
-    // location pin icon (left side)
     var pad=Math.round(w*0.05);
     var iconSize=Math.round(barH*0.5);
     var iconX=pad + iconSize/2;
     var iconY=h + barH/2;
     drawPinIcon(iconX, iconY, iconSize, COLORS.leicaRed);
 
-    // text right of icon (left-aligned, single line)
     var text;
     if(state.mode==="manual"){
       text=(textInput.value||"").trim() || "我的足迹";
@@ -2928,14 +3372,12 @@
   function drawPinIcon(cx, cy, size, color){
     ctx.save();
     ctx.fillStyle = color;
-    // teardrop shape
     ctx.beginPath();
     ctx.arc(cx, cy - size*0.18, size*0.38, Math.PI, 0, false);
     ctx.lineTo(cx + size*0.08, cy + size*0.42);
     ctx.quadraticCurveTo(cx, cy + size*0.5, cx - size*0.08, cy + size*0.42);
     ctx.closePath();
     ctx.fill();
-    // white inner dot
     ctx.fillStyle = "#FFFFFF";
     ctx.beginPath();
     ctx.arc(cx, cy - size*0.18, size*0.13, 0, Math.PI*2);
@@ -2949,7 +3391,6 @@
     canvas.width=w; canvas.height=h;
     ctx.drawImage(s.bmp,0,0,w,h);
 
-    // bottom dark gradient for readability
     var gradH=Math.round(h*0.45);
     var grad=ctx.createLinearGradient(0,h-gradH,0,h);
     grad.addColorStop(0,"rgba(0,0,0,0)");
@@ -2994,7 +3435,6 @@
     ctx.fillRect(0,0,canvas.width,canvas.height);
     ctx.drawImage(s.bmp,0,0,w,h);
 
-    // orange accent strip at top of bar (Hasselblad signature)
     var accentH=Math.max(4, Math.round(barH*0.07));
     ctx.fillStyle=COLORS.hasselbladOrange;
     ctx.fillRect(0, h, w, accentH);
@@ -3016,12 +3456,10 @@
     ctx.fillRect(0,0,canvas.width,canvas.height);
     ctx.drawImage(s.bmp, side, side, w, h);
 
-    // hairline border around the photo
     ctx.strokeStyle="rgba(0,0,0,.22)";
     ctx.lineWidth=Math.max(1, w*0.0014);
     ctx.strokeRect(side+0.5, side+0.5, w-1, h-1);
 
-    // small caption below, right-aligned
     var text;
     if(state.mode==="manual"){
       text=(textInput.value||"").trim() || "2026.05.28";
@@ -3045,7 +3483,6 @@
     ctx.fillRect(0,0,canvas.width,canvas.height);
     ctx.drawImage(s.bmp,0,0,w,h);
 
-    // small brand tag at top of panel
     var pad = Math.round(w*0.055);
     var tagPx = Math.max(11, Math.round(w*0.02));
     ctx.font="500 "+tagPx+'px '+FONT;
@@ -3053,7 +3490,6 @@
     ctx.textAlign="left"; ctx.textBaseline="top";
     ctx.fillText("印迹  ·  PHOTO", pad, h + Math.round(pad*0.45));
 
-    // title + caption
     var title, caption;
     if(state.mode==="manual"){
       title = ((textInput.value||"").trim() || "MOMENT").toUpperCase();
@@ -3084,7 +3520,6 @@
 
   // ========== v2.7.1 added presets: seasonal / camera-brand / glass / celebration ==========
 
-  // rounded-rect path helper (used by glass card); builds a path, caller fills/strokes/clips
   function roundRectPath(x, y, wd, ht, r){
     r = Math.min(r, wd/2, ht/2);
     ctx.beginPath();
@@ -3096,7 +3531,6 @@
     ctx.closePath();
   }
 
-  // Seasonal — tinted bottom bar + thin accent hairline. One renderer, four palettes.
   function drawSeasonStyle(pal){
     var s=getSize(); if(!s) return;
     var w=s.w, h=s.h;
@@ -3106,7 +3540,6 @@
     ctx.fillRect(0,0,canvas.width,canvas.height);
     ctx.drawImage(s.bmp,0,0,w,h);
 
-    // thin accent rule a little below the photo edge (editorial feel)
     var pad=Math.round(w*0.06);
     var lineY=h+Math.round(barH*0.24);
     ctx.strokeStyle=pal.accent;
@@ -3120,7 +3553,6 @@
     });
   }
 
-  // Camera-brand — dark bar + brand-color accent strip + brand-color text. Mirrors Hasselblad.
   function drawBrandStyle(pal){
     var s=getSize(); if(!s) return;
     var w=s.w, h=s.h;
@@ -3142,21 +3574,17 @@
   }
 
   // ---- frosted-glass blur of a region of the ALREADY-DRAWN photo on the main canvas ----
-  // Method: copy the region to a tiny offscreen canvas (heavy downscale) then smooth-upscale it
-  // back. This is a reliable strong blur on EVERY browser (no dependency on ctx.filter blur,
-  // which iOS Safari renders weakly / not at all on canvas). saturate+brightness add the
-  // vivid "liquid glass" light refraction. Call AFTER the photo is drawn to the canvas.
   function frostDraw(x, y, ww, hh){
-    var bw = Math.max(16, Math.round(ww/24));          // tiny intermediate width → heavy frost
+    var bw = Math.max(16, Math.round(ww/24));
     var bh = Math.max(2, Math.round(hh * bw / ww));
     var tmp = document.createElement("canvas");
     tmp.width = bw; tmp.height = bh;
     var tctx = tmp.getContext("2d");
-    tctx.drawImage(canvas, x, y, ww, hh, 0, 0, bw, bh);   // sample the region from the canvas
+    tctx.drawImage(canvas, x, y, ww, hh, 0, 0, bw, bh);
     ctx.imageSmoothingEnabled = true;
     if("imageSmoothingQuality" in ctx) ctx.imageSmoothingQuality = "high";
     if(typeof ctx.filter !== "undefined") ctx.filter = "saturate(155%) brightness(1.06)";
-    ctx.drawImage(tmp, 0, 0, bw, bh, x, y, ww, hh);       // smooth-upscale = the frosted look
+    ctx.drawImage(tmp, 0, 0, bw, bh, x, y, ww, hh);
     if(typeof ctx.filter !== "undefined") ctx.filter = "none";
   }
   function frostRect(x, y, ww, hh){
@@ -3172,7 +3600,6 @@
     ctx.restore();
   }
 
-  // Liquid glass — frosted bottom bar OVER the photo (strong downscale-blur frost).
   function drawGlassBar(){
     var s=getSize(); if(!s) return;
     var w=s.w, h=s.h;
@@ -3182,15 +3609,12 @@
     var barH=Math.max(72, Math.round(h*0.15));
     var barTop=h-barH;
 
-    // frost: strong frosted-glass blur of the photo region under the bar
     frostRect(0, barTop, w, barH);
-    // translucent dark tint so white text stays legible over any photo
     var g=ctx.createLinearGradient(0, barTop, 0, h);
     g.addColorStop(0, "rgba(20,20,24,.26)");
     g.addColorStop(1, "rgba(20,20,24,.44)");
     ctx.fillStyle=g;
     ctx.fillRect(0, barTop, w, barH);
-    // bright top highlight line (glass edge)
     ctx.fillStyle="rgba(255,255,255,.42)";
     ctx.fillRect(0, barTop, w, Math.max(1, Math.round(h*0.0018)));
 
@@ -3201,7 +3625,6 @@
     });
   }
 
-  // Liquid glass — floating frosted rounded chip near the bottom holding the text.
   function drawGlassCard(){
     var s=getSize(); if(!s) return;
     var w=s.w, h=s.h;
@@ -3214,9 +3637,7 @@
     var chipY=h - Math.round(h*0.05) - chipH;
     var r=Math.round(chipH*0.34);
 
-    // frost: strong frosted-glass blur clipped to the rounded chip
     frostRound(chipX, chipY, chipW, chipH, r);
-    // tinted glass fill
     ctx.save();
     roundRectPath(chipX, chipY, chipW, chipH, r);
     var g=ctx.createLinearGradient(0, chipY, 0, chipY+chipH);
@@ -3224,7 +3645,6 @@
     g.addColorStop(1, "rgba(28,28,32,.48)");
     ctx.fillStyle=g; ctx.fill();
     ctx.restore();
-    // highlight border
     ctx.save();
     roundRectPath(chipX, chipY, chipW, chipH, r);
     ctx.lineWidth=Math.max(1, Math.round(w*0.0016));
@@ -3239,43 +3659,37 @@
     });
   }
 
-  // Liquid glass — frosted glass border on ALL FOUR sides; the bottom side is taller and holds
-  // the text. Reuses frostRect (downscale-blur) so the frost is reliable on iOS Safari. v2.12.0.
   function drawGlassFrame(){
     var s=getSize(); if(!s) return;
     var w=s.w, h=s.h;
     canvas.width=w; canvas.height=h;
     ctx.drawImage(s.bmp,0,0,w,h);
 
-    var m=Math.max(22, Math.round(Math.min(w,h)*0.052));   // top / left / right thickness
-    var barH=Math.max(76, Math.round(h*0.14));             // bottom border — taller, holds the text
-    if(barH > Math.round(h*0.4)) barH=Math.round(h*0.4);   // guard for very short photos
-    var midH=h-m-barH;                                     // height of the left/right side strips
+    var m=Math.max(22, Math.round(Math.min(w,h)*0.052));
+    var barH=Math.max(76, Math.round(h*0.14));
+    if(barH > Math.round(h*0.4)) barH=Math.round(h*0.4);
+    var midH=h-m-barH;
     if(midH < 0) midH=0;
 
-    // frost the four border regions (over the photo edges) — corners covered by top/bottom strips
-    frostRect(0, 0, w, m);                 // top
-    frostRect(0, h-barH, w, barH);         // bottom (tall)
+    frostRect(0, 0, w, m);
+    frostRect(0, h-barH, w, barH);
     if(midH>0){
-      frostRect(0, m, m, midH);            // left
-      frostRect(w-m, m, m, midH);          // right
+      frostRect(0, m, m, midH);
+      frostRect(w-m, m, m, midH);
     }
 
-    // light glass tint on top/left/right keeps the rim bright & cohesive (not too dark)
     ctx.save();
     ctx.fillStyle="rgba(248,250,252,.16)";
     ctx.fillRect(0,0,w,m);
     if(midH>0){ ctx.fillRect(0,m,m,midH); ctx.fillRect(w-m,m,m,midH); }
     ctx.restore();
 
-    // bottom bar: darker translucent gradient so white text stays legible over any photo
     var g=ctx.createLinearGradient(0, h-barH, 0, h);
     g.addColorStop(0, "rgba(20,20,24,.24)");
     g.addColorStop(1, "rgba(20,20,24,.44)");
     ctx.fillStyle=g;
     ctx.fillRect(0, h-barH, w, barH);
 
-    // glass rim: bright highlight around the inner photo opening + faint top sheen line
     var iw=w-2*m, ih=h-m-barH;
     if(iw>0 && ih>0){
       ctx.save();
@@ -3294,7 +3708,6 @@
     });
   }
 
-  // small filled heart (for the anniversary style)
   function drawHeartIcon(cx, cy, sz, color){
     ctx.save();
     ctx.fillStyle=color;
@@ -3307,7 +3720,6 @@
     ctx.restore();
   }
 
-  // Birthday — warm bar with a thin band of colorful confetti dots above the text.
   function drawBirthday(){
     var s=getSize(); if(!s) return;
     var w=s.w, h=s.h;
@@ -3323,7 +3735,6 @@
     ctx.fillStyle=g;
     ctx.fillRect(0,h,w,barH);
 
-    // fixed (deterministic) confetti so the preview doesn't flicker between draws
     var confetti=[
       [0.06,0.20,"#EB5757"],[0.15,0.78,"#F2994A"],[0.24,0.30,"#F2C94C"],
       [0.35,0.70,"#27AE60"],[0.46,0.22,"#2D9CDB"],[0.57,0.74,"#9B51E0"],
@@ -3349,7 +3760,6 @@
     });
   }
 
-  // Anniversary — clean white bar with a small rose heart above the text.
   function drawAnniversary(){
     var s=getSize(); if(!s) return;
     var w=s.w, h=s.h;
@@ -3411,14 +3821,12 @@
     ctx.fillStyle = tpl.bg || COLORS.paperWhite;
     ctx.fillRect(0,0,canvas.width,canvas.height);
 
-    // photo with subtle shadow
     ctx.shadowColor="rgba(0,0,0,.16)";
     ctx.shadowBlur=Math.max(6, Math.round(w*0.012));
     ctx.shadowOffsetY=Math.max(2, Math.round(w*0.004));
     ctx.drawImage(s.bmp, side, side, w, h);
     ctx.shadowColor="transparent"; ctx.shadowBlur=0; ctx.shadowOffsetY=0;
 
-    // hairline border on photo
     ctx.strokeStyle="rgba(0,0,0,.10)";
     ctx.lineWidth=Math.max(1, w*0.001);
     ctx.strokeRect(side+0.5, side+0.5, w-1, h-1);
@@ -3438,7 +3846,6 @@
     canvas.width=w; canvas.height=h;
     ctx.drawImage(s.bmp,0,0,w,h);
 
-    // bottom gradient — convert tpl.bg to rgba alpha-fade
     var rgb = hexToRgb(tpl.bg || "#000000");
     var grad=ctx.createLinearGradient(0,h*0.5,0,h);
     grad.addColorStop(0,"rgba("+rgb+",0)");
@@ -3461,7 +3868,6 @@
     });
   }
 
-  // helper: pick a "soft" text color = blend text 60% with bg
   function mixSoft(textHex, bgHex){
     var t = hexToRgb(textHex).split(",");
     var b = hexToRgb(bgHex).split(",");
@@ -3507,7 +3913,6 @@
     var cy=oy+barH/2;
     ctx.textBaseline="middle";
 
-    // left block
     var leftRight=pad;
     if(info.device){
       var dpx=Math.round(barH*0.30);
@@ -3525,7 +3930,6 @@
       }
     }
 
-    // right block: params
     if(info.params){
       var gap=barH*0.42;
       var maxRW=w-pad-(info.device?leftRight+gap:pad);
@@ -3533,7 +3937,6 @@
       ctx.font="500 "+rpx+'px '+FONT;
       ctx.fillStyle=textColor; ctx.textAlign="right"; ctx.textBaseline="middle";
       ctx.fillText(info.params, ox+w-pad, cy);
-      // divider
       if(info.device){
         var rw=ctx.measureText(info.params).width;
         var dx=(ox+w-pad-rw)-gap*0.55;
@@ -3547,7 +3950,6 @@
         }
       }
     } else if(!info.device){
-      // nothing usable -> show placeholder centered
       ctx.font="500 "+Math.round(barH*0.3)+'px '+FONT;
       ctx.fillStyle=textSoft; ctx.textAlign="center";
       ctx.fillText("无拍摄信息", ox+w/2, cy);
@@ -3589,14 +3991,10 @@
     });
   }
 
-  // Produce export bytes for the current quality. JPEG paths re-inject the
-  // original photo's EXIF (device/time/exposure/GPS…); PNG is metadata-free.
-  // name of the currently-selected style (preset name or the user's custom-template name)
   function currentStyleName(){
     var c=findCustomTemplate(state.style); if(c && c.name) return c.name;
     var n=presetName(state.style); return n || "水印";
   }
-  // human-friendly export filename, e.g. 印迹_2026-05-31_经典.jpg (date + style, illegal chars stripped)
   function exportFilename(ext){
     var d=new Date(), p=function(n){return (n<10?"0":"")+n;};
     var date=d.getFullYear()+"-"+p(d.getMonth()+1)+"-"+p(d.getDate());
@@ -3626,7 +4024,6 @@
     }catch(e){ return false; }
   }
 
-  // Open the result sheet with a quick preview (always a light JPEG for display).
   saveBtn.addEventListener("click", function(){
     if(!state.bitmap){ return; }
     var url;
@@ -3637,9 +4034,6 @@
     overlay.classList.add("show");
   });
 
-  // Save to album via Web Share (iOS「存储图像」/ Android「保存到相册」); download as fallback.
-  // NOTE: must stay synchronous inside the click gesture — deferring share() loses
-  // user activation on iOS Safari and the share sheet won't open.
   if(saveAlbumBtn){
     saveAlbumBtn.addEventListener("click", function(){
       if(!state.bitmap){ return; }
@@ -3648,9 +4042,8 @@
       var filename=exportFilename(out.ext), file=null;
       try{ file=new File([out.blob], filename, {type:out.mime}); }catch(e){ file=null; }
       if(file && navigator.canShare && navigator.canShare({files:[file]}) && navigator.share){
-        // bare {files} only — the canonical "save image" invocation on iOS
         navigator.share({ files:[file] }).catch(function(err){
-          if(err && err.name==="AbortError") return; // user cancelled — silent
+          if(err && err.name==="AbortError") return;
           if(downloadBlob(out.blob, filename)) toast("已开始下载，请到下载文件夹查看");
         });
         return;
@@ -3660,7 +4053,6 @@
     });
   }
 
-  // Download as a file (mainly for desktop browsers).
   downloadLink.addEventListener("click", function(){
     if(!state.bitmap){ return; }
     var out;
@@ -3669,9 +4061,6 @@
     else toast("下载失败，请长按上方图片保存");
   });
 
-  // Copy the watermarked image to the clipboard (paste straight into chat / docs).
-  // Feature-gated: button stays hidden unless ClipboardItem image write is supported.
-  // The blob is built synchronously inside the click gesture so iOS keeps user activation.
   if(copyImgBtn){
     if(!(window.ClipboardItem && navigator.clipboard && navigator.clipboard.write)){
       copyImgBtn.hidden = true;
@@ -3699,9 +4088,10 @@
   resetBtn.addEventListener("click", function(){
     state.bitmap=null; state.exif=null; state.exifApp1=null;
     invalidateGrade();
+    clearCollageState();
     editor.style.display="none";
-    drop.style.display="flex";
-    applyDefaultText();   // next photo starts from the configured 默认水印文字
+    startView.style.display="";
+    applyDefaultText();
     setDropMsg("选择照片 · 拍照","点这里从相册选一张，或直接拍一张，给它加上白框黑字水印");
   });
 
@@ -3714,9 +4104,8 @@
     searchOverlay.classList.add("show");
     setTimeout(function(){ try{ searchInput.focus(); }catch(e){} }, 120);
   }
-  searchBtn.addEventListener("click", openTemplatePicker);
+  if(searchBtn) searchBtn.addEventListener("click", openTemplatePicker);
 
-  // build the category quick-filter chips; clicking one filters the list to that category
   function renderCatRow(){
     if(!catRow) return;
     catRow.innerHTML = CATEGORIES.map(function(c){
@@ -3741,7 +4130,6 @@
     var q=String(query||"").trim().toLowerCase();
     var pool=allTemplates();
     var matches=pool.filter(function(t){
-      // category filter (custom templates only appear under 全部)
       if(searchCat!=="all"){
         if(t._custom || CAT_OF[t.id]!==searchCat) return false;
       }
@@ -3759,10 +4147,8 @@
       var customTag = t._custom ? '<span class="tag-custom">我的</span>' : '';
       var delBtn = t._custom ? '<button class="del" data-del="'+t.id+'">删除</button>' : '';
       var shareBtn = t._custom ? '<button class="share" data-share="'+t.id+'">分享</button>' : '';
-      var pinned = isPinned(t.id);
-      var pinBtn = '<button class="pin'+(pinned?' on':'')+'" data-pin="'+t.id+'" title="'+(pinned?'从常用栏移除':'加到顶部常用栏')+'">'+(pinned?'★ 常用':'☆ 常用')+'</button>';
       return '<div class="template-item'+cur+'" data-style="'+t.id+'">'+
-             '<div class="name">'+escapeHtml(t.name)+customTag+badge+pinBtn+delBtn+shareBtn+'</div>'+
+             '<div class="name">'+escapeHtml(t.name)+customTag+badge+delBtn+shareBtn+'</div>'+
              '<div class="desc">'+escapeHtml(t.desc||"")+'</div>'+
              '</div>';
     }).join("");
@@ -3770,11 +4156,6 @@
     Array.prototype.forEach.call(searchResults.querySelectorAll(".template-item"), function(el){
       el.addEventListener("click", function(ev){
         var tgt = ev.target;
-        if(tgt && tgt.classList && tgt.classList.contains("pin")){
-          togglePin(tgt.getAttribute("data-pin"));
-          ev.stopPropagation();
-          return;
-        }
         if(tgt && tgt.classList && tgt.classList.contains("del")){
           deleteCustomTemplate(tgt.getAttribute("data-del"));
           ev.stopPropagation();
@@ -3793,12 +4174,11 @@
   }
 
   function deleteCustomTemplate(id){
-    if(!confirm("删除这个自定义模板?")) return;
+    if(!confirm("删除这个自定义水印?")) return;
     customTemplates = customTemplates.filter(function(c){ return c.id !== id; });
     persistCustomTemplates();
-    removePin(id);         // drop it from the 常用栏 too
     if(state.style === id){ setStyle("classic"); }
-    renderStyleSeg();      // rebuild seg (deleted button disappears)
+    renderStyleSeg();
     renderSearchResults(searchInput.value);
     toast("已删除");
   }
@@ -3811,13 +4191,13 @@
   var customName=$("customName");
   var customSave=$("customSave"), customCancel=$("customCancel");
   var newCustomBtn=$("newCustomBtn");
-  var editingCustomId = null;   // null = creating new; otherwise editing existing
+  var editingCustomId = null;
   var customLayout = "bar";
 
   function openCustomEditor(existing){
     if(existing){
       editingCustomId = existing.id;
-      customTitle.textContent = "编辑模板";
+      customTitle.textContent = "编辑水印";
       customLayout = existing.layout || "bar";
       customBg.value = existing.bg || "#FFFFFF";
       customText.value = existing.text || "#1C1814";
@@ -3826,7 +4206,7 @@
       customName.value = existing.name || "";
     } else {
       editingCustomId = null;
-      customTitle.textContent = "新建模板";
+      customTitle.textContent = "新建水印";
       customLayout = "bar";
       customBg.value = "#FFFFFF";
       customText.value = "#1C1814";
@@ -3862,7 +4242,7 @@
 
   customSave.addEventListener("click", function(){
     var name = (customName.value||"").trim();
-    if(!name){ toast("请给模板起个名字"); customName.focus(); return; }
+    if(!name){ toast("请给水印起个名字"); customName.focus(); return; }
     var tpl = {
       id: editingCustomId || ("custom_"+Date.now().toString(36)),
       name: name,
@@ -3877,19 +4257,16 @@
       customTemplates = customTemplates.map(function(c){ return c.id===editingCustomId ? tpl : c; });
     } else {
       customTemplates.push(tpl);
-      addPin(tpl.id);       // new custom auto-appears in the 常用栏 (matches old behavior)
     }
     persistCustomTemplates();
     closeCustomEditor();
-    renderStyleSeg();      // rebuild seg so the new/edited custom button appears
+    styleCat = "mine";
+    renderStyleSeg();
     setStyle(tpl.id);
-    toast(editingCustomId ? "已更新" : "已保存,主界面顶部已加上你的按钮");
+    toast(editingCustomId ? "已更新" : "已保存,在「水印」页「我的」分类里");
   });
 
   // ================= share / import custom templates =================
-  // A custom template travels as one opaque "share code": a fixed prefix plus a
-  // UTF-8-safe base64 of its JSON. Survives copy/paste through chat apps (WeChat),
-  // works fully offline, zero external dependencies.
   var SHARE_PREFIX = "YINJI1:";
   var shareOverlay=$("shareOverlay"), shareTitle=$("shareTitle"), shareSub=$("shareSub");
   var shareText=$("shareText");
@@ -3908,12 +4285,11 @@
     };
     var json = JSON.stringify({ v:1, type:"yinji-template", tpl:clean });
     var b64;
-    try{ b64 = btoa(unescape(encodeURIComponent(json))); }  // UTF-8 safe (handles 中文 names)
+    try{ b64 = btoa(unescape(encodeURIComponent(json))); }
     catch(e){ b64 = btoa(json); }
     return SHARE_PREFIX + b64;
   }
 
-  // 滤镜分享码:与模板共用 SHARE_PREFIX + base64(JSON),靠 type 区分模板 / 滤镜
   function encodeFilter(f){
     var a = f.adj || {};
     var clean = {
@@ -3928,11 +4304,10 @@
     };
     var json = JSON.stringify({ v:1, type:"yinji-filter", flt:clean });
     var b64;
-    try{ b64 = btoa(unescape(encodeURIComponent(json))); }  // UTF-8 safe (中文名)
+    try{ b64 = btoa(unescape(encodeURIComponent(json))); }
     catch(e){ b64 = btoa(json); }
     return SHARE_PREFIX + b64;
   }
-  // 解出分享码里的完整对象(不拆 tpl/flt),导入时按 type 分流到模板或滤镜
   function decodeShareRaw(code){
     var s = String(code||"");
     var idx = s.indexOf(SHARE_PREFIX);
@@ -3945,10 +4320,10 @@
     try{ return JSON.parse(json); }catch(e){ throw new Error("bad-json"); }
   }
 
-  var shareKind = "template";   // "template" | "filter" — 仅控制弹窗文案;导入按实际内容分流
+  var shareKind = "template";
   function openShare(mode, code, kind){
     shareKind = (kind === "filter") ? "filter" : "template";
-    var noun = (shareKind === "filter") ? "滤镜" : "模板";
+    var noun = (shareKind === "filter") ? "滤镜" : "水印";
     if(mode === "export"){
       shareTitle.textContent = "分享" + noun;
       shareSub.textContent = "把这段代码复制发给朋友,对方点「导入" + noun + "」粘贴就能用";
@@ -3974,7 +4349,7 @@
 
   function shareCustomTemplate(id){
     var tpl = findCustomTemplate(id);
-    if(!tpl){ toast("找不到这个模板"); return; }
+    if(!tpl){ toast("找不到这个水印"); return; }
     searchOverlay.classList.remove("show");
     openShare("export", encodeTemplate(tpl));
   }
@@ -4004,7 +4379,6 @@
     var raw;
     try{ raw = decodeShareRaw(shareText.value); }
     catch(e){ toast("这段代码看不懂,确认完整复制了吗?"); return; }
-    // 按内容分流:滤镜码 → 导入滤镜;否则当模板处理(兼容旧的裸 tpl 对象)
     if(raw && (raw.type === "yinji-filter" || raw.flt)){
       importFilterObj(raw.flt || raw);
     } else {
@@ -4014,11 +4388,11 @@
   function importTemplateObj(raw){
     var layout = (raw && (raw.layout==="bar"||raw.layout==="frame"||raw.layout==="overlay")) ? raw.layout : null;
     if(!layout || !isHexColor(raw.bg) || !isHexColor(raw.text)){
-      toast("模板信息不完整,导入失败"); return;
+      toast("水印信息不完整,导入失败"); return;
     }
-    var name = (typeof raw.name==="string" && raw.name.trim()) ? raw.name.trim().slice(0,14) : "导入的模板";
+    var name = (typeof raw.name==="string" && raw.name.trim()) ? raw.name.trim().slice(0,14) : "导入的水印";
     var tpl = {
-      id: "custom_"+Date.now().toString(36)+Math.floor(Math.random()*1296).toString(36),  // always a fresh id
+      id: "custom_"+Date.now().toString(36)+Math.floor(Math.random()*1296).toString(36),
       name: name,
       layout: layout,
       bg: raw.bg,
@@ -4028,15 +4402,14 @@
       desc: "自定义 · "+(layout==="bar"?"底栏":layout==="frame"?"四周白边":"满版渐变")
     };
     customTemplates.push(tpl);
-    addPin(tpl.id);       // imported custom auto-appears in the 常用栏
     persistCustomTemplates();
+    styleCat = "mine";
     renderStyleSeg();
     setStyle(tpl.id);
     closeShare();
-    searchOverlay.classList.remove("show");
-    toast("已导入「"+name+"」,顶部已加上按钮");
+    if(searchOverlay) searchOverlay.classList.remove("show");
+    toast("已导入「"+name+"」,在「水印」页「我的」分类里");
   }
-  // 导入滤镜:落到「我的」分类并立即套用
   function importFilterObj(flt){
     if(!flt || typeof flt!=="object"){ toast("滤镜信息不完整,导入失败"); return; }
     var base = (flt.base==="none" || TONE_PARAMS[flt.base]) ? flt.base : "none";
@@ -4058,7 +4431,7 @@
     persistCustomFilters();
     filterCat = "mine";
     renderFilters();
-    applyCustomFilter(f.id);   // 立即套用 + 高亮
+    applyCustomFilter(f.id);
     closeShare();
     toast("已导入滤镜「"+name+"」,在「我的」里");
   }
@@ -4071,6 +4444,11 @@
     searchOverlay.classList.remove("show");
     openShare("import", "");
   });
+  // 「水印」页内嵌模板区的动作按钮(新建 / 导入 / 分享 / 删除当前自定义模板)
+  if(newTplInline) newTplInline.addEventListener("click", function(){ openCustomEditor(null); });
+  if(importTplInline) importTplInline.addEventListener("click", function(){ openShare("import", ""); });
+  if(shareTplInline) shareTplInline.addEventListener("click", function(){ if(findCustomTemplate(state.style)) shareCustomTemplate(state.style); });
+  if(delTplInline) delTplInline.addEventListener("click", function(){ if(findCustomTemplate(state.style)) deleteCustomTemplate(state.style); });
 
   // ================= 滤镜:存为 / 分享 / 导入 / 删除 + 🎲 随机一套 =================
   function shareCustomFilter(id){
@@ -4104,10 +4482,9 @@
     closeFilterSave();
     filterCat = "mine";
     renderFilters();
-    applyCustomFilter(f.id);   // 选中刚存好的滤镜
+    applyCustomFilter(f.id);
     toast("已存为滤镜「"+f.name+"」,在「我的」里");
   }
-  // 🎲 随机一套:随机内置模板 + 随机内置滤镜(一起换一整套风格)
   function randomLook(){
     if(!state.bitmap){ toast("先选一张照片再随机"); return; }
     var sid = state.style;
@@ -4123,7 +4500,7 @@
     filterCat = "all";
     renderFilters();
     syncTonePad();
-    setStyle(sid);   // 设 state.style + 高亮 + draw() + savePrefs()
+    setStyle(sid);
     toast("换了一套:" + (presetName(sid)||"样式") + " · " + (ft?ft.name:"原图"));
   }
   if(saveFilterBtn)   saveFilterBtn.addEventListener("click", openFilterSave);
@@ -4139,29 +4516,26 @@
     if(!window.confirm("删除滤镜「"+nm+"」?删了不能恢复。")) return;
     customFilters = customFilters.filter(function(x){ return x.id !== state.filterId; });
     persistCustomFilters();
-    setTone("none");     // 回到原图(内部已清 filterId + 刷新高亮/按钮 + 重绘)
+    setTone("none");
     renderFilters();
     toast("已删除滤镜「"+nm+"」");
   });
   if(filterRandBtn)   filterRandBtn.addEventListener("click", randomLook);
 
-  // load customs on startup, then build the style seg (presets + customs)
   loadCustomTemplates();
   loadCustomFilters();
   renderStyleSeg();
 
-  // restore last-used choices (style / text-mode / export quality) from a prior visit
   (function initPrefs(){
     var st=ensureSettings();
-    setExportQuality(st.defaultQuality);    // baseline from settings default
-    // remember-last restores mode/quality, and the style only when 默认打开模板 = 用上次的
+    setExportQuality(st.defaultQuality);
     if(st.rememberLast){
       var p=loadPrefs();
       if(p){
         if(p.mode==="auto"||p.mode==="manual") prefMode=p.mode;
         if(p.quality) setExportQuality(p.quality);
         if(p.tone && (p.tone==="none"||TONE_PARAMS[p.tone])) state.tone=p.tone;
-        if(p.toneAdj && typeof p.toneAdj==="object"){   // 恢复调色盘微调,逐项夹紧到合法范围
+        if(p.toneAdj && typeof p.toneAdj==="object"){
           var pa=p.toneAdj;
           state.toneAdj = {
             temp:      clampNum(pa.temp,      -100, 100, 0),
@@ -4170,18 +4544,16 @@
             intensity: clampNum(pa.intensity,    0, 100, 100)
           };
         }
-        if(p.filterId && findCustomFilter(p.filterId)) state.filterId = p.filterId;   // 恢复上次选中的「我的滤镜」高亮
+        if(p.filterId && findCustomFilter(p.filterId)) state.filterId = p.filterId;
         if((st.defaultStyle||"last")==="last" && p.style && (DRAW_DISPATCH[p.style] || findCustomTemplate(p.style))) setStyle(p.style);
       }
     }
-    // an explicit 默认打开模板 wins over "用上次的" (and works even with 记住上次 off)
     var ds=st.defaultStyle;
     if(ds && ds!=="last" && (DRAW_DISPATCH[ds] || findCustomTemplate(ds))) setStyle(ds);
   })();
-  renderFilters();   // after initPrefs so the restored filter shows as the active chip
-  bindTonePad();     // 调色盘:绑定拖动盘 / 滑杆 / 复位 / 折叠,并把已恢复的微调同步到控件
+  renderFilters();
+  bindTonePad();
 
-  // inject version into the brand tag (so APP_VERSION constant is the single source)
   var verEl = document.getElementById('appVer');
   if(verEl) verEl.textContent = APP_VERSION;
 
@@ -4199,7 +4571,7 @@
     var saved = null;
     var s = PLATFORM.getStorage();
     if(s){ try{ saved = s.getItem(GLASS_KEY); }catch(e){} }
-    var on = saved !== "0"; // default ON
+    var on = saved !== "0";
     if(glassToggle) glassToggle.checked = on;
     applyGlass(on);
   })();
@@ -4212,27 +4584,53 @@
   }
 
   // ================= Theme: light / dark / follow system (v2.9.0) =================
-  // Only repaints the UI chrome (body[data-theme]); the canvas watermark output is untouched.
   var THEME_DARK_BG = "#16130F", THEME_LIGHT_BG = "#F4F0E8";
   var darkMQ = window.matchMedia ? window.matchMedia("(prefers-color-scheme: dark)") : null;
   function resolveDark(){
     var st=ensureSettings();
     if(st.theme==="dark")  return true;
     if(st.theme==="light") return false;
-    return !!(darkMQ && darkMQ.matches);   // "auto" → follow the OS
+    return !!(darkMQ && darkMQ.matches);
   }
+  function _hexToRgb(h){
+    h = String(h||"").replace("#","");
+    if(h.length===3) h = h.charAt(0)+h.charAt(0)+h.charAt(1)+h.charAt(1)+h.charAt(2)+h.charAt(2);
+    return [parseInt(h.slice(0,2),16), parseInt(h.slice(2,4),16), parseInt(h.slice(4,6),16)];
+  }
+  function _rgbToHex(r,g,b){
+    function c(x){ x=Math.round(Math.max(0,Math.min(255,x))); var s=x.toString(16); return s.length<2?"0"+s:s; }
+    return "#"+c(r)+c(g)+c(b);
+  }
+  function _mix(hex, target, t){
+    var a=_hexToRgb(hex), b=_hexToRgb(target);
+    return _rgbToHex(a[0]+(b[0]-a[0])*t, a[1]+(b[1]-a[1])*t, a[2]+(b[2]-a[2])*t);
+  }
+  function applyAccent(){
+    var st=ensureSettings();
+    var ac=st.accent, bd=document.body;
+    if(!ac || ac==="default" || !/^#[0-9a-fA-F]{6}$/.test(ac)){
+      bd.style.removeProperty("--accent");
+      bd.style.removeProperty("--accent-soft");
+      return;
+    }
+    var soft = resolveDark() ? _mix(ac, "#1A1410", 0.80) : _mix(ac, "#FBF6EE", 0.84);
+    bd.style.setProperty("--accent", ac);
+    bd.style.setProperty("--accent-soft", soft);
+  }
+
   function applyTheme(){
     var dark = resolveDark();
     document.body.setAttribute("data-theme", dark ? "dark" : "light");
     var meta = document.querySelector('meta[name="theme-color"]');
     if(meta) meta.setAttribute("content", dark ? THEME_DARK_BG : THEME_LIGHT_BG);
+    applyAccent();
   }
   if(darkMQ){
     var mqHandler = function(){ if(ensureSettings().theme==="auto") applyTheme(); };
     if(darkMQ.addEventListener) darkMQ.addEventListener("change", mqHandler);
-    else if(darkMQ.addListener) darkMQ.addListener(mqHandler);   // older Safari
+    else if(darkMQ.addListener) darkMQ.addListener(mqHandler);
   }
-  applyTheme();   // bootstrap: paint the right theme on first load
+  applyTheme();
 
   // ================= long-press hint visibility (v2.9.0) =================
   var stageHintEl = document.querySelector(".stage-hint");
@@ -4243,19 +4641,17 @@
 
   // ================= Settings panel (v2.9.0) =================
   var settingsBtn=$("settingsBtn"), settingsOverlay=$("settingsOverlay"), closeSettings=$("closeSettings");
-  var themeSeg=$("themeSeg"), rememberLastToggle=$("rememberLastToggle");
+  var themeSeg=$("themeSeg"), accentSwatches=$("accentSwatches"), accentColorInput=$("accentColorInput"), rememberLastToggle=$("rememberLastToggle");
   var defModeSeg=$("defModeSeg"), defTextSeg=$("defTextSeg"), fixedTextWrap=$("fixedTextWrap"), fixedTextInput=$("fixedTextInput"), defStyleSel=$("defStyleSel");
   var autoFieldsGrid=$("autoFieldsGrid"), defQualSeg=$("defQualSeg"), maxEdgeSeg=$("maxEdgeSeg"), longPressToggle=$("longPressToggle");
-  var resetPinsBtn=$("resetPinsBtn"), clearTplBtn=$("clearTplBtn"), resetSettingsBtn=$("resetSettingsBtn"), replayOnboardBtn=$("replayOnboardBtn"), aboutVer=$("aboutVer");
+  var clearTplBtn=$("clearTplBtn"), resetSettingsBtn=$("resetSettingsBtn"), replayOnboardBtn=$("replayOnboardBtn"), aboutVer=$("aboutVer");
 
-  // mark the .on button in a seg whose data-<attr> equals value
   function segSelect(segEl, attr, value){
     if(!segEl) return;
     Array.prototype.forEach.call(segEl.querySelectorAll("button"), function(b){
       b.classList.toggle("on", b.getAttribute(attr) === String(value));
     });
   }
-  // delegate clicks in a seg → mark .on + run cb(value)
   function segBind(segEl, attr, cb){
     if(!segEl) return;
     segEl.addEventListener("click", function(e){
@@ -4267,8 +4663,6 @@
     });
   }
 
-  // reflect the saved settings onto every control (called each time the sheet opens)
-  // populate the 默认打开模板 dropdown: "用上次用的" + every preset + the user's customs
   function buildDefStyleOptions(){
     if(!defStyleSel) return;
     var html='<option value="last">用上次用的</option>';
@@ -4279,6 +4673,16 @@
   function syncSettingsUI(){
     var st=ensureSettings();
     segSelect(themeSeg, "data-theme", st.theme);
+    if(accentSwatches){
+      var acc = st.accent || "default", matched=false;
+      Array.prototype.forEach.call(accentSwatches.querySelectorAll(".accent-sw"), function(b){
+        var v=b.getAttribute("data-accent");
+        var on = (v!==null && v===acc); b.classList.toggle("on", on); if(on) matched=true;
+      });
+      var customLabel = accentSwatches.querySelector(".accent-custom");
+      if(customLabel) customLabel.classList.toggle("on", !matched && acc!=="default");
+      if(accentColorInput && acc!=="default" && /^#[0-9a-fA-F]{6}$/.test(acc)) accentColorInput.value=acc;
+    }
     if(rememberLastToggle) rememberLastToggle.checked = !!st.rememberLast;
     if(defStyleSel){ buildDefStyleOptions(); var _ds=st.defaultStyle||"last"; if(_ds!=="last" && !(DRAW_DISPATCH[_ds]||findCustomTemplate(_ds))) _ds="last"; defStyleSel.value=_ds; }
     segSelect(defModeSeg, "data-m", st.defaultTextMode);
@@ -4303,19 +4707,25 @@
   if(closeSettings) closeSettings.addEventListener("click", closeSettingsPanel);
   if(settingsOverlay) settingsOverlay.addEventListener("click", function(e){ if(e.target===settingsOverlay) closeSettingsPanel(); });
 
-  // — bindings: each writes the setting, persists, and re-applies whatever it affects —
   segBind(themeSeg, "data-theme", function(v){ ensureSettings().theme=v; saveSettings(); applyTheme(); });
+  if(accentSwatches) accentSwatches.addEventListener("click", function(e){
+    var b=e.target; while(b && b!==accentSwatches && !(b.classList && b.classList.contains("accent-sw"))) b=b.parentNode;
+    if(!b || b===accentSwatches) return;
+    var v=b.getAttribute("data-accent"); if(v===null) return;
+    ensureSettings().accent=v; saveSettings(); applyAccent(); syncSettingsUI();
+    toast(v==="default" ? "主题色已恢复默认" : "主题色已更新");
+  });
+  if(accentColorInput) accentColorInput.addEventListener("input", function(){
+    ensureSettings().accent=accentColorInput.value; saveSettings(); applyAccent(); syncSettingsUI();
+  });
   if(rememberLastToggle) rememberLastToggle.addEventListener("change", function(){ ensureSettings().rememberLast=rememberLastToggle.checked; saveSettings(); });
-  // 默认打开模板: applies on the NEXT photo / 换一张 (initPrefs), not retroactively to the current one
   if(defStyleSel) defStyleSel.addEventListener("change", function(){ ensureSettings().defaultStyle=defStyleSel.value||"last"; saveSettings(); });
   segBind(defModeSeg, "data-m", function(v){ ensureSettings().defaultTextMode=v; saveSettings(); });
-  // 默认水印文字: takes effect on the NEXT photo / 换一张 — we don't clobber text the user may be editing now
   segBind(defTextSeg, "data-t", function(v){
     ensureSettings().defaultText=v; saveSettings();
     if(fixedTextWrap) fixedTextWrap.classList.toggle("hidden", v!=="fixed");
   });
   if(fixedTextInput) fixedTextInput.addEventListener("input", function(){ ensureSettings().fixedText=fixedTextInput.value; saveSettings(); });
-  // 自动模式字段勾选: live-refresh the auto panel + preview
   if(autoFieldsGrid) autoFieldsGrid.addEventListener("change", function(e){
     var c=e.target; if(!c || c.tagName!=="INPUT") return;
     var f=c.getAttribute("data-f"); if(!f) return;
@@ -4327,24 +4737,16 @@
   segBind(maxEdgeSeg, "data-e", function(v){ ensureSettings().maxEdge=parseInt(v,10)||2200; saveSettings(); if(state.bitmap) draw(); });
   if(longPressToggle) longPressToggle.addEventListener("change", function(){ ensureSettings().longPress=longPressToggle.checked; saveSettings(); applyLongPressHint(); });
 
-  // — data & privacy actions —
-  if(resetPinsBtn) resetPinsBtn.addEventListener("click", function(){
-    segPins = defaultPins(); saveSegPins();
-    renderStyleSeg(); renderSearchResults(searchInput.value||"");
-    toast("常用栏已重置");
-  });
   if(clearTplBtn) clearTplBtn.addEventListener("click", function(){
-    if(!customTemplates.length){ toast("还没有自定义模板"); return; }
-    if(!window.confirm("确定清空所有自定义模板?此操作不可恢复。")) return;
-    for(var i=0;i<customTemplates.length;i++) removePin(customTemplates[i].id);
+    if(!customTemplates.length){ toast("还没有自定义水印"); return; }
+    if(!window.confirm("确定清空所有自定义水印?此操作不可恢复。")) return;
     customTemplates=[]; persistCustomTemplates();
     renderStyleSeg();
     if(!findCustomTemplate(state.style) && !DRAW_DISPATCH[state.style]) setStyle("classic");
-    renderSearchResults(searchInput.value||"");
-    toast("已清空自定义模板");
+    toast("已清空自定义水印");
   });
   if(resetSettingsBtn) resetSettingsBtn.addEventListener("click", function(){
-    if(!window.confirm("恢复默认设置?(不会动你的照片、模板和常用栏)")) return;
+    if(!window.confirm("恢复默认设置?(不会动你的照片和水印)")) return;
     settings = defaultSettings(); saveSettings();
     applyTheme(); applyLongPressHint(); syncSettingsUI();
     toast("已恢复默认设置");
@@ -4355,7 +4757,7 @@
   var ONB_KEY = "yinji.onboarded.v1";
   var ONB_STEPS = [
     { emoji:"👋", title:"欢迎用印迹", body:"给照片加一条好看的相机水印。所有处理都在你手机本地完成,照片绝不上传,放心用。" },
-    { emoji:"🖼️", title:"选照片 · 挑样式", body:"点中间大框选一张照片。顶部默认是个大大的「选择模板」按钮,点开就能挑样式;喜欢的用「☆ 常用」钉到顶部,常用的就排成一条快捷栏。" },
+    { emoji:"🖼️", title:"选照片 · 挑水印", body:"点中间大框选一张照片。在「水印」页按分类挑一款喜欢的,点一下就套用;想自己做,点「＋ 新建我的水印」。" },
     { emoji:"✍️", title:"两种文字,随意切", body:"「手动输入」自己写一句;「自动读取」从照片里读出设备、时间、光圈快门 ISO,排成相机水印。改文字实时预览。" },
     { emoji:"💾", title:"保存 · 分享", body:"点「保存图片」再选「保存到相册」直接进相册;也能一键「复制图片」粘到聊天。右上角齿轮是设置,主题 / 默认行为都能调。" }
   ];
@@ -4383,7 +4785,6 @@
     if(onbStep < ONB_STEPS.length-1){ onbStep++; renderOnbStep(); } else finishOnboarding();
   });
   if(onbSkip) onbSkip.addEventListener("click", finishOnboarding);
-  // first run only: show it once, after the UI has painted
   (function initOnboard(){
     var seen=null, s=PLATFORM.getStorage();
     if(s){ try{ seen=s.getItem(ONB_KEY); }catch(e){} }
@@ -4391,14 +4792,9 @@
   })();
 
   // ================= 3.0 reserved: AI extension point =================
-  // 印迹 3.0 主打 AI。这里先把"接入位置"搭好,2.x 不产生任何行为,也不联网。
-  // 铁律:照片绝不静默上传。未来若有需要联网的 AI 能力,必须由用户在当次明确授权。
-  // 3.0 用法:window.Yinji.ai.register({ id, label, run })。run 收到的是
-  // window.Yinji.getContext() 的只读快照(故意不含原始像素 / bitmap),
-  // 需要像素的能力必须显式、单独向用户申请,不从这里直接拿。
   window.Yinji.ai = window.Yinji.ai || {
     version: "3.0-reserved",
-    available: false,                 // 3.0 注册了 provider 后才翻 true
+    available: false,
     _features: [],
     register: function(feature){
       if(feature && feature.id && typeof feature.run==="function"){
@@ -4409,19 +4805,21 @@
     list: function(){ return this._features.slice(); },
     run: function(id){
       for(var i=0;i<this._features.length;i++){ if(this._features[i].id===id) return this._features[i].run(window.Yinji.getContext()); }
-      return false;                   // 没有匹配的功能时:no-op
+      return false;
     }
   };
-  // v3.0 A1:把"智能配色"注册成第一个端上 AI 能力。
-  // 全程在本地跑:直接读已经加载在内存里的这张照片做统计,不联网、不上传、不写硬盘。
   window.Yinji.ai.register({
     id: "smartColor",
     label: "智能配色(端上)",
     onDevice: true,
     run: function(){ return smartColor(); }
   });
-  // 交给未来 AI 功能的只读上下文 —— 不含照片像素,照片数据留在本地。
-  // colorStats 只是整张图的"平均色 / 亮度 / 鲜艳度"几个数,是不可还原原图的聚合统计,不是像素。
+  window.Yinji.ai.register({
+    id: "caption",
+    label: "文案灵感(端上)",
+    onDevice: true,
+    run: function(){ return suggestCaptions(); }
+  });
   window.Yinji.getContext = window.Yinji.getContext || function(){
     var cs = null;
     if(state.bitmap){
@@ -4430,22 +4828,24 @@
         r: Math.round(info.r), g: Math.round(info.g), b: Math.round(info.b),
         luma: Math.round(info.luma),
         sat: Math.round(info.sat*100)/100,
-        warm: info.r > info.b            // true=整体偏暖, false=偏冷
+        warm: info.r > info.b
       };
     }
+    var clue = exifClues(state.exif);
     return {
       version: APP_VERSION,
       hasPhoto: !!state.bitmap,
+      hasExif: !!state.exif,
       style: state.style,
       mode: state.mode,
       text: (typeof textInput!=="undefined" && textInput) ? textInput.value : "",
-      colorStats: cs                     // 无照片或分析失败时为 null
+      colorStats: cs,
+      timeOfDay: clue.time, season: clue.season, device: clue.device, lens: clue.lens
     };
   };
-  // 设置面板里的 "AI · 即将推出" 占位入口(3.0 预告)
   var aiSoonBtn=$("aiSoonBtn");
   if(aiSoonBtn) aiSoonBtn.addEventListener("click", function(){
-    toast("智能配色已上线 ✨ 在「调色盘」里点「帮我配色」试试;更多 AI 功能陆续加入");
+    toast("已上线两个端上 AI ✨ 调色盘点「帮我配色」、手动文字下点「来点灵感」;更多陆续加入");
   });
 
   // ================= PWA: register service worker for offline + 新版本提示 =================
@@ -4460,12 +4860,11 @@
     if(ubRefreshBtn) ubRefreshBtn.addEventListener("click", function(){
       hideUpdateBar();
       if(waitingSW){
-        swReloading=true;                               // 用户主动触发，接下来的 controllerchange 才刷新
-        waitingSW.postMessage({ type:"SKIP_WAITING" });  // 让等待中的新 sw 立即激活
+        swReloading=true;
+        waitingSW.postMessage({ type:"SKIP_WAITING" });
       } else { window.location.reload(); }
     });
 
-    // 仅在用户点过「刷新」后才自动重载；否则首次安装时 clients.claim() 触发的 controllerchange 会误刷新
     navigator.serviceWorker.addEventListener("controllerchange", function(){
       if(!swReloading) return;
       window.location.reload();
@@ -4474,9 +4873,7 @@
     window.addEventListener("load", function(){
       navigator.serviceWorker.register("sw.js").then(function(reg){
         if(!reg) return;
-        // 打开页面前新版已装好、停在 waiting（有 controller 才算「更新」而非首次安装）→ 直接提示
         if(reg.waiting && navigator.serviceWorker.controller) showUpdateBar(reg.waiting);
-        // 页面开着时检测到新版本
         reg.addEventListener("updatefound", function(){
           var nw=reg.installing;
           if(!nw) return;
@@ -4484,7 +4881,7 @@
             if(nw.state==="installed" && navigator.serviceWorker.controller) showUpdateBar(nw);
           });
         });
-      }).catch(function(){ /* devfile.cn single-file deploy = no SW; ignore */ });
+      }).catch(function(){  });
     });
   }
 
