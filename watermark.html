@@ -237,24 +237,7 @@
   .drop p{margin:0;font-size:13.5px;color:var(--ink-soft);line-height:1.6;max-width:230px;}
   input[type=file]{display:none;}
 
-  /* 拼图入口按钮(空状态 drop 下方) v3.0.0-beta.3 */
-  .collage-entry{
-    display:flex;align-items:center;justify-content:center;gap:8px;
-    width:100%;margin-top:10px;padding:12px 0;
-    font:inherit;font-size:14.5px;font-weight:600;color:var(--accent);
-    background:var(--glass-bg-faint);
-    -webkit-backdrop-filter:var(--glass-blur-sm);backdrop-filter:var(--glass-blur-sm);
-    border:1px solid var(--glass-border);border-radius:var(--radius);
-    box-shadow:var(--glass-highlight);cursor:pointer;
-    transition:transform .16s var(--spring), background .2s var(--ease);
-    animation:yj-fadeUp .65s var(--spring) .18s both;
-  }
-  .collage-entry svg{width:19px;height:19px;stroke:var(--accent);}
-  .collage-entry:hover{background:var(--glass-bg);}
-  .collage-entry:active{transform:scale(.97);}
-  /* 拼图布局选择面板 */
-  .collage-preview-wrap{display:flex;align-items:center;justify-content:center;margin:4px 0 14px;}
-  #collagePreview{width:auto;max-width:62%;max-height:38vh;border-radius:14px;box-shadow:var(--shadow);background:#fff;touch-action:none;}
+  /* 拼贴版式选择(在「贴纸」页,拼图时才显示) */
   .collage-opts{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin:8px 0 4px;}
   .collage-opt{
     display:flex;flex-direction:column;align-items:center;gap:5px;
@@ -268,7 +251,7 @@
   .collage-opt:active{transform:scale(.95);}
   .collage-opt.on{border-color:var(--accent);color:var(--accent);background:var(--accent-soft);}
   .collage-opt.on .diag{color:var(--accent);}
-  /* 拼图加字 / 贴纸(v3.0.0-beta.6):预览上可拖动的文字 + emoji 贴纸,最后烤进大图 */
+  /* 贴纸调色板 + 编辑控件 */
   .collage-deco-bar{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;align-items:center;margin:2px 0 10px;}
   .deco-add{
     display:inline-flex;align-items:center;gap:4px;
@@ -285,10 +268,6 @@
   .deco-sticker:active{transform:scale(.88);border-color:var(--accent);}
   .collage-deco-edit{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;align-items:center;margin:0 0 12px;}
   .collage-deco-edit.hidden{display:none;}
-  .collage-edit.hidden{display:none;}
-  .collage-empty{display:flex;flex-direction:column;align-items:center;gap:10px;padding:12px 6px 6px;}
-  .collage-empty.hidden{display:none;}
-  .collage-empty-tip{margin:0;font-size:13px;color:var(--ink-soft);text-align:center;line-height:1.5;}
   .deco-ctl{
     padding:7px 13px;cursor:pointer;font:inherit;font-size:12.5px;
     background:var(--surface);color:var(--ink);border:1.5px solid var(--glass-border);border-radius:999px;
@@ -299,6 +278,14 @@
   .deco-color{position:relative;overflow:hidden;}
   .deco-color input[type=color]{position:absolute;inset:0;opacity:0;width:100%;height:100%;border:0;padding:0;margin:0;cursor:pointer;}
   .deco-del{color:#c0392b;border-color:#e0a89f;}
+  /* 贴纸标签(v3.0.0-beta.16):往任意照片贴 emoji / 手绘 / 文字 */
+  .sticker-layout-row.hidden{display:none;}
+  .sticker-cat-seg{margin:4px 0 10px;}
+  .sticker-sub{margin:2px 0 6px;font-size:12px;color:var(--ink-soft);text-align:center;}
+  .sticker-actions{display:flex;justify-content:center;margin:2px 0 10px;}
+  .sticker-tip{margin:6px 0 2px;font-size:11.5px;color:var(--ink-soft);text-align:center;line-height:1.5;opacity:.78;}
+  .deco-sticker.deco-doodle{display:flex;align-items:center;justify-content:center;}
+  .deco-sticker.deco-doodle canvas{display:block;}
 
   /* Editor */
   .editor{display:none;}
@@ -314,7 +301,7 @@
   }
   canvas{display:block;width:100%;height:auto;border-radius:8px;
     box-shadow:0 4px 16px rgba(54,40,24,.14);
-    transition:filter .35s var(--ease);
+    transition:filter .35s var(--ease);touch-action:none;
     -webkit-touch-callout:none;-webkit-user-select:none;user-select:none;cursor:zoom-in;}
   .stage-hint{
     text-align:center;margin:7px 0 0;font-size:11.5px;color:var(--ink-soft);
@@ -925,14 +912,9 @@
       </svg>
     </span>
     <h2>选择照片 · 拍照</h2>
-    <p>从相册选一张，或直接拍一张</p>
+    <p>选 1 张直接编辑，选多张（最多 9 张）自动拼成一张</p>
   </label>
-  <button type="button" class="collage-entry" id="collageEntry">
-    <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="8" height="8" rx="1.6"></rect><rect x="13" y="3" width="8" height="8" rx="1.6"></rect><rect x="3" y="13" width="8" height="8" rx="1.6"></rect><rect x="13" y="13" width="8" height="8" rx="1.6"></rect></svg>
-    拼贴 · 把 2–4 张拼成一张
-  </button>
-  <input type="file" id="fileInput" accept="image/*">
-  <input type="file" id="collageInput" accept="image/*" multiple>
+  <input type="file" id="fileInput" accept="image/*" multiple>
   </div>
 
   <!-- Editor -->
@@ -947,7 +929,7 @@
         <div class="seg edit-tabs" id="editTabs">
           <button data-tab="watermark" class="on" type="button">水印</button>
           <button data-tab="color" type="button">滤镜</button>
-          <button data-tab="collage" type="button">拼贴</button>
+          <button data-tab="sticker" type="button">贴纸</button>
         </div>
         <button class="filter-rand" id="filterRandBtn" type="button">🎲 随机一套</button>
       </div>
@@ -955,6 +937,8 @@
       <div class="edit-pane" id="watermarkPane">
         <div class="tone-block" id="styleBlock">
           <div class="tone-head"><span class="tone-label">水印</span></div>
+          <button class="cap-spark" id="sceneRecBtn" type="button">✨ 帮我选样式</button>
+          <div class="cap-list" id="sceneList" aria-live="polite"></div>
           <div class="filter-cats" id="styleCats"><!-- category chips rendered by renderStyleCats() --></div>
           <div class="seg tone-seg" id="styleSeg"><!-- template chips rendered by renderStyleChips() --></div>
           <p class="filter-mine-hint hidden" id="styleMineHint">还没有「我的水印」。点下面「＋ 新建我的水印」做一个,就会收藏到这里。</p>
@@ -1021,42 +1005,29 @@
         </div>
       </div>
 
-      <div class="edit-pane hidden" id="collagePane">
+      <div class="edit-pane hidden" id="stickerPane">
         <div class="tone-block">
-          <div class="tone-head"><span class="tone-label">拼贴</span></div>
-          <div class="collage-empty" id="collageEmpty">
-            <p class="collage-empty-tip">选 2–4 张照片拼成一张。拼好后，水印 / 滤镜照样能加。</p>
-            <button class="flt-act" id="collagePickBtn" type="button">＋ 选 2–4 张照片拼一张</button>
-          </div>
-          <div class="collage-edit hidden" id="collageEditWrap">
-            <div class="collage-preview-wrap">
-              <canvas id="collagePreview" width="600" height="600"></canvas>
-            </div>
+          <div class="tone-head"><span class="tone-label">贴纸</span></div>
+          <div class="sticker-layout-row hidden" id="stickerLayoutRow">
+            <p class="sticker-sub">拼贴版式</p>
             <div class="collage-opts" id="collageLayouts"><!-- rendered by renderCollageLayouts() --></div>
-            <div class="collage-deco-bar" id="collageDecoBar">
-              <button type="button" class="deco-add" id="collageAddText">＋ 文字</button>
-              <button type="button" class="deco-sticker" data-emoji="❤️">❤️</button>
-              <button type="button" class="deco-sticker" data-emoji="⭐">⭐</button>
-              <button type="button" class="deco-sticker" data-emoji="✨">✨</button>
-              <button type="button" class="deco-sticker" data-emoji="🌸">🌸</button>
-              <button type="button" class="deco-sticker" data-emoji="🌿">🌿</button>
-              <button type="button" class="deco-sticker" data-emoji="📷">📷</button>
-              <button type="button" class="deco-sticker" data-emoji="🎀">🎀</button>
-              <button type="button" class="deco-sticker" data-emoji="☀️">☀️</button>
-              <button type="button" class="deco-sticker" data-emoji="🌈">🌈</button>
-              <button type="button" class="deco-sticker" data-emoji="👍">👍</button>
-            </div>
-            <div class="collage-deco-edit hidden" id="collageDecoEdit">
-              <button type="button" class="deco-ctl" id="decoSmaller">小一点</button>
-              <button type="button" class="deco-ctl" id="decoBigger">大一点</button>
-              <button type="button" class="deco-ctl deco-text-only" id="decoEditText">改文字</button>
-              <label class="deco-ctl deco-color deco-text-only" id="decoColorBtn">颜色<input type="color" id="decoColorInput" value="#ffffff"></label>
-              <button type="button" class="deco-ctl deco-del" id="decoDelete">删除</button>
-            </div>
-            <div class="filter-actions">
-              <button class="flt-act" id="collageRepick" type="button">换照片</button>
-            </div>
           </div>
+          <div class="seg sticker-cat-seg" id="stickerCatSeg">
+            <button data-scat="emoji" class="on" type="button">表情</button>
+            <button data-scat="doodle" type="button">手绘</button>
+          </div>
+          <div class="collage-deco-bar" id="stickerPalette"><!-- rendered by renderStickerPalette() --></div>
+          <div class="sticker-actions" id="stickerActions">
+            <button type="button" class="deco-add" id="stickerAddText">＋ 文字</button>
+          </div>
+          <div class="collage-deco-edit hidden" id="stickerDecoEdit">
+            <button type="button" class="deco-ctl" id="decoSmaller">小一点</button>
+            <button type="button" class="deco-ctl" id="decoBigger">大一点</button>
+            <button type="button" class="deco-ctl deco-text-only" id="decoEditText">改文字</button>
+            <label class="deco-ctl deco-color deco-colorable" id="decoColorBtn">颜色<input type="color" id="decoColorInput" value="#ffffff"></label>
+            <button type="button" class="deco-ctl deco-del" id="decoDelete">删除</button>
+          </div>
+          <p class="sticker-tip">点上面的贴纸贴到照片上，再用手指拖动换位置。</p>
         </div>
       </div>
 
@@ -1358,12 +1329,12 @@
   "use strict";
 
   // ---------- version (single source of truth; bump on every release) ----------
-  var APP_VERSION = "v3.0.0-beta.14";
+  var APP_VERSION = "v3.0.0-beta.18";
 
   // ---------- state ----------
   var state = { bitmap:null, exif:null, exifApp1:null, mode:"manual", editTab:"watermark", style:"classic", exportQuality:"standard", tone:"none",
     toneAdj:{ temp:0, tint:0, sat:0, intensity:100 },
-    filterId:null };
+    filterId:null, stickers:[] };
 
   // ---------- remember last choices (style / text-mode / export quality) ----------
   var PREFS_KEY = "yinji.prefs.v1";
@@ -1991,10 +1962,15 @@
 
   // ================= load photo =================
   fileInput.addEventListener("change", function(ev){
-    var file=ev.target.files && ev.target.files[0];
-    if(!file){ setDropMsg("没选到照片","再试一次，或点这里重新选"); return; }
+    var files=ev.target.files ? Array.prototype.slice.call(ev.target.files) : [];
+    if(!files.length){ setDropMsg("没选到照片","再试一次，或点这里重新选"); return; }
+    if(files.length>=2){
+      try{ fileInput.value=""; }catch(e){}
+      startCollageFromFiles(files);   // 选了多张 → 自动拼图
+      return;
+    }
     setDropMsg("正在读取照片…","已选择，请稍候");
-    loadFile(file).catch(function(err){
+    loadFile(files[0]).catch(function(err){
       var m=(err&&err.message)?err.message:"未知问题";
       setDropMsg("打不开这张照片","原因："+m+" · 点这里重新选");
     }).then(function(){
@@ -2034,6 +2010,7 @@
       }
       state.bitmap=bmp;
       clearCollageState();
+      resetStickers();
       setMode(chooseInitialMode(), true);
       setEditTab("watermark");
       startView.style.display="none";
@@ -2081,68 +2058,15 @@
     });
   }
 
-  // ================= 拼图 (collage) v3.0.0-beta.3 =================
-  var collageInput=$("collageInput"), collageEntry=$("collageEntry"),
-      collagePane=$("collagePane"), collageEmpty=$("collageEmpty"), collageEditWrap=$("collageEditWrap"),
-      collagePickBtn=$("collagePickBtn"), collagePreview=$("collagePreview"),
-      collageLayouts=$("collageLayouts"), collageRepick=$("collageRepick");
+  // ================= 拼图合成 (collage) + 贴纸 (sticker) v3.0.0-beta.16 =================
+  // 拼图：在「选择照片」时选 2~9 张 → 自动拼成一张写进 state.bitmap（拼好后可在「贴纸」页换版式）。
+  // 贴纸：编辑器第三个标签。往当前这张照片（单张或拼图都行）贴 emoji / 手绘小图 / 文字，
+  //       可拖动、缩放、改色、删除；贴纸画在主画布最上层，导出时一起烤进成图。纯端上、零依赖、不联网。
   var COLLAGE_SIZE=1500;
   var collageCanvas=null;
   var collagePhotos=[];
   var collageLayoutId=null;
-
-  var collageDecoBar=$("collageDecoBar"), collageAddTextBtn=$("collageAddText"),
-      collageDecoEdit=$("collageDecoEdit"),
-      decoSmaller=$("decoSmaller"), decoBigger=$("decoBigger"),
-      decoEditTextBtn=$("decoEditText"), decoColorInput=$("decoColorInput"), decoDelete=$("decoDelete");
-  var collageDecos=[];
-  var collageSelected=-1;
-  var collageDrag=null;
   var DECO_FONT='-apple-system,"PingFang SC","Microsoft YaHei","Helvetica Neue",sans-serif';
-
-  function _isLightColor(hex){
-    var c=_hexToRgb(hex||"#ffffff");
-    return (0.299*c[0]+0.587*c[1]+0.114*c[2])>150;
-  }
-  function decoMetrics(ctx, d, size){
-    var fs=Math.max(8, d.size*size);
-    ctx.save();
-    ctx.font=(d.type==="text"?"600 ":"")+fs+"px "+DECO_FONT;
-    var w=ctx.measureText(d.content||"").width;
-    ctx.restore();
-    return { cx:d.x*size, cy:d.y*size, w:w, h:fs*1.18, fs:fs };
-  }
-  function drawCollageDecos(ctx, size, decos, selIndex){
-    if(!decos || !decos.length) return;
-    if(selIndex==null) selIndex=-1;
-    for(var i=0;i<decos.length;i++){
-      var d=decos[i], m=decoMetrics(ctx, d, size);
-      ctx.save();
-      ctx.textAlign="center"; ctx.textBaseline="middle";
-      if(d.type==="text"){
-        ctx.font="600 "+m.fs+"px "+DECO_FONT;
-        ctx.lineJoin="round";
-        ctx.lineWidth=Math.max(2, m.fs*0.16);
-        ctx.strokeStyle=_isLightColor(d.color)?"rgba(0,0,0,.5)":"rgba(255,255,255,.85)";
-        ctx.strokeText(d.content||"", m.cx, m.cy);
-        ctx.fillStyle=d.color||"#ffffff";
-        ctx.fillText(d.content||"", m.cx, m.cy);
-      } else {
-        ctx.font=m.fs+"px "+DECO_FONT;
-        ctx.fillText(d.content||"", m.cx, m.cy);
-      }
-      ctx.restore();
-      if(i===selIndex){
-        ctx.save();
-        ctx.strokeStyle="#3e86d6";
-        ctx.lineWidth=Math.max(2, size*0.004);
-        ctx.setLineDash([size*0.02, size*0.014]);
-        var pad=m.fs*0.18+size*0.012;
-        ctx.strokeRect(m.cx-m.w/2-pad, m.cy-m.h/2-pad, m.w+pad*2, m.h+pad*2);
-        ctx.restore();
-      }
-    }
-  }
 
   var COLLAGE_LAYOUTS={
     2:[
@@ -2158,6 +2082,23 @@
       {id:"4grid", label:"田字格", cells:[{x:0,y:0,w:.5,h:.5},{x:.5,y:0,w:.5,h:.5},{x:0,y:.5,w:.5,h:.5},{x:.5,y:.5,w:.5,h:.5}]},
       {id:"4v",    label:"竖排四", cells:[{x:0,y:0,w:1,h:.25},{x:0,y:.25,w:1,h:.25},{x:0,y:.5,w:1,h:.25},{x:0,y:.75,w:1,h:.25}]},
       {id:"4h",    label:"横排四", cells:[{x:0,y:0,w:.25,h:1},{x:.25,y:0,w:.25,h:1},{x:.5,y:0,w:.25,h:1},{x:.75,y:0,w:.25,h:1}]}
+    ],
+    5:[
+      {id:"5td", label:"上2下3", cells:[{x:0,y:0,w:.5,h:.5},{x:.5,y:0,w:.5,h:.5},{x:0,y:.5,w:1/3,h:.5},{x:1/3,y:.5,w:1/3,h:.5},{x:2/3,y:.5,w:1/3,h:.5}]},
+      {id:"5lb", label:"左大右4", cells:[{x:0,y:0,w:.5,h:1},{x:.5,y:0,w:.25,h:.5},{x:.75,y:0,w:.25,h:.5},{x:.5,y:.5,w:.25,h:.5},{x:.75,y:.5,w:.25,h:.5}]}
+    ],
+    6:[
+      {id:"6g32", label:"3×2", cells:[{x:0,y:0,w:1/3,h:.5},{x:1/3,y:0,w:1/3,h:.5},{x:2/3,y:0,w:1/3,h:.5},{x:0,y:.5,w:1/3,h:.5},{x:1/3,y:.5,w:1/3,h:.5},{x:2/3,y:.5,w:1/3,h:.5}]},
+      {id:"6g23", label:"2×3", cells:[{x:0,y:0,w:.5,h:1/3},{x:.5,y:0,w:.5,h:1/3},{x:0,y:1/3,w:.5,h:1/3},{x:.5,y:1/3,w:.5,h:1/3},{x:0,y:2/3,w:.5,h:1/3},{x:.5,y:2/3,w:.5,h:1/3}]}
+    ],
+    7:[
+      {id:"7td", label:"上3下4", cells:[{x:0,y:0,w:1/3,h:.5},{x:1/3,y:0,w:1/3,h:.5},{x:2/3,y:0,w:1/3,h:.5},{x:0,y:.5,w:.25,h:.5},{x:.25,y:.5,w:.25,h:.5},{x:.5,y:.5,w:.25,h:.5},{x:.75,y:.5,w:.25,h:.5}]}
+    ],
+    8:[
+      {id:"8g42", label:"4×2", cells:[{x:0,y:0,w:.25,h:.5},{x:.25,y:0,w:.25,h:.5},{x:.5,y:0,w:.25,h:.5},{x:.75,y:0,w:.25,h:.5},{x:0,y:.5,w:.25,h:.5},{x:.25,y:.5,w:.25,h:.5},{x:.5,y:.5,w:.25,h:.5},{x:.75,y:.5,w:.25,h:.5}]}
+    ],
+    9:[
+      {id:"9g33", label:"3×3", cells:[{x:0,y:0,w:1/3,h:1/3},{x:1/3,y:0,w:1/3,h:1/3},{x:2/3,y:0,w:1/3,h:1/3},{x:0,y:1/3,w:1/3,h:1/3},{x:1/3,y:1/3,w:1/3,h:1/3},{x:2/3,y:1/3,w:1/3,h:1/3},{x:0,y:2/3,w:1/3,h:1/3},{x:1/3,y:2/3,w:1/3,h:1/3},{x:2/3,y:2/3,w:1/3,h:1/3}]}
     ]
   };
 
@@ -2185,25 +2126,24 @@
     var rw=iw*s, rh=ih*s;
     ctx.drawImage(img, dx+(dw-rw)/2, dy+(dh-rh)/2, rw, rh);
   }
-  function drawCollageInto(canvas, layout, photos, decos, selIndex){
-    var size=canvas.width;
-    var ctx=canvas.getContext("2d");
+  function drawCollageInto(cv, layout, photos){
+    var size=cv.width;
+    var g=cv.getContext("2d");
     var gap=Math.max(2, Math.round(size*0.012));
     var rad=Math.round(gap*1.4);
-    ctx.clearRect(0,0,size,size);
-    ctx.fillStyle="#ffffff"; ctx.fillRect(0,0,size,size);
+    g.clearRect(0,0,size,size);
+    g.fillStyle="#ffffff"; g.fillRect(0,0,size,size);
     var cells=layout.cells;
     for(var i=0;i<cells.length;i++){
       var c=cells[i];
       var dx=c.x*size+gap/2, dy=c.y*size+gap/2, dw=c.w*size-gap, dh=c.h*size-gap;
-      ctx.save();
-      collageRoundRect(ctx,dx,dy,dw,dh,rad);
-      ctx.clip();
-      if(photos[i]){ coverDraw(ctx,photos[i],dx,dy,dw,dh); }
-      else { ctx.fillStyle="#EDE7DC"; ctx.fillRect(dx,dy,dw,dh); }
-      ctx.restore();
+      g.save();
+      collageRoundRect(g,dx,dy,dw,dh,rad);
+      g.clip();
+      if(photos[i]){ coverDraw(g,photos[i],dx,dy,dw,dh); }
+      else { g.fillStyle="#EDE7DC"; g.fillRect(dx,dy,dw,dh); }
+      g.restore();
     }
-    drawCollageDecos(ctx, size, decos, selIndex);
   }
   function layoutSvg(layout){
     var s='<svg viewBox="0 0 100 100" aria-hidden="true">';
@@ -2215,13 +2155,8 @@
     return s+'</svg>';
   }
 
-  function renderCollagePreview(){
-    var layout=findCollageLayout(collagePhotos.length, collageLayoutId);
-    if(!layout) return;
-    collageLayoutId=layout.id;
-    drawCollageInto(collagePreview, layout, collagePhotos, collageDecos, collageSelected);
-  }
   function renderCollageLayouts(){
+    if(!collageLayouts) return;
     var arr=collageLayoutsFor(collagePhotos.length)||[];
     collageLayouts.innerHTML="";
     for(var i=0;i<arr.length;i++){
@@ -2234,44 +2169,33 @@
         b.addEventListener("click", function(){
           collageLayoutId=layout.id;
           renderCollageLayouts();
-          syncCollage();
+          applyCollageToMain();
         });
         collageLayouts.appendChild(b);
       })(arr[i]);
     }
   }
 
-  // 把当前拼贴合成进 state.bitmap(不带选中高亮),再让主画布连同滤镜/水印一起重画
+  // 把当前拼贴合成进 state.bitmap,再让主画布连同滤镜/水印/贴纸一起重画
   function applyCollageToMain(){
     if(collagePhotos.length<2) return;
     var layout=findCollageLayout(collagePhotos.length, collageLayoutId);
     if(!layout) return;
     collageLayoutId=layout.id;
     if(!collageCanvas){ collageCanvas=document.createElement("canvas"); collageCanvas.width=COLLAGE_SIZE; collageCanvas.height=COLLAGE_SIZE; }
-    drawCollageInto(collageCanvas, layout, collagePhotos, collageDecos, -1);
+    drawCollageInto(collageCanvas, layout, collagePhotos);
     state.bitmap=collageCanvas; state.exif=null; state.exifApp1=null;
     invalidateGrade();
     draw();
   }
-  // 拼贴有改动:小预览 + 主画布一起更新
-  function syncCollage(){ renderCollagePreview(); applyCollageToMain(); }
-  // 切到「拼贴」标签时,根据有没有拼贴在编辑,显示空状态或编辑区
-  function refreshCollagePane(){
-    var active=collagePhotos.length>=2;
-    if(collageEmpty) collageEmpty.classList.toggle("hidden", active);
-    if(collageEditWrap) collageEditWrap.classList.toggle("hidden", !active);
-    if(active){ renderCollageLayouts(); renderCollagePreview(); }
-  }
-  function clearCollageState(){ collagePhotos=[]; collageLayoutId=null; resetCollageDecos(); }
+  function clearCollageState(){ collagePhotos=[]; collageLayoutId=null; }
 
-  collageEntry.addEventListener("click", function(){ try{ collageInput.click(); }catch(e){} });
-  if(collagePickBtn) collagePickBtn.addEventListener("click", function(){ try{ collageInput.click(); }catch(e){} });
-  collageInput.addEventListener("change", function(ev){
-    var files=ev.target.files ? Array.prototype.slice.call(ev.target.files) : [];
-    try{ collageInput.value=""; }catch(e){}
+  // 首页多选 2~9 张 → 自动拼成一张,进编辑器后停在「贴纸」页
+  function startCollageFromFiles(files){
+    files = files || [];
     if(files.length<2){ toast("拼图至少要选 2 张照片"); return; }
     var trimmedMsg="";
-    if(files.length>4){ files=files.slice(0,4); trimmedMsg="最多 4 张,已用前 4 张"; }
+    if(files.length>9){ files=files.slice(0,9); trimmedMsg="最多 9 张,已用前 9 张"; }
     toast("正在读取照片…");
     var jobs=[]; for(var i=0;i<files.length;i++){ jobs.push(loadBitmap(files[i])); }
     Promise.all(jobs).then(function(bmps){
@@ -2283,104 +2207,311 @@
       if(ok.length<2){ toast("有照片打不开,至少要 2 张能用的"); return; }
       collagePhotos=ok;
       collageLayoutId=null;
-      resetCollageDecos();
+      resetStickers();
       startView.style.display="none";
       editor.style.display="block";
       applyCollageToMain();
       setMode("manual", true);
       renderAutoPanel();
-      setEditTab("collage");
-      toast(trimmedMsg || "拼好啦,水印 / 滤镜照常加 ✨");
+      setEditTab("sticker");
+      toast(trimmedMsg || "拼好啦,水印 / 滤镜 / 贴纸照常加 ✨");
     }).catch(function(){ toast("读取照片失败,换几张再试"); });
-  });
+  }
 
-  if(collageRepick) collageRepick.addEventListener("click", function(){ try{ collageInput.click(); }catch(e){} });
+  // ---------- 手绘贴纸:12 个用 canvas 路径画的小图标,纯端上、零依赖、可换色 ----------
+  var DOODLE_IDS=['heart','star','sparkle','sun','cloud','flower','leaf','bubble','check','crown','moon','bolt'];
+  var DOODLE_COLORS=['#ff5a7a','#ffb443','#ff7eb6','#ffd23f','#7fc8ff','#ff8fae','#7fd17f','#9b8cff','#5ad17f','#ffce54','#ffd86b','#ffcf3f'];
+  function _starPath(g,points,outer,inner,rot){
+    g.beginPath();
+    for(var i=0;i<points*2;i++){
+      var r=(i%2===0)?outer:inner;
+      var a=rot+i*Math.PI/points;
+      var x=Math.cos(a)*r, y=Math.sin(a)*r;
+      if(i===0) g.moveTo(x,y); else g.lineTo(x,y);
+    }
+    g.closePath();
+  }
+  function _doodleRoundRect(g,x,y,w,h,r){
+    r=Math.max(0,Math.min(r,w/2,h/2));
+    g.moveTo(x+r,y);
+    g.arcTo(x+w,y,x+w,y+h,r);
+    g.arcTo(x+w,y+h,x,y+h,r);
+    g.arcTo(x,y+h,x,y,r);
+    g.arcTo(x,y,x+w,y,r);
+    g.closePath();
+  }
+  // 在 (cx,cy) 处画一个边长约 2*half 的手绘图标(图标本身在单位坐标 [-1,1])
+  function drawDoodle(g, id, cx, cy, half, color){
+    color=color||'#ff5a7a';
+    g.save();
+    g.translate(cx, cy);
+    g.scale(half, half);
+    g.lineJoin="round"; g.lineCap="round";
+    g.fillStyle=color; g.strokeStyle=color; g.lineWidth=0.16;
+    switch(id){
+      case 'heart':
+        g.beginPath(); g.moveTo(0,0.78);
+        g.bezierCurveTo(-1.1,-0.05,-0.62,-0.95,0,-0.42);
+        g.bezierCurveTo(0.62,-0.95,1.1,-0.05,0,0.78);
+        g.closePath(); g.fill(); break;
+      case 'star':
+        _starPath(g,5,0.96,0.42,-Math.PI/2); g.fill(); break;
+      case 'sparkle':
+        g.beginPath(); g.moveTo(0,-1);
+        g.quadraticCurveTo(0.16,-0.16,1,0); g.quadraticCurveTo(0.16,0.16,0,1);
+        g.quadraticCurveTo(-0.16,0.16,-1,0); g.quadraticCurveTo(-0.16,-0.16,0,-1);
+        g.closePath(); g.fill(); break;
+      case 'sun':
+        for(var si=0;si<8;si++){ var sa=si*Math.PI/4; g.beginPath(); g.moveTo(Math.cos(sa)*0.62,Math.sin(sa)*0.62); g.lineTo(Math.cos(sa)*0.98,Math.sin(sa)*0.98); g.stroke(); }
+        g.beginPath(); g.arc(0,0,0.46,0,Math.PI*2); g.fill(); break;
+      case 'cloud':
+        g.beginPath();
+        g.arc(-0.45,0.12,0.42,Math.PI*0.5,Math.PI*1.5);
+        g.arc(-0.05,-0.22,0.5,Math.PI,Math.PI*2);
+        g.arc(0.5,0.05,0.4,Math.PI*1.5,Math.PI*0.5);
+        g.closePath(); g.fill(); break;
+      case 'flower':
+        for(var fi=0;fi<6;fi++){ var fa=fi*Math.PI/3; g.save(); g.rotate(fa); g.beginPath(); g.arc(0,-0.56,0.34,0,Math.PI*2); g.fill(); g.restore(); }
+        g.fillStyle="#fff7d6"; g.beginPath(); g.arc(0,0,0.3,0,Math.PI*2); g.fill(); break;
+      case 'leaf':
+        g.beginPath(); g.moveTo(0,-0.95); g.quadraticCurveTo(0.95,-0.1,0,0.95); g.quadraticCurveTo(-0.95,-0.1,0,-0.95); g.closePath(); g.fill();
+        g.strokeStyle="rgba(255,255,255,0.85)"; g.lineWidth=0.1; g.beginPath(); g.moveTo(0,-0.68); g.lineTo(0,0.68); g.stroke(); break;
+      case 'bubble':
+        g.beginPath(); _doodleRoundRect(g,-0.92,-0.82,1.84,1.4,0.4); g.fill();
+        g.beginPath(); g.moveTo(-0.32,0.5); g.lineTo(-0.18,1.0); g.lineTo(0.16,0.5); g.closePath(); g.fill(); break;
+      case 'check':
+        g.lineWidth=0.26; g.beginPath(); g.moveTo(-0.72,0.04); g.lineTo(-0.18,0.62); g.lineTo(0.78,-0.62); g.stroke(); break;
+      case 'crown':
+        g.beginPath(); g.moveTo(-0.9,0.56); g.lineTo(-0.72,-0.5); g.lineTo(-0.26,0.16); g.lineTo(0,-0.72); g.lineTo(0.26,0.16); g.lineTo(0.72,-0.5); g.lineTo(0.9,0.56); g.closePath(); g.fill(); break;
+      case 'moon':
+        g.beginPath(); g.arc(0,0,0.92,Math.PI*0.5,Math.PI*1.5,false); g.arc(0.28,0,0.92,Math.PI*1.5,Math.PI*0.5,true); g.closePath(); g.fill(); break;
+      case 'bolt':
+        g.beginPath(); g.moveTo(0.22,-0.95); g.lineTo(-0.5,0.14); g.lineTo(-0.02,0.14); g.lineTo(-0.22,0.95); g.lineTo(0.56,-0.16); g.lineTo(0.06,-0.16); g.closePath(); g.fill(); break;
+    }
+    g.restore();
+  }
 
-  function resetCollageDecos(){ collageDecos=[]; collageSelected=-1; collageDrag=null; syncCollageDecoEdit(); }
-  function syncCollageDecoEdit(){
-    if(!collageDecoEdit) return;
-    var d=(collageSelected>=0)?collageDecos[collageSelected]:null;
-    collageDecoEdit.classList.toggle("hidden", !d);
-    if(d){
-      var isText=(d.type==="text");
-      var only=collageDecoEdit.querySelectorAll(".deco-text-only");
-      for(var i=0;i<only.length;i++) only[i].classList.toggle("hidden", !isText);
-      if(isText && decoColorInput) decoColorInput.value=d.color||"#ffffff";
+  // ---------- 贴纸图层:画在主画布最上层,跟着照片/拼图一起导出 ----------
+  var stickerSel=-1;
+  var stickerDrag=null;
+  var _exportClean=false;
+
+  function stickerMetrics(item){
+    var base=Math.min(canvas.width, canvas.height);
+    var cx=item.x*canvas.width, cy=item.y*canvas.height, w, h;
+    if(item.type==="text"){
+      var fs=Math.max(8, item.size*base);
+      ctx.save(); ctx.font="700 "+fs+'px '+DECO_FONT;
+      w=ctx.measureText(item.content||"").width; ctx.restore();
+      h=fs;
+    } else {
+      w=h=Math.max(8, item.size*base);
+    }
+    return { cx:cx, cy:cy, w:w, h:h, base:base };
+  }
+  function drawStickerLayer(){
+    var arr=state.stickers||[];
+    for(var i=0;i<arr.length;i++){
+      var it=arr[i], m=stickerMetrics(it);
+      ctx.save();
+      if(it.type==="text"){
+        var fs=Math.max(8, it.size*m.base);
+        ctx.font="700 "+fs+'px '+DECO_FONT;
+        ctx.textAlign="center"; ctx.textBaseline="middle"; ctx.lineJoin="round";
+        ctx.strokeStyle="rgba(0,0,0,0.3)"; ctx.lineWidth=Math.max(2, fs*0.09);
+        ctx.strokeText(it.content||"", m.cx, m.cy);
+        ctx.fillStyle=it.color||"#ffffff";
+        ctx.fillText(it.content||"", m.cx, m.cy);
+      } else if(it.type==="doodle"){
+        drawDoodle(ctx, it.content, m.cx, m.cy, m.w/2, it.color||"#ff5a7a");
+      } else {
+        var fe=Math.max(8, it.size*m.base);
+        ctx.font=fe+"px "+DECO_FONT; ctx.textAlign="center"; ctx.textBaseline="middle";
+        ctx.fillText(it.content||"", m.cx, m.cy);
+      }
+      ctx.restore();
+      if(!_exportClean && state.editTab==="sticker" && i===stickerSel){
+        ctx.save();
+        ctx.strokeStyle="rgba(255,255,255,0.95)";
+        ctx.lineWidth=Math.max(2, m.base*0.006);
+        ctx.setLineDash([m.base*0.02, m.base*0.014]);
+        var pad=m.base*0.022;
+        ctx.strokeRect(m.cx-m.w/2-pad, m.cy-m.h/2-pad, m.w+pad*2, m.h+pad*2);
+        ctx.restore();
+      }
     }
   }
-  function addCollageDeco(d){
-    if(collageDecos.length>=12){ toast("贴的有点多啦,先删掉几个"); return; }
-    collageDecos.push(d);
-    collageSelected=collageDecos.length-1;
-    syncCollageDecoEdit();
-    syncCollage();
+  // 导出:临时去掉选中虚线框 → 取图 → 恢复(同一帧内同步完成,无闪烁)
+  function exportDataURL(type, q){
+    _exportClean=true; draw();
+    var url;
+    try{ url=(q!=null)?canvas.toDataURL(type,q):canvas.toDataURL(type); }
+    catch(e){ url=canvas.toDataURL(); }
+    _exportClean=false; draw();
+    return url;
   }
-  function addCollageText(){
+
+  // ---------- 贴纸面板 ----------
+  var stickerPane=$("stickerPane");
+  var stickerLayoutRow=$("stickerLayoutRow");
+  var stickerCatSeg=$("stickerCatSeg");
+  var stickerPalette=$("stickerPalette");
+  var stickerAddTextBtn=$("stickerAddText");
+  var stickerDecoEdit=$("stickerDecoEdit");
+  var decoSmaller=$("decoSmaller");
+  var decoBigger=$("decoBigger");
+  var decoEditTextBtn=$("decoEditText");
+  var decoColorInput=$("decoColorInput");
+  var decoDelete=$("decoDelete");
+
+  var stickerCat="emoji";
+  var STICKER_EMOJIS=['❤️','✨','🌟','😍','😎','🥰','😂','👍','🙌','🌸','🌈','☀️','🌙','🍀','🎉','📸','☕️','🍰','🐱','🌷'];
+
+  function selectedSticker(){ return (stickerSel>=0 && state.stickers && state.stickers[stickerSel]) ? state.stickers[stickerSel] : null; }
+  function resetStickers(){ state.stickers=[]; stickerSel=-1; stickerDrag=null; syncStickerEdit(); }
+  function syncStickerEdit(){
+    if(!stickerDecoEdit) return;
+    var d=selectedSticker();
+    stickerDecoEdit.classList.toggle("hidden", !d);
+    if(d){
+      var isText=(d.type==="text");
+      var only=stickerDecoEdit.querySelectorAll(".deco-text-only");
+      for(var i=0;i<only.length;i++) only[i].classList.toggle("hidden", !isText);
+      var canColor=(d.type==="text"||d.type==="doodle");
+      var colorable=stickerDecoEdit.querySelectorAll(".deco-colorable");
+      for(var j=0;j<colorable.length;j++) colorable[j].classList.toggle("hidden", !canColor);
+      if(canColor && decoColorInput) decoColorInput.value=d.color||(d.type==="doodle"?"#ff5a7a":"#ffffff");
+    }
+  }
+  function addSticker(d){
+    if(!state.bitmap){ toast("先选一张照片再贴贴纸"); return; }
+    if(!state.stickers) state.stickers=[];
+    if(state.stickers.length>=16){ toast("贴的有点多啦,先删掉几个"); return; }
+    state.stickers.push(d);
+    stickerSel=state.stickers.length-1;
+    syncStickerEdit();
+    draw();
+  }
+  function addStickerText(){
     var t=window.prompt("输入要加的文字", "");
     if(t==null) return;
     t=String(t).trim(); if(!t) return; if(t.length>30) t=t.slice(0,30);
-    addCollageDeco({type:"text", x:0.5, y:0.5, content:t, size:0.09, color:"#ffffff"});
+    addSticker({type:"text", x:0.5, y:0.5, content:t, size:0.09, color:"#ffffff"});
   }
-  function collageEventPos(ev){
-    var r=collagePreview.getBoundingClientRect();
+  function renderStickerCat(){
+    if(!stickerCatSeg) return;
+    Array.prototype.forEach.call(stickerCatSeg.querySelectorAll("button[data-scat]"), function(b){
+      b.classList.toggle("on", b.getAttribute("data-scat")===stickerCat);
+    });
+  }
+  function renderStickerPalette(){
+    if(!stickerPalette) return;
+    stickerPalette.innerHTML="";
+    if(stickerCat==="doodle"){
+      DOODLE_IDS.forEach(function(id, idx){
+        var b=document.createElement("button");
+        b.type="button"; b.className="deco-sticker deco-doodle";
+        b.setAttribute("data-doodle", id);
+        var cv=document.createElement("canvas"); cv.width=34; cv.height=34;
+        drawDoodle(cv.getContext("2d"), id, 17, 17, 14, DOODLE_COLORS[idx%DOODLE_COLORS.length]);
+        b.appendChild(cv);
+        stickerPalette.appendChild(b);
+      });
+    } else {
+      STICKER_EMOJIS.forEach(function(e){
+        var b=document.createElement("button");
+        b.type="button"; b.className="deco-sticker";
+        b.setAttribute("data-emoji", e);
+        b.textContent=e;
+        stickerPalette.appendChild(b);
+      });
+    }
+  }
+  function refreshStickerPane(){
+    var isCollage=collagePhotos.length>=2;
+    if(stickerLayoutRow) stickerLayoutRow.classList.toggle("hidden", !isCollage);
+    if(isCollage) renderCollageLayouts();
+    renderStickerCat();
+    renderStickerPalette();
+    syncStickerEdit();
+  }
+
+  if(stickerCatSeg){
+    stickerCatSeg.addEventListener("click", function(ev){
+      var b=ev.target.closest ? ev.target.closest("button[data-scat]") : null;
+      if(!b) return;
+      stickerCat=b.getAttribute("data-scat");
+      renderStickerCat(); renderStickerPalette();
+    });
+  }
+  if(stickerPalette){
+    stickerPalette.addEventListener("click", function(ev){
+      var b=ev.target.closest ? ev.target.closest(".deco-sticker") : null;
+      if(!b) return;
+      var emoji=b.getAttribute("data-emoji");
+      var doodle=b.getAttribute("data-doodle");
+      if(emoji){ addSticker({type:"emoji", x:0.5, y:0.5, content:emoji, size:0.16, color:null}); }
+      else if(doodle){ var di=DOODLE_IDS.indexOf(doodle); addSticker({type:"doodle", x:0.5, y:0.5, content:doodle, size:0.18, color:DOODLE_COLORS[(di<0?0:di)%DOODLE_COLORS.length]}); }
+    });
+  }
+  if(stickerAddTextBtn) stickerAddTextBtn.addEventListener("click", addStickerText);
+  if(decoSmaller) decoSmaller.addEventListener("click", function(){ var d=selectedSticker(); if(!d) return; d.size=Math.max(0.03, d.size*0.85); draw(); });
+  if(decoBigger) decoBigger.addEventListener("click", function(){ var d=selectedSticker(); if(!d) return; d.size=Math.min(0.7, d.size*1.18); draw(); });
+  if(decoEditTextBtn) decoEditTextBtn.addEventListener("click", function(){
+    var d=selectedSticker(); if(!d || d.type!=="text") return;
+    var t=window.prompt("改文字", d.content||"");
+    if(t==null) return; t=String(t).trim(); if(!t) return; if(t.length>30) t=t.slice(0,30);
+    d.content=t; draw();
+  });
+  if(decoColorInput) decoColorInput.addEventListener("input", function(){
+    var d=selectedSticker(); if(!d || (d.type!=="text" && d.type!=="doodle")) return;
+    d.color=decoColorInput.value; draw();
+  });
+  if(decoDelete) decoDelete.addEventListener("click", function(){
+    if(stickerSel<0 || !state.stickers) return;
+    state.stickers.splice(stickerSel,1);
+    stickerSel=-1; syncStickerEdit(); draw();
+  });
+
+  // 主画布上拖动贴纸(只在「贴纸」标签里生效)
+  function stickerEventPos(ev){
+    var r=canvas.getBoundingClientRect();
     return { x:(ev.clientX-r.left)/r.width, y:(ev.clientY-r.top)/r.height };
   }
-  function collageHit(nx, ny){
-    var ctx=collagePreview.getContext("2d"), size=collagePreview.width;
-    for(var i=collageDecos.length-1;i>=0;i--){
-      var m=decoMetrics(ctx, collageDecos[i], size);
-      var hw=m.w/2+size*0.03, hh=m.h/2+size*0.03;
-      if(Math.abs(nx*size-m.cx)<=hw && Math.abs(ny*size-m.cy)<=hh) return i;
+  function stickerHit(nx, ny){
+    var arr=state.stickers||[];
+    var px=nx*canvas.width, py=ny*canvas.height;
+    for(var i=arr.length-1;i>=0;i--){
+      var m=stickerMetrics(arr[i]);
+      var hw=m.w/2+canvas.width*0.025, hh=m.h/2+canvas.height*0.025;
+      if(Math.abs(px-m.cx)<=hw && Math.abs(py-m.cy)<=hh) return i;
     }
     return -1;
   }
-  collageAddTextBtn.addEventListener("click", addCollageText);
-  collageDecoBar.addEventListener("click", function(ev){
-    var b=ev.target.closest ? ev.target.closest(".deco-sticker") : null;
-    if(!b) return;
-    var emoji=b.getAttribute("data-emoji");
-    if(emoji) addCollageDeco({type:"sticker", x:0.5, y:0.5, content:emoji, size:0.16, color:null});
-  });
-  decoSmaller.addEventListener("click", function(){ var d=collageDecos[collageSelected]; if(!d) return; d.size=Math.max(0.03, d.size*0.85); syncCollage(); });
-  decoBigger.addEventListener("click", function(){ var d=collageDecos[collageSelected]; if(!d) return; d.size=Math.min(0.6, d.size*1.18); syncCollage(); });
-  decoEditTextBtn.addEventListener("click", function(){
-    var d=collageDecos[collageSelected]; if(!d || d.type!=="text") return;
-    var t=window.prompt("改文字", d.content||"");
-    if(t==null) return; t=String(t).trim(); if(!t) return; if(t.length>30) t=t.slice(0,30);
-    d.content=t; syncCollage();
-  });
-  decoColorInput.addEventListener("input", function(){
-    var d=collageDecos[collageSelected]; if(!d || d.type!=="text") return;
-    d.color=decoColorInput.value; syncCollage();
-  });
-  decoDelete.addEventListener("click", function(){
-    if(collageSelected<0) return;
-    collageDecos.splice(collageSelected,1);
-    collageSelected=-1; syncCollageDecoEdit(); syncCollage();
-  });
-  collagePreview.addEventListener("pointerdown", function(ev){
-    var p=collageEventPos(ev), hit=collageHit(p.x, p.y);
-    collageSelected=hit;
+  canvas.addEventListener("pointerdown", function(ev){
+    if(state.editTab!=="sticker" || !state.bitmap) return;
+    var p=stickerEventPos(ev), hit=stickerHit(p.x, p.y);
+    stickerSel=hit;
     if(hit>=0){
-      var d=collageDecos[hit];
-      collageDrag={ dx:p.x-d.x, dy:p.y-d.y };
-      try{ collagePreview.setPointerCapture(ev.pointerId); }catch(e){}
+      var d=state.stickers[hit];
+      stickerDrag={ dx:p.x-d.x, dy:p.y-d.y };
+      try{ canvas.setPointerCapture(ev.pointerId); }catch(e){}
       ev.preventDefault();
     }
-    syncCollageDecoEdit();
-    renderCollagePreview();
+    syncStickerEdit();
+    draw();
   });
-  collagePreview.addEventListener("pointermove", function(ev){
-    if(!collageDrag || collageSelected<0) return;
-    var p=collageEventPos(ev), d=collageDecos[collageSelected];
-    d.x=Math.max(0, Math.min(1, p.x-collageDrag.dx));
-    d.y=Math.max(0, Math.min(1, p.y-collageDrag.dy));
+  canvas.addEventListener("pointermove", function(ev){
+    if(!stickerDrag || stickerSel<0) return;
+    var p=stickerEventPos(ev), d=state.stickers[stickerSel];
+    d.x=Math.max(0, Math.min(1, p.x-stickerDrag.dx));
+    d.y=Math.max(0, Math.min(1, p.y-stickerDrag.dy));
     ev.preventDefault();
-    renderCollagePreview();
+    draw();
   });
-  function endCollageDrag(ev){ if(collageDrag){ collageDrag=null; try{ collagePreview.releasePointerCapture(ev.pointerId); }catch(e){} applyCollageToMain(); } }
-  collagePreview.addEventListener("pointerup", endCollageDrag);
-  collagePreview.addEventListener("pointercancel", endCollageDrag);
+  function endStickerDrag(ev){ if(stickerDrag){ stickerDrag=null; try{ canvas.releasePointerCapture(ev.pointerId); }catch(e){} } }
+  canvas.addEventListener("pointerup", endStickerDrag);
+  canvas.addEventListener("pointercancel", endStickerDrag);
   // ================= style switching =================
   var SEG_PRESETS = ['classic', 'polaroid', 'leica', 'glassBar', 'magazine', 'polaroidPlus'];
 
@@ -2697,6 +2828,82 @@
   }
   function renderCaptions(){ renderCaptionChips(suggestCaptions()); }
 
+  // ---------- v3.0 A4: 智能场景识别 → 推荐水印样式(端上启发式;不联网/不识图/不下模型/不上传照片) ----------
+  // 只用「聚合色彩占比 + EXIF 派生线索(时段/季节/光圈/焦段)」做粗判,绝不读原始像素重建、绝不读原始 GPS。
+  var SCENE_STYLES = {
+    landscape: ["duskMountain","minimalCorner","checkIn","solarTerm","mistBlue"],
+    night:     ["darkBar","nightBlue","cinema","magazine"],
+    food:      ["polaroidPlus","milkTea","kodakGold","glassCard"],
+    portrait:  ["minimalFrame","morandi","polaroid","filmStrip"],
+    daily:     ["classic","glassBar","oatCream","minimalCorner"]
+  };
+  var SCENE_LABEL = { landscape:"风景", night:"夜景", food:"美食", portrait:"人像", daily:"日常" };
+  var SEASON_STYLE = { "春":"springCherry","夏":"summerSea","秋":"autumnMaple","冬":"winterSnow" };
+  function styleNameOf(id){
+    for(var i=0;i<TEMPLATES.length;i++){ if(TEMPLATES[i].id===id) return TEMPLATES[i].name; }
+    return id;
+  }
+  // 一遍 48×48 缩图采样:平均亮度 / 冷暖 + 偏绿、偏蓝像素占比(用于猜草木 / 天空水面)。聚合统计,不可还原原图。
+  function analyzeScene(bmp){
+    if(!bmp) return null;
+    var N=48, c, x;
+    try{
+      c=document.createElement("canvas"); c.width=N; c.height=N;
+      x=c.getContext("2d"); x.drawImage(bmp,0,0,N,N);
+      var d=x.getImageData(0,0,N,N).data, n=0, lum=0, warm=0, green=0, blue=0;
+      for(var i=0;i<d.length;i+=4){
+        if(d[i+3]<16) continue;
+        var r=d[i], g=d[i+1], b=d[i+2];
+        n++; lum+=0.299*r+0.587*g+0.114*b; warm+=(r-b);
+        if(g>r+8 && g>b+8) green++;
+        if(b>r+8 && b>g+6) blue++;
+      }
+      if(!n) return null;
+      return { luma:lum/n, warmth:warm/n, greenFrac:green/n, blueFrac:blue/n };
+    }catch(e){ return null; }
+  }
+  function classifyScene(){
+    var s=analyzeScene(state.bitmap); if(!s) return "daily";
+    var clue=exifClues(state.exif);
+    var nature=s.greenFrac + s.blueFrac;
+    if(s.luma<58 || clue.time==="夜") return "night";
+    if(nature>=0.42 || clue.lens==="广角") return "landscape";
+    if(clue.bigAperture && s.warmth>10 && nature<0.22 && s.luma>95) return "food";
+    if(clue.bigAperture && clue.lens!=="广角") return "portrait";
+    if(s.warmth>16 && nature<0.16 && s.luma>120) return "food";
+    return "daily";
+  }
+  function suggestStyles(){
+    var scene=classifyScene();
+    var ids=(SCENE_STYLES[scene]||SCENE_STYLES.daily).slice();
+    var seasonId=SEASON_STYLE[exifClues(state.exif).season];
+    if(seasonId && ids.indexOf(seasonId)<0) ids.unshift(seasonId);
+    var seen={}, out=[];
+    for(var i=0;i<ids.length && out.length<4;i++){
+      var id=ids[i]; if(id && !seen[id]){ seen[id]=1; out.push({id:id, name:styleNameOf(id)}); }
+    }
+    return { scene:scene, label:SCENE_LABEL[scene]||"日常", styles:out };
+  }
+  function renderSceneChips(res){
+    var box=$("sceneList"); if(!box) return;
+    box.innerHTML="";
+    res.styles.forEach(function(s){
+      var b=document.createElement("button");
+      b.type="button"; b.className="cap-chip"; b.textContent=s.name;
+      b.addEventListener("click", function(){
+        setStyle(s.id);
+        toast("已套用「"+s.name+"」样式 ✨");
+      });
+      box.appendChild(b);
+    });
+  }
+  function aiScene(){
+    if(!state.bitmap){ toast("先选一张照片,再帮你挑样式 ✨"); return; }
+    var res=suggestStyles();
+    renderSceneChips(res);
+    toast("看了下这张照片,像是「"+res.label+"」,挑了几款样式 ✨");
+  }
+
   // ---------- v3.0 B1: 联网 AI 文案(BYOK,默认关,失败回退端上) ----------
   var _aiConsentSession = false;
   var captionAiBtn = $("captionAiBtn");
@@ -2908,15 +3115,16 @@
   });
 
   function setEditTab(tab){
-    if(tab!=="color" && tab!=="collage") tab="watermark";
+    if(tab!=="color" && tab!=="sticker") tab="watermark";
     state.editTab=tab;
     Array.prototype.forEach.call(editTabs.querySelectorAll("button"), function(b){
       b.classList.toggle("on", b.getAttribute("data-tab")===tab);
     });
     watermarkPane.classList.toggle("hidden", tab!=="watermark");
     colorPane.classList.toggle("hidden", tab!=="color");
-    if(collagePane) collagePane.classList.toggle("hidden", tab!=="collage");
-    if(tab==="collage" && typeof refreshCollagePane==="function") refreshCollagePane();
+    if(stickerPane) stickerPane.classList.toggle("hidden", tab!=="sticker");
+    if(tab==="sticker" && typeof refreshStickerPane==="function") refreshStickerPane();
+    draw();
   }
 
   function renderAutoPanel(){
@@ -2937,6 +3145,7 @@
 
   textInput.addEventListener("input", function(){ if(state.mode==="manual") draw(); });
   (function(){ var cb=$("captionBtn"); if(cb) cb.addEventListener("click", renderCaptions); })();
+  (function(){ var sb=$("sceneRecBtn"); if(sb) sb.addEventListener("click", aiScene); })();
 
   // ================= color grading (色调影调 · Beta, v2.12.0) =================
   var TONE_LIST = [
@@ -2945,44 +3154,68 @@
     {id:"kodak",     name:"柯达", cat:"film"},
     {id:"fade",      name:"褪色", cat:"film"},
     {id:"fujiGreen", name:"富士", cat:"film"},
+    {id:"slide",     name:"反转片", cat:"film"},
+    {id:"oldPhoto",  name:"旧时光", cat:"film"},
     {id:"bw",     name:"黑白",   cat:"bw"},
     {id:"bwHigh", name:"高反差", cat:"bw"},
     {id:"bwSoft", name:"柔黑白", cat:"bw"},
+    {id:"bwSepia",name:"棕调",   cat:"bw"},
+    {id:"bwCool", name:"冷黑白", cat:"bw"},
     {id:"warm",       name:"暖阳", cat:"warm"},
     {id:"autumnWarm", name:"暖秋", cat:"warm"},
     {id:"goldenHour", name:"落日", cat:"warm"},
+    {id:"honey",      name:"蜜糖", cat:"warm"},
+    {id:"terracotta", name:"赤陶", cat:"warm"},
     {id:"cool",     name:"冷调", cat:"cool"},
     {id:"deepBlue", name:"冷蓝", cat:"cool"},
     {id:"cyanLime", name:"青柠", cat:"cool"},
+    {id:"nordic",   name:"北欧", cat:"cool"},
+    {id:"teal",     name:"蓝青", cat:"cool"},
     {id:"fresh", name:"清新", cat:"fresh"},
     {id:"japan", name:"日系", cat:"fresh"},
     {id:"cream", name:"奶油", cat:"fresh"},
+    {id:"sakura",name:"樱花", cat:"fresh"},
+    {id:"mint",  name:"薄荷", cat:"fresh"},
     {id:"gray",      name:"高级灰", cat:"mood"},
     {id:"vivid",     name:"鲜艳",   cat:"mood"},
     {id:"cinematic", name:"电影感", cat:"mood"},
-    {id:"hkRetro",   name:"港风",   cat:"mood"}
+    {id:"hkRetro",   name:"港风",   cat:"mood"},
+    {id:"morandi",   name:"莫兰迪", cat:"mood"},
+    {id:"dreamy",    name:"梦幻",   cat:"mood"}
   ];
   var TONE_PARAMS = {
     film:       { sat:0.82, con:0.92, bri:1.03, temp:12,  tint:-4, lift:16 },
     kodak:      { sat:0.98, con:0.96, bri:1.03, temp:16,  tint:3,  lift:12 },
     fade:       { sat:0.70, con:0.86, bri:1.05, temp:6,   tint:-2, lift:30 },
     fujiGreen:  { sat:1.04, con:0.98, bri:1.02, temp:-6,  tint:9,  lift:8  },
+    slide:      { sat:1.18, con:1.10, bri:1.00, temp:-2,  tint:-2, lift:2  },
+    oldPhoto:   { sat:0.68, con:0.88, bri:1.04, temp:14,  tint:4,  lift:28 },
     bw:         { sat:0,    con:1.06, bri:1.00, temp:0,   tint:0,  lift:0  },
     bwHigh:     { sat:0,    con:1.24, bri:0.99, temp:0,   tint:0,  lift:0  },
     bwSoft:     { sat:0,    con:0.94, bri:1.04, temp:0,   tint:0,  lift:20 },
+    bwSepia:    { sat:0,    con:1.05, bri:1.02, temp:20,  tint:7,  lift:10 },
+    bwCool:     { sat:0,    con:1.10, bri:1.00, temp:-16, tint:-4, lift:4  },
     warm:       { sat:1.08, con:1.05, bri:1.02, temp:18,  tint:2,  lift:0  },
     autumnWarm: { sat:1.14, con:1.04, bri:1.00, temp:26,  tint:7,  lift:0  },
     goldenHour: { sat:1.18, con:1.07, bri:1.02, temp:32,  tint:5,  lift:2  },
+    honey:      { sat:1.10, con:1.00, bri:1.05, temp:20,  tint:5,  lift:10 },
+    terracotta: { sat:1.06, con:1.07, bri:0.99, temp:24,  tint:9,  lift:2  },
     cool:       { sat:1.03, con:1.06, bri:1.00, temp:-16, tint:-2, lift:0  },
     deepBlue:   { sat:1.02, con:1.09, bri:0.99, temp:-28, tint:-5, lift:0  },
     cyanLime:   { sat:1.08, con:1.02, bri:1.02, temp:-12, tint:11, lift:4  },
+    nordic:     { sat:0.90, con:0.99, bri:1.04, temp:-12, tint:-2, lift:12 },
+    teal:       { sat:1.10, con:1.07, bri:1.00, temp:-12, tint:7,  lift:2  },
     fresh:      { sat:1.10, con:0.98, bri:1.06, temp:-4,  tint:4,  lift:8  },
     japan:      { sat:0.94, con:0.94, bri:1.08, temp:-2,  tint:7,  lift:18 },
     cream:      { sat:0.92, con:0.93, bri:1.07, temp:9,   tint:2,  lift:22 },
+    sakura:     { sat:1.02, con:0.94, bri:1.08, temp:8,   tint:-5, lift:18 },
+    mint:       { sat:1.06, con:0.96, bri:1.06, temp:-6,  tint:9,  lift:14 },
     gray:       { sat:0.45, con:0.93, bri:1.02, temp:2,   tint:0,  lift:12 },
     vivid:      { sat:1.35, con:1.12, bri:1.00, temp:2,   tint:0,  lift:0  },
     cinematic:  { sat:0.92, con:1.14, bri:0.99, temp:-5,  tint:-3, lift:8  },
-    hkRetro:    { sat:1.06, con:1.10, bri:0.99, temp:-8,  tint:5,  lift:6  }
+    hkRetro:    { sat:1.06, con:1.10, bri:0.99, temp:-8,  tint:5,  lift:6  },
+    morandi:    { sat:0.60, con:0.97, bri:1.03, temp:4,   tint:1,  lift:16 },
+    dreamy:     { sat:1.04, con:0.90, bri:1.05, temp:6,   tint:0,  lift:26 }
   };
   var FILTER_CATEGORIES = [
     {key:"all",   label:"全部"},
@@ -3151,9 +3384,9 @@
   function draw(){
     if(!state.bitmap) return;
     var custom = findCustomTemplate(state.style);
-    if(custom){ drawCustom(custom); return; }
-    var fn = DRAW_DISPATCH[state.style] || drawClassic;
-    fn();
+    if(custom){ drawCustom(custom); }
+    else { var fn = DRAW_DISPATCH[state.style] || drawClassic; fn(); }
+    if(typeof drawStickerLayer==="function") drawStickerLayer();
   }
 
   function drawOriginalOnly(){
@@ -3164,7 +3397,9 @@
   }
   (function(){
     var holdTimer=null, holding=false, sx=0, sy=0;
-    function begin(x,y){ if(!state.bitmap) return; if(!ensureSettings().longPress) return; sx=x; sy=y; holdTimer=setTimeout(function(){ holding=true; drawOriginalOnly(); }, 220); }
+    function begin(x,y){ if(!state.bitmap) return;
+      if(state.editTab==="sticker"){ var r=canvas.getBoundingClientRect(); if(r.width && r.height && stickerHit((x-r.left)/r.width,(y-r.top)/r.height)>=0) return; }
+      if(!ensureSettings().longPress) return; sx=x; sy=y; holdTimer=setTimeout(function(){ holding=true; drawOriginalOnly(); }, 220); }
     function moveCancel(x,y){ if(holdTimer && (Math.abs(x-sx)>10||Math.abs(y-sy)>10)){ clearTimeout(holdTimer); holdTimer=null; } }
     function end(){ if(holdTimer){ clearTimeout(holdTimer); holdTimer=null; } if(holding){ holding=false; draw(); } }
     canvas.addEventListener("touchstart", function(e){ if(e.touches[0]) begin(e.touches[0].clientX,e.touches[0].clientY); }, {passive:true});
@@ -4118,10 +4353,10 @@
   function buildExport(){
     var q=state.exportQuality||"standard", mime, ext, u;
     if(q==="png"){
-      u=dataURLToUint8(canvas.toDataURL("image/png"));
+      u=dataURLToUint8(exportDataURL("image/png"));
       mime="image/png"; ext="png";
     } else {
-      u=dataURLToUint8(canvas.toDataURL("image/jpeg", q==="high"?0.98:0.92));
+      u=dataURLToUint8(exportDataURL("image/jpeg", q==="high"?0.98:0.92));
       if(state.exifApp1){ try{ u=spliceApp1(u, state.exifApp1); }catch(e){} }
       mime="image/jpeg"; ext="jpg";
     }
@@ -4141,7 +4376,7 @@
   saveBtn.addEventListener("click", function(){
     if(!state.bitmap){ return; }
     var url;
-    try{ url=canvas.toDataURL("image/jpeg",0.92); }
+    try{ url=exportDataURL("image/jpeg",0.92); }
     catch(e){ toast("生成失败，请重试"); return; }
     resultImg.src=url;
     setExportQuality(state.exportQuality||"standard");
@@ -4183,7 +4418,7 @@
       copyImgBtn.addEventListener("click", function(){
         if(!state.bitmap){ return; }
         try{
-          var u=dataURLToUint8(canvas.toDataURL("image/png"));
+          var u=dataURLToUint8(exportDataURL("image/png"));
           var blob=new Blob([u],{type:"image/png"});
           navigator.clipboard.write([new ClipboardItem({"image/png":blob})]).then(function(){
             toast("图片已复制，可直接粘贴");
@@ -4203,6 +4438,7 @@
     state.bitmap=null; state.exif=null; state.exifApp1=null;
     invalidateGrade();
     clearCollageState();
+    resetStickers();
     editor.style.display="none";
     startView.style.display="";
     applyDefaultText();
@@ -4951,6 +5187,12 @@
     onDevice: false,
     run: function(){ return aiCaptionOnline(); }
   });
+  window.Yinji.ai.register({
+    id: "scene",
+    label: "场景荐样式(端上)",
+    onDevice: true,
+    run: function(){ return suggestStyles(); }
+  });
   window.Yinji.getContext = window.Yinji.getContext || function(){
     var cs = null;
     if(state.bitmap){
@@ -4971,7 +5213,8 @@
       mode: state.mode,
       text: (typeof textInput!=="undefined" && textInput) ? textInput.value : "",
       colorStats: cs,
-      timeOfDay: clue.time, season: clue.season, device: clue.device, lens: clue.lens
+      timeOfDay: clue.time, season: clue.season, device: clue.device, lens: clue.lens,
+      scene: state.bitmap ? classifyScene() : ""
     };
   };
 
