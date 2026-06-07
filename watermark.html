@@ -966,6 +966,7 @@
         <div class="field hidden" id="autoField">
           <label class="lbl">从照片读取到的拍摄信息</label>
           <div id="autoBody"></div>
+          <input type="text" id="locationInput" class="hidden" placeholder="地点（可手填，如 上海·外滩，留空则用照片里的坐标）" maxlength="30" autocomplete="off">
         </div>
       </div>
 
@@ -1204,6 +1205,7 @@
         <label class="set-check"><input type="checkbox" data-f="shutter">快门</label>
         <label class="set-check"><input type="checkbox" data-f="iso">ISO</label>
         <label class="set-check"><input type="checkbox" data-f="focal">焦段</label>
+        <label class="set-check"><input type="checkbox" data-f="location">地点</label>
       </div>
     </div>
 
@@ -1311,7 +1313,7 @@
   "use strict";
 
   // ---------- version (single source of truth; bump on every release) ----------
-  var APP_VERSION = "v3.0.1";
+  var APP_VERSION = "v3.2.0";
 
   // ---------- 访问统计(百度统计 · 异步加载 / 不阻塞渲染 / 不发照片) ----------
   // 站点 ID 是在百度统计「新增网站」后拿到的公开标识(写在每个访客的页面里、非密钥)。
@@ -1321,14 +1323,25 @@
   // ---------- state ----------
   var state = { bitmap:null, exif:null, exifApp1:null, mode:"manual", editTab:"watermark", style:"classic", exportQuality:"standard", tone:"none",
     toneAdj:{ temp:0, tint:0, sat:0, intensity:100 },
-    filterId:null, stickers:[] };
+    filterId:null, stickers:[], locationText:"" };
 
   // ---------- remember last choices (style / text-mode / export quality) ----------
   var PREFS_KEY = "yinji.prefs.v1";
   var prefMode = null;
+  // 按样式记忆调色:每个水印样式各记一份「滤镜 + 调色盘」,切回该样式时自动恢复
+  var STYLE_COLORS_KEY = "yinji.styleColors.v1";
+  var styleColors = {};
+  function loadStyleColors(){ var s=PLATFORM.getStorage(); if(!s) return; try{ var raw=s.getItem(STYLE_COLORS_KEY); if(raw){ var o=JSON.parse(raw); if(o && typeof o==="object") styleColors=o; } }catch(e){} }
+  function persistStyleColors(){ var s=PLATFORM.getStorage(); if(!s) return; try{ s.setItem(STYLE_COLORS_KEY, JSON.stringify(styleColors)); }catch(e){} }
   function savePrefs(){
     var s=PLATFORM.getStorage(); if(!s) return;
     try{ s.setItem(PREFS_KEY, JSON.stringify({ style:state.style, mode:prefMode||state.mode, quality:state.exportQuality, tone:state.tone, toneAdj:state.toneAdj, filterId:state.filterId })); }catch(e){}
+    // 同时记下「当前样式」此刻的调色,供下次切回时恢复
+    if(state.style){
+      var a=state.toneAdj||{};
+      styleColors[state.style] = { tone:state.tone, toneAdj:{ temp:a.temp||0, tint:a.tint||0, sat:a.sat||0, intensity:(a.intensity==null?100:a.intensity) }, filterId:state.filterId };
+      persistStyleColors();
+    }
   }
   function loadPrefs(){
     var s=PLATFORM.getStorage(); if(!s) return null;
@@ -1349,7 +1362,7 @@
       longPress: true,
       defaultText: "date",
       fixedText: "",
-      autoFields: { device:true, time:true, aperture:true, shutter:true, iso:true, focal:true },
+      autoFields: { device:true, time:true, aperture:true, shutter:true, iso:true, focal:true, location:false },
       maxEdge: 2200,
       aiOnline: false,
       aiBase: "",
@@ -1413,7 +1426,10 @@
     matcha:    { bg:"#EBF0DC", text:"#5C6E2E", soft:"#9AA876", accent:"#8DA24A" },
     milkTea:   { bg:"#F1E6D6", text:"#9A6B33", soft:"#BFA079", accent:"#CBA15C" },
     lotusPink: { bg:"#F2E7EA", text:"#9A6373", soft:"#C2A0AB", accent:"#C99AAA" },
-    oatCream:  { bg:"#F4EEDF", text:"#80714F", soft:"#B5A684", accent:"#C9B68A" }
+    oatCream:  { bg:"#F4EEDF", text:"#80714F", soft:"#B5A684", accent:"#C9B68A" },
+    seaSalt:   { bg:"#EDF2F3", text:"#445A62", soft:"#97A8AE", accent:"#8AAAB4" },
+    peach:     { bg:"#F8E7DC", text:"#B05F45", soft:"#D3A290", accent:"#E0936F" },
+    greenGrape:{ bg:"#F0F1D6", text:"#727A22", soft:"#B2B778", accent:"#B0BC44" }
   };
   var BRAND = {
     fuji:  { bg:"#16241D", accent:"#4FA877", text:"#7FCBA0", soft:"#6E8E7C" },
@@ -1422,7 +1438,10 @@
     canon: { bg:"#1B1311", accent:"#D8262C", text:"#EC6A6E", soft:"#A07473" },
     night: { bg:"#0F1A28", accent:"#3E86D6", text:"#6FB0EE", soft:"#7C8CA0" },
     silver:{ bg:"#1C1E20", accent:"#B8C0C6", text:"#D6DCE0", soft:"#8A9298" },
-    kodak: { bg:"#1C1408", accent:"#E8A12A", text:"#F0C268", soft:"#A98A52" }
+    kodak: { bg:"#1C1408", accent:"#E8A12A", text:"#F0C268", soft:"#A98A52" },
+    wineRed:    { bg:"#1E1014", accent:"#A23B4C", text:"#CC6E7E", soft:"#8C6A70" },
+    darkTeal:   { bg:"#0E1A1C", accent:"#2E8C92", text:"#6BBEC4", soft:"#6E8A8C" },
+    plumPurple: { bg:"#17101E", accent:"#7E4F9C", text:"#AE86C8", soft:"#857A92" }
   };
 
   // ---------- platform interface ----------
@@ -1441,7 +1460,7 @@
   var $ = function(id){ return document.getElementById(id); };
   var fileInput=$("fileInput"), drop=$("drop"), editor=$("editor"), startView=$("startView");
   var canvas=$("canvas"), ctx=canvas.getContext("2d");
-  var seg=$("seg"), styleSeg=$("styleSeg"), toneSeg=$("toneSeg"), manualField=$("manualField"), autoField=$("autoField"), autoBody=$("autoBody");
+  var seg=$("seg"), styleSeg=$("styleSeg"), toneSeg=$("toneSeg"), manualField=$("manualField"), autoField=$("autoField"), autoBody=$("autoBody"), locationInput=$("locationInput");
   var toneToggle=$("toneToggle"), tonePanel=$("tonePanel"), tonePad=$("tonePad"), toneKnob=$("toneKnob"),
       toneIntensity=$("toneIntensity"), toneIntensityVal=$("toneIntensityVal"),
       toneSat=$("toneSat"), toneSatVal=$("toneSatVal"), toneReset=$("toneReset"),
@@ -1504,14 +1523,20 @@
     {id:"lotusPink",     name:"藕粉",         desc:"低饱和藕粉雾玫调,柔雅气质底栏 + 细线,比樱粉更含蓄。", tags:["藕粉","粉","藕荷","莫兰迪","柔","季节","lotus","气质"]},
     {id:"oatCream",      name:"燕麦",         desc:"温润燕麦奶油色,百搭中性底栏 + 细线,极简耐看。", tags:["燕麦","奶油","米","中性","百搭","柔","季节","oat","极简"]},
     {id:"silverMono",    name:"银盐",         desc:"炭灰深色底栏 + 银灰细条 + 银字,黑白 / 银盐胶片质感。", tags:["银盐","银","灰","黑白","单色","mono","相机","胶片"]},
-    {id:"kodakGold",     name:"柯达金",       desc:"暖棕深色底栏 + 琥珀金细条 + 金字,经典柯达胶片暖调。", tags:["柯达","金","琥珀","暖","胶片","film","kodak","相机"]}
+    {id:"kodakGold",     name:"柯达金",       desc:"暖棕深色底栏 + 琥珀金细条 + 金字,经典柯达胶片暖调。", tags:["柯达","金","琥珀","暖","胶片","film","kodak","相机"]},
+    {id:"seaSalt",       name:"海盐",         desc:"清爽海盐灰蓝调,极简通透浅底栏 + 细线,日常百搭最干净。", tags:["海盐","灰蓝","清爽","极简","干净","季节","clean","百搭"]},
+    {id:"peach",         name:"蜜桃",         desc:"暖甜蜜桃珊瑚调,柔粉浅底栏 + 细线,元气可爱。", tags:["蜜桃","珊瑚","粉","暖","甜","可爱","季节","peach"]},
+    {id:"greenGrape",    name:"青提",         desc:"清新青提黄绿调,明亮浅底栏 + 细线,鲜活有活力。", tags:["青提","黄绿","柚子","清新","鲜活","季节","grape","活力"]},
+    {id:"wineRed",       name:"酒红",         desc:"深酒红暗底栏 + 胭脂细条 + 红字,微醺复古质感。", tags:["酒红","胭脂","深色","复古","暗","wine","微醺","氛围"]},
+    {id:"darkTeal",      name:"黛青",         desc:"深黛青暗底栏 + 孔雀蓝细条 + 青字,沉静电影感。", tags:["黛青","孔雀蓝","petrol","深色","电影","暗","teal","沉静"]},
+    {id:"plumPurple",    name:"绛紫",         desc:"深绛紫暗底栏 + 紫罗兰细条 + 紫字,神秘高级感。", tags:["绛紫","紫罗兰","深色","高级","神秘","暗","plum","氛围"]}
   ];
 
   var CAT_IDS = {
     base:     ["classic","polaroid","polaroidPlus","minimalFrame","magazineLight","minimalCorner"],
-    dark:     ["darkBar","cinema","magazine","hasselblad","nightBlue"],
+    dark:     ["darkBar","cinema","magazine","hasselblad","nightBlue","wineRed","darkTeal","plumPurple"],
     color:    ["leica","filmStrip","checkIn","bigDate","morandi"],
-    season:   ["springCherry","summerSea","autumnMaple","winterSnow","solarTerm","mistBlue","duskMountain","daiPurple","matchaGreen","milkTea","lotusPink","oatCream"],
+    season:   ["springCherry","summerSea","autumnMaple","winterSnow","solarTerm","mistBlue","duskMountain","daiPurple","matchaGreen","milkTea","lotusPink","oatCream","seaSalt","peach","greenGrape"],
     brand:    ["fujiFilm","sonyAlpha","nikonGold","canonRed","silverMono","kodakGold"],
     glass:    ["glassBar","glassCard","glassFrame"],
     festival: ["festivalRed","birthday","anniversary","graduation","midAutumn"]
@@ -1776,8 +1801,9 @@
       var tags={};
       readIFD(view, tiff, ifd0, little, tags);
       if(tags.__exif){ readIFD(view, tiff, tiff+tags.__exif, little, tags); }
-      delete tags.__exif;
-      if(tags.model||tags.make||tags.date||tags.fnumber||tags.exposure||tags.iso||tags.focal) return tags;
+      if(tags.__gps){ readGpsIFD(view, tiff, tiff+tags.__gps, little, tags); }
+      delete tags.__exif; delete tags.__gps;
+      if(tags.model||tags.make||tags.date||tags.fnumber||tags.exposure||tags.iso||tags.focal||typeof tags.lat==="number") return tags;
       return null;
     }catch(e){ return null; }
   }
@@ -1799,8 +1825,34 @@
         case 0x829A: out.exposure = rational(view,tiff,vo,little); break;
         case 0x8827: out.iso = (type===3)? get16(vo) : get32(vo); break;
         case 0x920A: out.focal = rational(view,tiff,vo,little); break;
+        case 0x8825: out.__gps = get32(vo); break;
       }
     }
+  }
+
+  // GPS IFD(0x8825):读经纬度。纯本地解析,只在用户开「地点」开关时才用于显示;绝不联网、绝不自动外发。
+  function readGpsIFD(view, tiff, ifd, little, out){
+    try{
+      var count=view.getUint16(ifd, little), latRef="", lonRef="", lat=null, lon=null;
+      for(var i=0;i<count;i++){
+        var e=ifd+2+i*12, tag=view.getUint16(e,little), vo=e+8;
+        if(tag===0x0001) latRef=ascii(view,tiff,vo,2,little);
+        else if(tag===0x0002) lat=gpsDMS(view,tiff,vo,little);
+        else if(tag===0x0003) lonRef=ascii(view,tiff,vo,2,little);
+        else if(tag===0x0004) lon=gpsDMS(view,tiff,vo,little);
+      }
+      if(lat!==null && lon!==null && lat===lat && lon===lon){
+        if(/S/i.test(latRef)) lat=-lat;
+        if(/W/i.test(lonRef)) lon=-lon;
+        if(Math.abs(lat)<=90 && Math.abs(lon)<=180){ out.lat=lat; out.lon=lon; }
+      }
+    }catch(e){}
+  }
+  // 3 个 RATIONAL(度 / 分 / 秒)→ 十进制度数
+  function gpsDMS(view,tiff,vo,little){
+    var off=tiff+view.getUint32(vo,little);
+    function r(o){ var n=view.getUint32(o,little), d=view.getUint32(o+4,little); return d? n/d : 0; }
+    return r(off) + r(off+8)/60 + r(off+16)/3600;
   }
 
   function ascii(view,tiff,vo,num,little){
@@ -1922,7 +1974,14 @@
     if(af.shutter && ex.exposure) parts.push(ex.exposure<1 ? ("1/"+Math.round(1/ex.exposure)+"s") : (trimNum(ex.exposure)+"s"));
     if(af.iso && ex.iso) parts.push("ISO"+ex.iso);
     if(af.focal && ex.focal) parts.push(Math.round(ex.focal)+"mm");
+    if(af.location){ var loc=(state.locationText||"").trim() || gpsString(ex); if(loc) parts.push(loc); }
     return { device:device, date:date, params:parts.join("  ·  ") };
+  }
+  // GPS 十进制度数 → 显示串(如 31.2400°N 121.4900°E);手填地名优先(见 buildInfo)
+  function gpsString(ex){
+    if(!ex || typeof ex.lat!=="number" || typeof ex.lon!=="number") return "";
+    function f(v,pos,neg){ return Math.abs(v).toFixed(4)+"°"+(v>=0?pos:neg); }
+    return f(ex.lat,"N","S")+" "+f(ex.lon,"E","W");
   }
   function trimNum(n){ return (n%1===0)? String(n) : n.toFixed(1); }
   function formatDate(s){
@@ -2539,7 +2598,7 @@
       return '<button data-style="'+t.id+'"'+(t.kind==="custom"?' class="custom-tpl"':'')+'>'+escapeHtml(t.name)+'</button>';
     }).join("");
     Array.prototype.forEach.call(styleSeg.querySelectorAll("button[data-style]"), function(b){
-      b.addEventListener("click", function(){ setStyle(b.getAttribute("data-style")); });
+      b.addEventListener("click", function(){ setStyle(b.getAttribute("data-style"), true); });
     });
     markStyleActive();
     updateStyleActions();
@@ -2558,7 +2617,7 @@
   }
   function renderStyleSeg(){ renderStyleCats(); renderStyleChips(); }
 
-  function setStyle(style){
+  function setStyle(style, recall){
     state.style = style;
     var found = null;
     Array.prototype.forEach.call(styleSeg.querySelectorAll("button"), function(b){
@@ -2572,9 +2631,22 @@
       if(bL < sS + 6) styleSeg.scrollLeft = Math.max(0, bL - 6);
       else if(bL + bW > sS + sW - 6) styleSeg.scrollLeft = bL + bW - sW + 6;
     }
+    if(recall) recallStyleColor(style);
     updateStyleActions();
     draw();
     savePrefs();
+  }
+  // 用户点某样式时,若它有记忆的调色就恢复(仅用户点样式触发;随机 / 导入 / 启动恢复用 setStyle 不带 recall,不受影响)
+  function recallStyleColor(style){
+    var sc = styleColors[style];
+    if(!sc) return;
+    state.tone = (sc.tone==="none" || (TONE_PARAMS && TONE_PARAMS[sc.tone])) ? sc.tone : "none";
+    var a = sc.toneAdj || {};
+    state.toneAdj = { temp:clampNum(a.temp,-100,100,0), tint:clampNum(a.tint,-100,100,0), sat:clampNum(a.sat,-100,100,0), intensity:clampNum(a.intensity,0,100,100) };
+    state.filterId = (sc.filterId && findCustomFilter(sc.filterId)) ? sc.filterId : null;
+    syncTonePad();
+    markFilterActive();
+    updateFilterActions();
   }
 
   // ---------- 滤镜区(v2.14.0):分类行 + 滤镜 chips(内置 + 我的) + 选中态 ----------
@@ -3113,10 +3185,19 @@
     chips.forEach(function(c){ html+='<span class="chip"><b>'+c[0]+'</b>'+escapeHtml(c[1])+'</span>'; });
     html+='</div>';
     autoBody.innerHTML=html;
+    syncLocationInput();
+  }
+  // 「地点」手填框:仅在设置开了「地点」时显示;手填优先、留空则用照片坐标
+  function syncLocationInput(){
+    if(!locationInput) return;
+    var on = !!(ensureSettings().autoFields && ensureSettings().autoFields.location);
+    locationInput.classList.toggle("hidden", !on);
+    if(on && document.activeElement!==locationInput) locationInput.value = state.locationText||"";
   }
   function escapeHtml(s){ return String(s).replace(/[&<>"]/g,function(m){return({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[m]);}); }
 
   textInput.addEventListener("input", function(){ if(state.mode==="manual") draw(); });
+  if(locationInput) locationInput.addEventListener("input", function(){ state.locationText = locationInput.value; if(state.mode==="auto" && state.bitmap) draw(); });
   (function(){ var cb=$("captionBtn"); if(cb) cb.addEventListener("click", renderCaptions); })();
   (function(){ var sb=$("sceneRecBtn"); if(sb) sb.addEventListener("click", aiScene); })();
 
@@ -3351,7 +3432,13 @@
     lotusPink:      function(){ drawSeasonStyle(SEASON.lotusPink); },
     oatCream:       function(){ drawSeasonStyle(SEASON.oatCream); },
     silverMono:     function(){ drawBrandStyle(BRAND.silver); },
-    kodakGold:      function(){ drawBrandStyle(BRAND.kodak); }
+    kodakGold:      function(){ drawBrandStyle(BRAND.kodak); },
+    seaSalt:        function(){ drawSeasonStyle(SEASON.seaSalt); },
+    peach:          function(){ drawSeasonStyle(SEASON.peach); },
+    greenGrape:     function(){ drawSeasonStyle(SEASON.greenGrape); },
+    wineRed:        function(){ drawBrandStyle(BRAND.wineRed); },
+    darkTeal:       function(){ drawBrandStyle(BRAND.darkTeal); },
+    plumPurple:     function(){ drawBrandStyle(BRAND.plumPurple); }
   };
 
   function draw(){
@@ -3559,6 +3646,17 @@
     });
   }
 
+  // 采样当前画布某区域的平均亮度(0–255);画布此时已绘好照片 + 滤镜,用来给"压在照片上的字"自动选黑 / 白。失败兜底中性。
+  function bgLumaAt(x, y, bw, bh){
+    try{
+      x=Math.max(0,Math.round(x)); y=Math.max(0,Math.round(y));
+      bw=Math.min(canvas.width-x, Math.round(bw)); bh=Math.min(canvas.height-y, Math.round(bh));
+      if(bw<=0 || bh<=0) return 128;
+      var d=ctx.getImageData(x,y,bw,bh).data, sum=0, n=0;
+      for(var i=0;i<d.length;i+=4){ sum += 0.299*d[i]+0.587*d[i+1]+0.114*d[i+2]; n++; }
+      return n? sum/n : 128;
+    }catch(e){ return 128; }
+  }
   function drawMinimalCorner(){
     var s=getSize(); if(!s) return;
     var w=s.w, h=s.h;
@@ -3575,10 +3673,13 @@
     var pad=Math.round(w*0.035);
     var px=Math.max(14, Math.round(w*0.022));
     ctx.font="500 "+px+'px '+FONT;
-    ctx.fillStyle="rgba(255,255,255,.95)";
-    ctx.shadowColor="rgba(0,0,0,.6)";
+    // 自动黑 / 白:看右下角文字落点处照片的明暗,亮底用深字 + 浅光晕、暗底用白字 + 深阴影,保证可读
+    var luma=bgLumaAt(w*0.42, h-pad-px*1.6, w-pad-w*0.42, px*1.7);
+    var darkText = luma>145;
+    ctx.fillStyle = darkText ? "rgba(26,22,18,.96)" : "rgba(255,255,255,.96)";
+    ctx.shadowColor = darkText ? "rgba(255,255,255,.55)" : "rgba(0,0,0,.6)";
     ctx.shadowBlur=Math.max(4, Math.round(w*0.008));
-    ctx.shadowOffsetY=1;
+    ctx.shadowOffsetY=darkText?0:1;
     ctx.textAlign="right"; ctx.textBaseline="bottom";
     ctx.fillText(text, w-pad, h-pad);
     ctx.shadowColor="transparent"; ctx.shadowBlur=0; ctx.shadowOffsetY=0;
@@ -4756,6 +4857,7 @@
 
   loadCustomTemplates();
   loadCustomFilters();
+  loadStyleColors();
   renderStyleSeg();
 
   (function initPrefs(){
