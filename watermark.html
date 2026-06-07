@@ -170,7 +170,7 @@
       radial-gradient(100% 60% at 50% 112%, rgba(194,99,45,.06), transparent 60%);
     background-attachment:fixed;
     min-height:100vh;
-    padding:0 0 calc(env(safe-area-inset-bottom) + 20px);
+    padding:0 env(safe-area-inset-right) calc(env(safe-area-inset-bottom) + 20px) env(safe-area-inset-left);
     -webkit-font-smoothing:antialiased;
     -moz-osx-font-smoothing:grayscale;
     text-rendering:optimizeLegibility;
@@ -1062,24 +1062,6 @@
   </div>
 </div>
 
-<!-- Search sheet -->
-<div class="overlay" id="searchOverlay">
-  <div class="sheet search-sheet">
-    <h3>更多模板</h3>
-    <p class="sub">按分类挑,或输入关键词搜</p>
-    <input type="text" id="searchInput" class="search-input" placeholder="搜模板名 / 风格 / 标签" maxlength="20">
-    <div class="cat-row" id="catRow"></div>
-    <div class="tpl-actions-row">
-      <button class="btn btn-new-tpl" id="newCustomBtn">+ 新建我的模板</button>
-      <button class="btn btn-import-tpl" id="importTplBtn">导入模板</button>
-    </div>
-    <div id="searchResults" class="search-results"></div>
-    <div class="row">
-      <button class="btn btn-ghost" id="closeSearch">关闭</button>
-    </div>
-  </div>
-</div>
-
 <!-- Custom template editor sheet -->
 <div class="overlay" id="customOverlay">
   <div class="sheet">
@@ -1329,7 +1311,7 @@
   "use strict";
 
   // ---------- version (single source of truth; bump on every release) ----------
-  var APP_VERSION = "v3.0.0-beta.18";
+  var APP_VERSION = "v3.0.0";
 
   // ---------- state ----------
   var state = { bitmap:null, exif:null, exifApp1:null, mode:"manual", editTab:"watermark", style:"classic", exportQuality:"standard", tone:"none",
@@ -1472,10 +1454,7 @@
   var editTabs=$("editTabs"), watermarkPane=$("watermarkPane"), colorPane=$("colorPane");
   var overlay=$("overlay"), resultImg=$("resultImg"), downloadLink=$("downloadLink"), closeSheet=$("closeSheet");
   var copyImgBtn=$("copyImgBtn");
-  var searchBtn=$("searchBtn"), toastEl=$("toast");
-  var searchOverlay=$("searchOverlay"), searchInput=$("searchInput"), searchResults=$("searchResults"), closeSearch=$("closeSearch");
-  var catRow=$("catRow");
-  var searchCat="all";
+  var toastEl=$("toast");
 
   // ---------- template registry (42 presets + user-defined customs at runtime) ----------
   var TEMPLATES = [
@@ -1523,17 +1502,6 @@
     {id:"kodakGold",     name:"柯达金",       desc:"暖棕深色底栏 + 琥珀金细条 + 金字,经典柯达胶片暖调。", tags:["柯达","金","琥珀","暖","胶片","film","kodak","相机"]}
   ];
 
-  // ---------- categories (quick-filter chips in the 更多模板 panel) ----------
-  var CATEGORIES = [
-    {key:"all",      label:"全部"},
-    {key:"base",     label:"基础"},
-    {key:"dark",     label:"深色"},
-    {key:"color",    label:"彩色"},
-    {key:"season",   label:"季节"},
-    {key:"brand",    label:"品牌"},
-    {key:"glass",    label:"玻璃"},
-    {key:"festival", label:"节日"}
-  ];
   var CAT_IDS = {
     base:     ["classic","polaroid","polaroidPlus","minimalFrame","magazineLight","minimalCorner"],
     dark:     ["darkBar","cinema","magazine","hasselblad","nightBlue"],
@@ -4445,91 +4413,12 @@
     setDropMsg("选择照片 · 拍照","点这里从相册选一张，或直接拍一张，给它加上白框黑字水印");
   });
 
-  // ================= template search =================
-  function openTemplatePicker(){
-    searchInput.value="";
-    searchCat="all";
-    renderCatRow();
-    renderSearchResults("");
-    searchOverlay.classList.add("show");
-    setTimeout(function(){ try{ searchInput.focus(); }catch(e){} }, 120);
-  }
-  if(searchBtn) searchBtn.addEventListener("click", openTemplatePicker);
-
-  function renderCatRow(){
-    if(!catRow) return;
-    catRow.innerHTML = CATEGORIES.map(function(c){
-      return '<button class="cat-chip'+(c.key===searchCat?' on':'')+'" data-cat="'+c.key+'">'+c.label+'</button>';
-    }).join("");
-    Array.prototype.forEach.call(catRow.querySelectorAll(".cat-chip"), function(el){
-      el.addEventListener("click", function(){
-        searchCat = el.getAttribute("data-cat");
-        Array.prototype.forEach.call(catRow.querySelectorAll(".cat-chip"), function(x){ x.classList.remove("on"); });
-        el.classList.add("on");
-        renderSearchResults(searchInput.value);
-      });
-    });
-  }
-  closeSearch.addEventListener("click", function(){ searchOverlay.classList.remove("show"); });
-  searchOverlay.addEventListener("click", function(e){
-    if(e.target===searchOverlay) searchOverlay.classList.remove("show");
-  });
-  searchInput.addEventListener("input", function(){ renderSearchResults(searchInput.value); });
-
-  function renderSearchResults(query){
-    var q=String(query||"").trim().toLowerCase();
-    var pool=allTemplates();
-    var matches=pool.filter(function(t){
-      if(searchCat!=="all"){
-        if(t._custom || CAT_OF[t.id]!==searchCat) return false;
-      }
-      if(!q) return true;
-      var hay=(t.name+" "+(t.desc||"")+" "+(t.tags||[]).join(" ")+" "+t.id).toLowerCase();
-      return hay.indexOf(q)!==-1;
-    });
-    if(matches.length===0){
-      searchResults.innerHTML='<div class="template-empty">没找到匹配的模板,换个关键词试试</div>';
-      return;
-    }
-    var html=matches.map(function(t){
-      var cur = (t.id===state.style) ? ' current' : '';
-      var badge = (t.id===state.style) ? '<span class="badge">当前</span>' : '';
-      var customTag = t._custom ? '<span class="tag-custom">我的</span>' : '';
-      var delBtn = t._custom ? '<button class="del" data-del="'+t.id+'">删除</button>' : '';
-      var shareBtn = t._custom ? '<button class="share" data-share="'+t.id+'">分享</button>' : '';
-      return '<div class="template-item'+cur+'" data-style="'+t.id+'">'+
-             '<div class="name">'+escapeHtml(t.name)+customTag+badge+delBtn+shareBtn+'</div>'+
-             '<div class="desc">'+escapeHtml(t.desc||"")+'</div>'+
-             '</div>';
-    }).join("");
-    searchResults.innerHTML=html;
-    Array.prototype.forEach.call(searchResults.querySelectorAll(".template-item"), function(el){
-      el.addEventListener("click", function(ev){
-        var tgt = ev.target;
-        if(tgt && tgt.classList && tgt.classList.contains("del")){
-          deleteCustomTemplate(tgt.getAttribute("data-del"));
-          ev.stopPropagation();
-          return;
-        }
-        if(tgt && tgt.classList && tgt.classList.contains("share")){
-          shareCustomTemplate(tgt.getAttribute("data-share"));
-          ev.stopPropagation();
-          return;
-        }
-        setStyle(el.getAttribute("data-style"));
-        searchOverlay.classList.remove("show");
-        toast("已切换为「"+el.querySelector(".name").firstChild.nodeValue+"」");
-      });
-    });
-  }
-
   function deleteCustomTemplate(id){
     if(!confirm("删除这个自定义水印?")) return;
     customTemplates = customTemplates.filter(function(c){ return c.id !== id; });
     persistCustomTemplates();
     if(state.style === id){ setStyle("classic"); }
     renderStyleSeg();
-    renderSearchResults(searchInput.value);
     toast("已删除");
   }
 
@@ -4540,7 +4429,6 @@
   var customAccent=$("customAccent"), customAccentOn=$("customAccentOn");
   var customName=$("customName");
   var customSave=$("customSave"), customCancel=$("customCancel");
-  var newCustomBtn=$("newCustomBtn");
   var editingCustomId = null;
   var customLayout = "bar";
 
@@ -4581,10 +4469,6 @@
     });
   }
 
-  newCustomBtn.addEventListener("click", function(){
-    searchOverlay.classList.remove("show");
-    openCustomEditor(null);
-  });
   customCancel.addEventListener("click", closeCustomEditor);
   customOverlay.addEventListener("click", function(e){
     if(e.target===customOverlay) closeCustomEditor();
@@ -4621,7 +4505,6 @@
   var shareOverlay=$("shareOverlay"), shareTitle=$("shareTitle"), shareSub=$("shareSub");
   var shareText=$("shareText");
   var shareCopyBtn=$("shareCopyBtn"), shareImportBtn=$("shareImportBtn"), shareClose=$("shareClose");
-  var importTplBtn=$("importTplBtn");
 
   function isHexColor(v){ return typeof v==="string" && /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/.test(v); }
 
@@ -4700,7 +4583,6 @@
   function shareCustomTemplate(id){
     var tpl = findCustomTemplate(id);
     if(!tpl){ toast("找不到这个水印"); return; }
-    searchOverlay.classList.remove("show");
     openShare("export", encodeTemplate(tpl));
   }
 
@@ -4757,7 +4639,6 @@
     renderStyleSeg();
     setStyle(tpl.id);
     closeShare();
-    if(searchOverlay) searchOverlay.classList.remove("show");
     toast("已导入「"+name+"」,在「水印」页「我的」分类里");
   }
   function importFilterObj(flt){
@@ -4790,10 +4671,6 @@
   shareImportBtn.addEventListener("click", doImport);
   shareClose.addEventListener("click", closeShare);
   shareOverlay.addEventListener("click", function(e){ if(e.target===shareOverlay) closeShare(); });
-  importTplBtn.addEventListener("click", function(){
-    searchOverlay.classList.remove("show");
-    openShare("import", "");
-  });
   // 「水印」页内嵌模板区的动作按钮(新建 / 导入 / 分享 / 删除当前自定义模板)
   if(newTplInline) newTplInline.addEventListener("click", function(){ openCustomEditor(null); });
   if(importTplInline) importTplInline.addEventListener("click", function(){ openShare("import", ""); });
