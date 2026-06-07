@@ -1020,6 +1020,8 @@
           <div class="collage-deco-bar" id="stickerPalette"><!-- rendered by renderStickerPalette() --></div>
           <div class="sticker-actions" id="stickerActions">
             <button type="button" class="deco-add" id="stickerAddText">＋ 文字</button>
+            <button type="button" class="deco-add" id="stickerAddImage">＋ 图片 / Logo</button>
+            <input type="file" id="stickerImageInput" accept="image/*" class="hidden">
           </div>
           <div class="collage-deco-edit hidden" id="stickerDecoEdit">
             <button type="button" class="deco-ctl" id="decoSmaller">小一点</button>
@@ -1313,7 +1315,7 @@
   "use strict";
 
   // ---------- version (single source of truth; bump on every release) ----------
-  var APP_VERSION = "v3.2.0";
+  var APP_VERSION = "v3.3.0";
 
   // ---------- 访问统计(百度统计 · 异步加载 / 不阻塞渲染 / 不发照片) ----------
   // 站点 ID 是在百度统计「新增网站」后拿到的公开标识(写在每个访客的页面里、非密钥)。
@@ -2336,6 +2338,9 @@
       ctx.save(); ctx.font="700 "+fs+'px '+DECO_FONT;
       w=ctx.measureText(item.content||"").width; ctx.restore();
       h=fs;
+    } else if(item.type==="image"){
+      w=Math.max(8, item.size*base);
+      h=item._ar ? Math.max(8, w/item._ar) : w;   // 保持图片原始宽高比
     } else {
       w=h=Math.max(8, item.size*base);
     }
@@ -2356,6 +2361,8 @@
         ctx.fillText(it.content||"", m.cx, m.cy);
       } else if(it.type==="doodle"){
         drawDoodle(ctx, it.content, m.cx, m.cy, m.w/2, it.color||"#ff5a7a");
+      } else if(it.type==="image"){
+        if(it._img){ ctx.drawImage(it._img, m.cx-m.w/2, m.cy-m.h/2, m.w, m.h); }
       } else {
         var fe=Math.max(8, it.size*m.base);
         ctx.font=fe+"px "+DECO_FONT; ctx.textAlign="center"; ctx.textBaseline="middle";
@@ -2389,6 +2396,7 @@
   var stickerCatSeg=$("stickerCatSeg");
   var stickerPalette=$("stickerPalette");
   var stickerAddTextBtn=$("stickerAddText");
+  var stickerAddImageBtn=$("stickerAddImage"), stickerImageInput=$("stickerImageInput");
   var stickerDecoEdit=$("stickerDecoEdit");
   var decoSmaller=$("decoSmaller");
   var decoBigger=$("decoBigger");
@@ -2429,6 +2437,29 @@
     if(t==null) return;
     t=String(t).trim(); if(!t) return; if(t.length>30) t=t.slice(0,30);
     addSticker({type:"text", x:0.5, y:0.5, content:t, size:0.09, color:"#ffffff"});
+  }
+  // 自定义 Logo / 签名:选一张图片(本地读取、绝不上传)→ 降采样到 ≤600px(省内存、保留透明 PNG)→ 当一个可拖动 / 缩放的图片贴纸
+  function addStickerImage(file){
+    if(!state.bitmap){ toast("先选一张照片,再加图片 / Logo"); return; }
+    if(!file || !/^image\//.test(file.type||"")){ toast("请选一张图片"); return; }
+    if(state.stickers && state.stickers.length>=16){ toast("贴的有点多啦,先删掉几个"); return; }
+    var reader=new FileReader();
+    reader.onload=function(){
+      var img=new Image();
+      img.onload=function(){
+        var iw=img.naturalWidth||img.width, ih=img.naturalHeight||img.height;
+        if(!iw||!ih){ toast("这张图片读不出尺寸,换一张"); return; }
+        var mx=600, sc=Math.min(1, mx/Math.max(iw,ih)), tw=Math.max(1,Math.round(iw*sc)), th=Math.max(1,Math.round(ih*sc));
+        var oc=document.createElement("canvas"); oc.width=tw; oc.height=th;
+        try{ oc.getContext("2d").drawImage(img,0,0,tw,th); }catch(e){ toast("这张图片处理失败,换一张"); return; }
+        addSticker({ type:"image", x:0.5, y:0.5, size:0.3, content:"", _img:oc, _ar:tw/th });
+        toast("加好啦,手指拖动换位置、用「小一点 / 大一点」调大小 ✨");
+      };
+      img.onerror=function(){ toast("这张图片打不开,换一张"); };
+      img.src=reader.result;
+    };
+    reader.onerror=function(){ toast("读取图片失败,换一张"); };
+    reader.readAsDataURL(file);
   }
   function renderStickerCat(){
     if(!stickerCatSeg) return;
@@ -2487,6 +2518,10 @@
     });
   }
   if(stickerAddTextBtn) stickerAddTextBtn.addEventListener("click", addStickerText);
+  if(stickerAddImageBtn && stickerImageInput){
+    stickerAddImageBtn.addEventListener("click", function(){ stickerImageInput.value=""; stickerImageInput.click(); });
+    stickerImageInput.addEventListener("change", function(ev){ var f=ev.target.files && ev.target.files[0]; if(f) addStickerImage(f); });
+  }
   if(decoSmaller) decoSmaller.addEventListener("click", function(){ var d=selectedSticker(); if(!d) return; d.size=Math.max(0.03, d.size*0.85); draw(); });
   if(decoBigger) decoBigger.addEventListener("click", function(){ var d=selectedSticker(); if(!d) return; d.size=Math.min(0.7, d.size*1.18); draw(); });
   if(decoEditTextBtn) decoEditTextBtn.addEventListener("click", function(){
