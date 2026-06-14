@@ -156,6 +156,139 @@ UI 上本版只放预告:设置面板「AI · 即将推出」段 + `#aiSoonBtn`(
 
 - 自检:`node --check` = SYNTAX_OK、grep 无外链资源;版本 → v2.12.0,`sw.js` cache → `yinji-v19-2026-06-01-v2.12.0`。
 
+## 6.14 v2.13.0 新增实现要点（调色盘 / iPhone 16 Pro 风格 2D 调色盘）
+
+> 把 6.13 的「8 款一键色调(Beta)」升级成**可手动微调**:在预设之上叠一层 `state.toneAdj`,用一块 iPhone 16 Pro 风格的 2D 调色盘 + 强度 / 饱和滑杆来调。**完全沿用 6.13 的 `getSize()` 单点注入管线**——36 款样式 + 导出零改动全继承,不碰任何绘制函数。这是 3.0「智能配色」(`roadmap-3.0.md` A1)的手动版地基:将来 AI 自动配色填的就是同一个 `state.toneAdj`。
+
+- **微调层 `state.toneAdj{temp,tint,sat,intensity}`**(默认 `{0,0,0,100}` = 中性 + 强度满):
+  - `effectiveParams()` 把**预设 + 盘子叠加**成最终参数喂给 `applyTone`:`base=TONE_PARAMS[tone]||中性`;`sat=base.sat*(1+adj.sat/100)`、`temp=base.temp+adj.temp*0.4`、`tint=base.tint+adj.tint*0.4`(±100 拖动 → ±40 实际偏移,手感不过冲)、`intensity=adj.intensity/100`。预设与盘子是**正交叠加**,可只用其一、也可叠着用。
+  - `applyTone(d,p)` 加**强度混合 K**(`K=p.intensity`,0..1):逐像素先算出调色结果,再 `out=orig+(graded-orig)*K`。K=0 → 还原原片(强度滑杆拉到 0 = 原图),K=1 → 全量调色。
+  - `clampNum(v,lo,hi,fallback)`:新加的健壮校验小工具,`initPrefs` 还原 `toneAdj` 各字段、`effectiveParams` / `gradeSig` 取值都过它,挡住 NaN / 越界 / 旧数据。
+- **缓存与判定**:
+  - `hasGrade()` = `(预设非 none ∥ 盘子 temp/tint/sat 任一非 0) 且 intensity>0`——否则 `gradedBitmap` 直接返原图(零开销;强度=0 也判为无调色)。
+  - `gradeSig()` = `tone|temp|tint|sat|intensity`(全 clamp),盘子任一值变即换键 → `_gradeCache` 失效重算;签名 + `w/h/src` 命中才复用。`gradedBitmap()` 改以 `gradeSig()` 为键、`effectiveParams()` 为参,其余(离屏 canvas / tainted try-catch 回退)沿用 6.13。
+- **UI——iPhone 16 Pro 风格 2D 调色盘(折叠在「调色盘 ▾」里)**:
+  - `#toneToggle`(`调色盘 ▾`,`aria-expanded` / `aria-controls`)折叠 / 展开 `#tonePanel`(`.tone-dial.hidden{display:none}`),文字在 ▾ / ▴ 切。
+  - `.dial-pad`(180×180,`touch-action:none` 防页面跟着滚):两层 `linear-gradient`(冷暖横轴 蓝→橙、色调纵轴 品红→绿)+ `background-blend-mode:multiply` 出盘面观感;`::before` / `::after` 十字准星;`#toneKnob`(26px 旋钮,`position:absolute` + `margin:-13px` 居中到落点)。
+  - 落点 ↔ 参数:`placeToneKnob()` 把 (temp,tint) → `left=((temp+100)/2)%`、`top=((tint+100)/2)%`;`padPosToAdj(cx,cy)` 反向按 pad 矩形相对坐标算 `temp=round(x*200-100)`、`tint=round(y*200-100)`。
+  - `.dial-sliders`:`#toneIntensity`(强度 0–100)、`#toneSat`(饱和 −100..100,`accent-color:var(--accent)`);`#toneReset`「复位调色盘」归中性。
+  - **交互 `bindTonePad()`**:优先 **Pointer Events**(`setPointerCapture` 包 try/catch,失败回退 touch+mouse);pad `down` / `move` 实时 `padPosToAdj`→`syncTonePad`→`scheduleToneDraw`;滑杆 `input` 实时重绘、`change` 落 `savePrefs`。`scheduleToneDraw()` 用 `requestAnimationFrame` 节流(无 rAF 同步 `draw()` 兜底)避免拖动狂重绘;`syncTonePad()` 同步旋钮位置 + 滑杆值 + 标签。IIFE 内 `renderToneSeg()` 后调一次 `bindTonePad()`。
+- **持久**:`savePrefs` 写 `toneAdj`;`initPrefs` 用 `clampNum` 逐字段校验还原。
+- 自检:`node --check` = SYNTAX_OK、grep 无外链;版本 → v2.13.0,`sw.js` cache → `yinji-v20-2026-06-02-v2.13.0`。
+
+## 6.15 v2.14.0 新增实现要点（滤镜系统 / 20 款分 6 类 / 随机一套 / 我的滤镜存分享导入）
+
+> 把 6.13 的「8 款一键色调 + 调色盘微调」整体收编为**滤镜**——一档 built-in 滤镜 = 一整套完成观感,调色盘成了「在某套滤镜上再手动微调」的图层(Model B)。**完全沿用 6.13 / 6.12 的 `getSize()` 单点注入管线**:本版多出的 12 款预设只是往 `TONE_LIST` / `TONE_PARAMS` 加数据,**不碰任何绘制函数、不加逐样式逻辑**。这是 3.0 滤镜体系(`roadmap-3.0.md` A1)的地基。
+
+- **命名 + 交互模型(Model B)**:
+  - 全 UI「调色 / 色调」统一改叫**滤镜**;`tone-label` → `滤镜`、去掉 `.beta-tag` Beta 角标。
+  - **built-in 选中即重置**:点内置滤镜把调色盘 `state.toneAdj` 归中性 + 清 `state.filterId`(它本就是完成态,不残留上一套手动微调)。
+  - **手动动了 = 脱离选中**:`bindTonePad` 的 dial `down`、强度 `input`、饱和 `input`、`toneReset` 均调 `clearFilterSel()`——观感降级为「未保存的微调」,高亮取消,可再「＋ 存为滤镜」收藏。
+  - `state.filterId`(string|null):仅指向当前选中的**自定义**滤镜(用于「我的」高亮 + 分享 / 删除目标);`savePrefs` 持久、`initPrefs` 还原前先 `findCustomFilter` 校验存在。
+- **数据层——20 款预设分 6 类 + 自定义滤镜存储**:
+  - `TONE_LIST` 扩到 21 项(含 none 原图),每项 `{id,name,cat}`;`TONE_PARAMS` 20 组 `{sat,con,bri,temp,tint,lift}` 沿用 6.12 同一套像素参数,**直接被 `effectiveParams()`→`gradedBitmap()` 单点注入消费**,新预设零额外代码。
+  - `FILTER_CATEGORIES` 8 项:`all 全部 / film 胶片 / bw 黑白 / warm 暖调 / cool 冷调 / fresh 清新 / mood 氛围 / mine 我的`(按风格分 + 单独「我的」类);`var filterCat="all"` 记当前分类。
+  - 自定义滤镜 = `{id,name,base,adj}`(base = 某 tone id 当底、adj = 调色盘 `{temp,tint,sat,intensity}`);`FILTERS_STORAGE_KEY="yinji.filters.v1"`、`customFilters[]`、`isValidCustomFilter()` 守卫、`loadCustomFilters` / `persistCustomFilters` / `findCustomFilter`。
+- **UI——分类条 + chip 区 + 我的滤镜动作区**:
+  - `tone-block` 重构:`滤镜` 标签 + `#filterRandBtn`(🎲 随机一套,`margin-left:auto`)、`#filterCats`(横向滚动分类条,隐藏滚动条)、`#toneSeg`(chip 行)、`#filterMineHint`(「我的」空态提示)、`#filterActions`(`#saveFilterBtn ＋存为滤镜` / `#importFilterBtn 导入滤镜` / `#shareFilterBtn 分享` / `#delFilterBtn 删除`.danger)。
+  - `renderFilters()`(取代旧 `renderToneSeg()`):按 `filterCat` 过滤——`mine` 渲 `customFilters`(空则显 hint)、其余按 `TONE_LIST[].cat` 过滤内置;自定义 chip 加 `.custom-flt`(橙点 `::after`)。同步刷新分类条高亮 + 动作区显隐(`updateFilterActions`:有选中自定义才显分享 / 删除)。
+  - `#filterSaveOverlay` 存名弹窗:`#filterName`(maxlength 12)+ 保存 / 取消;`#filterSaveDo` 校验非空 → 建 `{id:"flt_"+ts,name:slice(0,12),base:state.tone,adj:clamp(state.toneAdj)}` → push + persist + `filterCat="mine"` + `renderFilters` + `applyCustomFilter`。
+- **分享码——type 路由(模板 / 滤镜共用一套编解码)**:
+  - `encodeFilter(f)`:JSON `{v:1,type:"yinji-filter",flt:{name,base,adj clamp}}` → `btoa(unescape(encodeURIComponent(json)))`,沿用 `SHARE_PREFIX="YINJI1:"`(离线、纯本地)。
+  - `decodeShareRaw(code)`:剥前缀 / 空白 → `atob` → `decodeURIComponent(escape())` → `JSON.parse`,返回**整个对象**(不再只返 tpl)。
+  - `doImport()` 按 `raw.type==="yinji-filter" ∥ raw.flt` 路由:滤镜走 `importFilterObj(flt)`(校验 + 全新 `flt_` id + clamp adj + `isValidCustomFilter` 守卫 + push/persist + 切「我的」+ `applyCustomFilter`),否则走拆出的 `importTemplateObj(raw.tpl||raw)`;`openShare(mode,code,kind)` 按 `kind` 切「滤镜 / 模板」文案。删了死代码 `decodeTemplate`。
+- **随机一套 `randomLook()`(🎲)**:守卫有图 → 随机 `TEMPLATES` 模板 + 随机一款非 none 内置滤镜(**模板 + 滤镜一起随机**),`toneAdj` 归中性、清 `filterId`、`filterCat="all"` → `renderFilters` + `syncTonePad` + `setStyle` → toast「换了一套:模板名 · 滤镜名」。用户无需自己挑。
+- **持久**:`savePrefs` 写 `filterId`;`initPrefs` 还原(`findCustomFilter` 校验)。自定义滤镜单独存 `yinji.filters.v1`。
+- 自检:`node --check` = SYNTAX_OK、grep 无外链;版本 → v2.14.0,`sw.js` cache → `yinji-v21-2026-06-02-v2.14.0`。浏览器预览(DOM 点击 + canvas 像素采样)过:21 chip / 8 分类 / 分类过滤 / 内置选中高亮 / 存为滤镜持久 + 「我的」选中 / 分享导入往返建副本 / 随机一套换图换调。
+
+## 6.16 v3.0.0-beta.1 新增实现要点（智能配色 A1 / 端上启发式 / 3.0 第一个 AI 功能）
+
+> 3.0「AI 主打」的首发功能。**纯端上启发式**——无神经网络、无模型下载、无联网。把照片缩到 48×48 采样统计 → 用规则映射成一组调色盘 `state.toneAdj` → 喂给 6.14 已有的 `syncTonePad()` + `effectiveParams()→gradedBitmap()` 管线。**渲染端零改动**:A1 只是"自动拨盘子",拨完和用户手动拖盘完全等价(同为「未保存的微调」,可复位 / 存为滤镜)。这是 `roadmap-3.0.md` A1 的落地。
+
+- **采样 `analyzePhoto(bmp)`**(闭包私有):`document.createElement('canvas')` 48×48 → `drawImage` → `getImageData`(包 `try/catch`,跨域 taint 返 `null`),跳过 α<16 像素;累加平均 `r/g/b` + 每像素 HSV 饱和度 `(max-min)/max`;返回 `{r,g,b,luma=0.299r+0.587g+0.114b,sat=平均饱和}`。**缩图采样**避免在全分辨率上跑循环卡手机。
+- **规则 `suggestToneAdj(info)`**(输出全在 ±100 盘坐标系,下手克制):
+  - 冷暖:`warmth=r-b`;`tempFactor = warmth<0 ? 0.8 : 0.35`(**回暖比压冷更积极**,贴合暖调品牌、避免把暖照片洗白);`temp=clampNum(round(-warmth*tempFactor),-22,35,0)`。
+  - 绿 / 品红:`greenCast=g-(r+b)/2`;`tint=clampNum(round(-greenCast*0.5),-18,18,0)`。
+  - 饱和:`sat<0.18`(灰)→`+28`、`>0.55`(艳)→`-12`、其余→`+14`。
+  - 强度:基准 `72`;`luma<45 ∥ >215`(过暗 / 过亮,均值不可信)→`60`。
+- **动作 `smartColor()`**:守卫 `state.bitmap`(无图 toast)→ `suggestToneAdj(analyzePhoto(...))`(失败再 toast)→ `state.tone="none"`(从原图起步,这套色纯来自照片、不叠预设)+ `state.toneAdj=adj` + `state.filterId=null` → `syncTonePad()` + `markFilterActive()` + `updateFilterActions()` + `draw()` + `savePrefs()` → toast「已按这张照片配好色 ✨ 不满意点复位调色盘」。
+- **UI**:`#tonePanel` 顶部插 `<button class="dial-smart" id="smartColorBtn">✨ 帮我配色<span class="sub">…</span></button>`;CSS `.dial-smart`(整宽、`var(--accent)` 底 + 白字、`.sub` 独占一行小字、`[disabled]` 灰显);`bindTonePad()` 末尾接 `smartColorBtn.addEventListener("click", smartColor)`(随其余调色盘控件一次性绑定)。
+- **3.0 AI 接入位**:`window.Yinji.ai.register({id:"smartColor",label:"智能配色(端上)",onDevice:true,run:function(){return smartColor();}})` —— `ai.available` 翻 `true`、`ai.list()` 含 smartColor;run 全程本地、直接读已加载的 `state.bitmap`,不经 `getContext()` 取像素、不联网、不写盘。`getContext()` 增 `colorStats`(有图时 `{r,g,b,luma,sat,warm:r>b}`,整图聚合 / 四舍五入,**不可还原原图、非像素**;无图或分析失败为 `null`),延续 6.11「快照绝不含照片像素」铁律。
+- 自检:`node --check` = SYNTAX_OK、grep 无 `http(s)://` / CDN / 外链字体;版本 → v3.0.0-beta.1,`sw.js` cache → `yinji-v22-2026-06-02-v3.0.0-beta.1`。浏览器预览(注入合成照 + DOM / canvas 采样)过:冷照回暖(temp 盘 +35、旋钮 67.5%、画面 R+8 / B−8 向暖)、暖照封顶压冷(temp 盘 −22、旋钮 39%)、旋钮 + 双滑杆 + 标签同步、复位回中性、AI 后手动滑杆仍生效、`colorStats` 正确、无 console 报错。
+
+## 6.17 v3.0.0-beta.2 实现要点（UI 紧凑化 + 动效弹性 / 纯 CSS）
+
+> 本轮**只动 CSS,零 JS / 零渲染管线改动**:目标是"手机一屏尽量放得下" + "动效更有弹性、手感更好"。所有改动都是等比收紧尺寸 + 一个新增缓动 token,功能 / 滤镜 / 导出 / 调色盘逻辑完全不变。
+
+- **整体等比收紧(UI 紧凑化)**:`:root` 圆角 `--radius` 22→18px;`body` 底部安全区 padding +30→+20px;`header` 上下 padding 20/16→13/10px、品牌名 27→23px、副标 margin-top 7→5px;`.icon-btn` 44×44 圆角 14 → 40×40 圆角 13;`.drop`(空状态)padding 60/26→40/24、margin-top 6→4、圆环 72→58 / svg 32→27 / 标题 18→17;`.canvas-stage` padding 18→13 / margin-top 6→4;`.stage-hint` margin 9→7;`.panel` margin-top 16→11 / padding 18→14;`.seg button` padding 11/14→9/13、字号 14.5→14;`.tone-block` margin-top 14→10;`.dial-smart` padding 11/14→10/13、下边距 14→10;`.field` margin-top 16→11、文本框 padding 13/15→11/14;`.actions` margin-top 20→14、`.btn` padding 15→13;`#seg` 行内 margin-top 10→8。
+- **动效弹性(`--spring`)**:`:root` 新增 `--spring:cubic-bezier(.34,1.5,.56,1)`(控制点 y=1.5>1 → 末段过冲回弹)。入场 `yj-fadeUp`(header / panel / drop)缓动由 `--ease` 换成 `--spring`,translateY 收尾略微越过 0 再回弹;`yj-scaleIn` 由单段改 **3 段过冲**(`0%` scale.93 → `55%` 1.018 → `100%` 1),仍配 `--ease`(非 spring)避免双重过冲;`.seg button` 过渡 `all .18s ease`→`all .2s var(--spring)`,`.btn` 过渡 `transform .12s`→`transform .16s var(--spring)`,按压更"弹"。**保留 `@media (prefers-reduced-motion: reduce)` 把动画时长压到 .01ms** 的无障碍兜底。
+- **取舍**:UI 走**等比收紧而非重排布局**——风险最低、视觉关系与可发现性不变、零功能回归。落地后**横幅(4:3)照片可一屏放下,竖幅(3:4)因控件面板较高仍需轻滑**,这是刻意取舍(不为塞下竖幅牺牲控件可见性 / 给预览强行封高);竖幅也想一屏留作后续单独评估。
+- 自检:`node --check` = SYNTAX_OK、grep 无 `http(s)://` / CDN / 外链字体;版本 → v3.0.0-beta.2,`sw.js` cache → `yinji-v23-2026-06-03-v3.0.0-beta.2`。浏览器预览(`getComputedStyle` + `getBoundingClientRect` 实测,截图本轮偶发卡顿改用计算样式量取):固定外壳(header + stage padding + hint + panel + body padding)≈ 583px;横幅 4:3 成像 ≈ 801px(< 812 视口,一屏放下);竖幅 3:4 ≈ 970px(需轻滑);spring 缓动 / 各尺寸缩减均已在计算样式确认生效,JS 正常执行(21 滤镜 chip 渲染、无 console 报错)。
+
+## 6.18 v3.0.0-beta.3 实现要点（拼图基础版 / 合成即照片）
+
+> 6/3 冲刺第①项「拼图」。**核心架构决策:不碰渲染 / 导出管线**——把 2–4 张照片合成进一张离屏 `<canvas>`,再令 `state.bitmap` 指向这张 canvas。既有 `getSize()` 读 `bmp.width||bmp.naturalWidth`、所有绘制走 `drawImage(bmp,...)`,故拼好的图对下游就是"一张普通照片",水印 / 滤镜 / 调色 / 导出**全部零改动继承**。拼图无单一 EXIF → `state.exif=null` / `exifApp1=null`。
+
+- **入口与 DOM**:空状态(原 `.drop` + `<input>`)整体包进 `#startView`;`.drop` 下方加整宽玻璃按钮 `#collageEntry`(四宫格 SVG 图标,`yj-fadeUp` + `var(--spring)` 入场);新增隐藏 `<input id="collageInput" accept="image/*" multiple>`。原先两处 `drop.style.display` 开关(`loadFile` 隐藏、reset 复原)改为操作 `startView`。新增 `#collageOverlay` sheet(`#collagePreview` 预览 canvas + `#collageLayouts` 选项行 + 取消 / 换照片 / 用这个拼)。
+- **布局表**:`COLLAGE_LAYOUTS` 以张数为键——`2:[2lr,2tb]`、`3:[3v,3h,3lr]`、`4:[4grid,4v,4h]`,每个 cell 是归一化 `{x,y,w,h}`(0~1 占比);`collageLayoutsFor(n)` / `findCollageLayout(n,id)`(找不到 id 返回首个)。
+- **合成 `drawCollageInto(canvas,layout,photos)`**:白底 + gap(≈size×1.2%) + 圆角(gap×1.4);逐格 `collageRoundRect`(裁剪路径,**特意不叫 `roundRectPath`,避开既有同名全局函数被后声明覆盖的坑**——node --check 查不出此类静默 bug)→ `clip()` → `coverDraw`(用 `Math.max(dw/iw,dh/ih)` 算 cover 缩放、居中绘制,填满不变形),无图格填占位色 `#EDE7DC`。`layoutSvg(layout)` 按 cells 画 mini 预览塞进选项芯片(`fill="currentColor"`,**无 xmlns**,避外链 grep)。
+- **选图 → 预览 → 确认**:`collageInput change` → slice + 清 `value`(允许重选同图)+ <2 张 / >4 张拦截或截断 → `Promise.all(loadBitmap…)`(复用既有 `createImageBitmap` + `<img>` 兜底)过滤打不开的 → 先 `renderCollagePreview()`(把 `collageLayoutId` 从 null 落到首个布局)再 `renderCollageLayouts()`(故首个布局**开局即高亮**,修了一个开局无高亮的割裂 bug)→ overlay show。`用这个拼` → `COLLAGE_SIZE=1500` 方图合成 → `state.bitmap=cv; state.exif=null; invalidateGrade()` → `setMode(chooseInitialMode(),true)` + 切 editor(`startView` 隐藏) + `renderAutoPanel()` + `draw()`。
+- 自检:`node --check`=SYNTAX_OK、grep 无 `http(s)://` / CDN / 外链字体;版本 → v3.0.0-beta.3,`sw.js` cache → `yinji-v24-2026-06-03-v3.0.0-beta.3`。浏览器预览(注入合成照 File 经 `DataTransfer` 设 `collageInput.files` + dispatch change):2/3/4 张分别出 2/3/3 个布局选项、预览非空、点选项 `.on` 唯一切换 + 重绘、「用这个拼」后进编辑器(`#canvas` 1500×1680=方图 + 标题栏、控件齐、无 console 报错)。
+
+## 6.19 v3.0.0-beta.4 实现要点（水印扩充 +6 款 / 调色板加法）
+
+> 6/4 冲刺第①项「水印扩充」。沿用 6.7 节(v2.9.1 起)的**零风险加法**:**只加调色 + 注册,不写任何新绘制代码**。两个共享渲染器都只吃 `{bg,text,soft,accent}` 四键——`drawSeasonStyle(pal)`=浅底栏 + 照片下方一道 `accent` 细线 + `text`/`soft` 文字;`drawBrandStyle(pal)`=深底栏 + 顶部一条 `accent` 撞色细条 + 撞色字。模板总数 **36 → 42**。
+
+- **新增调色**:`SEASON` 加 4 款奶系柔色——`matcha {bg:#EBF0DC,text:#5C6E2E,soft:#9AA876,accent:#8DA24A}`(抹茶,暖调奶绿,区别于冷青瓷绿 `solarTerm`)、`milkTea {…#F1E6D6/#9A6B33…}`(焦糖奶茶)、`lotusPink {…#F2E7EA/#9A6373…}`(藕粉雾玫,比 `spring` 含蓄)、`oatCream {…#F4EEDF/#80714F…}`(燕麦奶油,暖中性);`BRAND` 加 2 款——`silver {bg:#1C1E20,accent:#B8C0C6,text:#D6DCE0,soft:#8A9298}`(银盐,炭灰 + 银灰,黑白单色,填补无灰/银品牌色空白)、`kodak {bg:#1C1408,accent:#E8A12A,text:#F0C268,soft:#A98A52}`(柯达金,espresso + 琥珀金,区别于 `sony` 纯橙黑底 / `nikon` 柠檬黄)。
+- **4 个改动点**:`SEASON`/`BRAND` 加调色 → `TEMPLATES` 加 6 条(id/name/desc/tags)→ `DRAW_DISPATCH` 加 6 条 `id→function(){ drawSeasonStyle/drawBrandStyle(pal); }` 映射 → `CAT_IDS`(`season` +4 奶系、`brand` +2 胶片)。顺手订正注册区注释 `(30→42 presets)`。**id 三处必须一致**(`TEMPLATES` ↔ `DRAW_DISPATCH` ↔ `CAT_IDS`):`matchaGreen`/`milkTea`/`lotusPink`/`oatCream`/`silverMono`/`kodakGold`。
+- 自检:`node --check`=SYNTAX_OK、grep 无 `http(s)://` / CDN / 外链字体;版本 → v3.0.0-beta.4,`sw.js` cache → `yinji-v25-2026-06-04-v3.0.0-beta.4`。浏览器预览(注入 1200×800 合成照 File 进编辑器):更多模板面板渲染 **42** 个 `.template-item[data-style]`;逐个 `.click()` 6 个新 id → 画布稳定 1200×956(800 照片 + 156 标题栏)、**0 报错**;`getImageData(5,h-20)` 采底栏左下像素 → 6 款 `bg` **全部与设计 hex 精确相符**。(注:该环境 `preview_screenshot` 截图子系统超时不可用,改用 eval 逐像素取色,比肉眼截图更精确。)
+
+## 6.20 v3.0.0-beta.5 实现要点（自定义主题色 / inline `--accent` 覆盖，仅改外壳）
+
+> 6/4 冲刺第②项「支持修改主题配色」。让用户在「设置 → 外观」自定义 App 强调色 `--accent`。整套 UI 早已全程引用 `var(--accent)` / `var(--accent-soft)`,故只改这两个变量即可全局换色;**画布水印成图只读 JS 端硬编码调色板(`SEASON`/`BRAND`/`COLORS`),从不读 CSS 变量,故成图天然不受影响**。
+
+- **核心手法**:把选中色作为 **inline style 写到 `document.body`** 上——inline 样式优先级高于任何选择器规则,因此同时盖过 `:root`(浅色默认 `#C2632D`)与 `body[data-theme="dark"]`(深色默认 `#E08A4C`)两处 `--accent`;若设到 `documentElement(html)` 则在深色模式会被 `body[data-theme="dark"]` 的规则反盖,故必须设到 `body`。选「默认」时 `body.style.removeProperty('--accent'/'--accent-soft')` 还原主题自带色。
+- **`applyAccent()`**(新增,挂 `applyTheme()` 末尾):颜色工具 `_hexToRgb` / `_rgbToHex` / `_mix(hex,target,t)`(向 target 线性插值)。`accent==="default"` 或非 `#RRGGBB` → remove 还原;否则 `setProperty('--accent', ac)`,**`--accent-soft` 按明暗分别算**:浅色 `_mix(ac,'#FBF6EE',0.84)`(向奶白淡化)、深色 `_mix(ac,'#1A1410',0.80)`(向近黑压暗),结果贴近原手调默认值(`#F4E6D8` / `#3A2A1C`)。`applyTheme()` 末尾调 `applyAccent()` 使切换明暗 / 跟随系统时 soft 随当前明暗重算;`matchMedia` change → `applyTheme` 链路、`resetSettingsBtn`(走 `applyTheme`)均自动覆盖。
+- **数据层**:`defaultSettings()` 增 `accent:"default"`,沿用 `yinji.settings.v1`,`loadSettings` 通用拷贝分支即识别字符串键,无需迁移。
+- **UI**(设置 → 外观,`#themeSeg` 下方):`#accentSwatches` = 6 个 `.accent-sw[data-accent]` 圆点(default 赤陶 #C2632D / 海蓝 #2E6F95 / 松绿 #3E7A5E / 黛紫 #7A6A9A / 胭脂 #B65069 / 墨灰 #5A6168)+ `.accent-custom`(彩虹 `conic-gradient` 标签内嵌透明 `<input type=color id=accentColorInput>`)。`.accent-sw.on` 双层 ring 标选中。
+- **wiring**:`syncSettingsUI()` 按 `data-accent===acc` 标 `.on`,无匹配且非 default 给 `.accent-custom` 标 `.on`,回填 `accentColorInput.value`;`#accentSwatches` click(冒泡找 `.accent-sw`;自定义标签无 `data-accent` → return 交给 input 事件)与 `accentColorInput` input 事件均写 `settings.accent` + save + `applyAccent()` + `syncSettingsUI()`。
+- 自检:`node --check`=SYNTAX_OK、grep 无 `http(s)://`;版本 → v3.0.0-beta.5,`sw.js` cache → `yinji-v26-2026-06-04-v3.0.0-beta.5`。浏览器预览(先清 SW + caches 再 reload):7 个色板 + 取色 input 在位;点海蓝 → `body --accent`=#2E6F95 / soft=#dae0e0 / 持久化 / swatch `.on` / input 回填;点默认 → inline 清空、computed 回落 #C2632D、持久化 "default";深色下点松绿 → soft=#212820(向近黑);**实测玻璃开关 checked slider 背景 rgb(194,99,45 赤陶)→ 点胭脂 → rgb(182,80,105)→ 点默认 → 回赤陶**,证明可见 UI 实时换色且能还原;取色盘 input 派发 → 持久化 #1f8a70、自定义 ring 亮、无预设误选;console 零报错。(该环境 `preview_screenshot` 仍超时,改用 eval 读 `getComputedStyle`/inline style 验证。)
+
+## 6.21 v3.0.0-beta.6 实现要点（拼图加文字 / 贴纸 / 预览叠加层烤进大图）
+
+> 6/4 冲刺第③项「画图功能 × 自定义拼贴结合」,南心确认范围 = **拼图上加文字 / emoji 贴纸**(不做自由手绘)。在 6.18 拼图基础上加一层「装饰层(deco)」,与拼图同样**不碰渲染 / 导出管线**:deco 在合成时一起画进 1500² 离屏 canvas,`state.bitmap` 指向它,下游水印 / 滤镜 / 导出零改动继承。
+
+- **数据模型**:`collageDecos=[]`,每项 `{type:'text'|'sticker', x, y, content, size, color}`。`x,y` 为**中心点归一化坐标(0~1)**、`size` 为**高度占画布的比例**——与画布边长无关,故预览(600)与成图(1500)**等比一致**,无需按比例换算。配套 `collageSelected`(选中下标 / -1)、`collageDrag`(`{dx,dy}` 指针与中心的归一化偏移)。
+- **渲染**:`decoMetrics(ctx,d,size)` 用 `measureText` 量中心 / 宽高 / 字号(`fs=max(8,d.size*size)`);`drawCollageDecos(ctx,size,decos,selIndex)`——text 用 600 字重 + center/middle 对齐,**先 `strokeText` 描边光晕**(`lineJoin=round`、`lineWidth≈fs*0.16`,按字色明暗经 `_isLightColor`(复用 beta.5 的 `_hexToRgb`)选黑 / 白 halo)**再 `fillText`**,保证压在任意照片上可读;sticker 直接 `fillText(emoji)`(系统彩色字形,`fillStyle` 无效、**零外部资源**)。选中画蓝色虚线框(`setLineDash`),**仅预览**——`drawCollageInto(canvas,layout,photos,decos,selIndex)` 在 `collageConfirm` 时传 `selIndex=-1`,故成图不含框。两调用方:`renderCollagePreview` 传 `collageDecos,collageSelected`;confirm 传 `collageDecos,-1`。
+- **交互**:`collageAddText`→`window.prompt`(trim / 空忽略 / 截 30 字)→ `addCollageDeco({type:'text',x:.5,y:.5,size:.09,color:'#ffffff'})`;`#collageDecoBar` 委托点击 `.deco-sticker[data-emoji]` → `addCollageDeco({type:'sticker',size:.16,color:null})`;上限 12。**拖动用 Pointer Events**:`#collagePreview` 加 `touch-action:none`(防滚动劫持),`pointerdown`→`collageEventPos`(`getBoundingClientRect` 把缩放显示坐标换算回归一化)+ `collageHit`(从上往下命中、范围放宽 `size*0.03`)→ 选中 + 记 `collageDrag` + `setPointerCapture`;`pointermove` 更新 `d.x/d.y`(clamp 0~1);`pointerup/cancel` 释放。选中行 `#collageDecoEdit`:`syncCollageDecoEdit()` toggle `.hidden` + 按 `type==='text'` toggle `.deco-text-only`(改文字 / 颜色对 sticker 隐藏);大小 `*0.85` / `*1.18`(clamp 0.03~0.6)、改文字再 prompt、颜色 = 隐藏 `<input type=color>` 的 input 事件、删除 = splice。`resetCollageDecos()` 在换照片 / 取消 / 关遮罩 / confirm 各清一次。
+- **踩坑**:项目内**无全局 `.hidden`**(只有带前缀的),新增 **scoped** `.collage-deco-edit.hidden` / `.deco-ctl.hidden`,否则隐藏不生效。
+- 自检:`node --check`=SYNTAX_OK、grep 无 `http(s)://`;版本 → v3.0.0-beta.6,`sw.js` cache → `yinji-v27-2026-06-04-v3.0.0-beta.6`。浏览器预览(脚本注入两张纯色 PNG 走真实 `change` 管线):overlay 打开、左格取到 `#2244cc` 照片像素;点 ❤️ → 预览中心出现非白像素、编辑行显示且 text-only 控件对贴纸隐藏;删除 → 编辑行回隐;`prompt` stub 加文字 → 中心像素变化、text-only 显示;字色改 `#00ff00` → 预览出 5641 绿像素;点「用这个拼」无异常切编辑器、overlay 关,**最终合成画布 1500×1680 含 37690 绿像素**(证明 deco 烤进大图并穿过水印管线);console 零报错。(该环境 `preview_screenshot` 仍超时,改用 eval 注入文件 + 采样像素验证。)
+
+## 6.22 v3.0.0-beta.7 实现要点（智能文案灵感 A3 / 端上规则版 / 第二个端上 AI）
+
+> 6/4 冲刺第⑦项「AI 功能再次增加」=「在 A1 基础上继续加 AI 能力」,落地 `roadmap-3.0.md` 的 **A3 智能文案 / 标题建议(端上规则版)**。**纯端上、零网络、零模型下载**——读这张照片的 EXIF 派生线索 + A1 的色调倾向,用规则 + 词库套句式生成 2~3 个文案候选,点 chip 填进文字框。与 6.16 的 A1 一样:**渲染端零改动**,只是替用户把文字框填好,填完仍是普通手动文字,可再改。
+
+- **入口与 DOM**:`#manualField` 里 `#textInput` 下加一个整宽 `<button class="cap-spark" id="captionBtn">✨ 来点灵感<span class="sub">读这张照片的时间 / 季节 / 色调,给你几个文案,点一下就填</span></button>` + 候选容器 `<div class="cap-list" id="captionList" aria-live="polite"></div>`。CSS:`.cap-spark`(透明底 + `var(--accent)` 描边 / 字、`.sub` 独占行小字、`:active` scale.97);`.cap-chip`(玻璃底 + `backdrop-filter`,`body[data-glass=off]` / `[data-theme=dark]` 各自降级配色);`.cap-list:empty{margin-top:0}` 让空态不留缝。
+- **EXIF 线索 `exifClues(ex)`**(纯函数):用 `/^(\d{4})\D(\d{1,2})\D(\d{1,2})\D+(\d{1,2})/` 解析 `ex.date`(`"YYYY:MM:DD HH:MM:SS"`)→ **季节**(月份 3-5 春 / 6-8 夏 / 9-11 秋 / 12-2 冬)+ **时段**(时 5-8 晨 / 8-11 上午 / 11-14 午 / 14-17 午后 / 17-20 暮 / 其余 夜);`device=ex.model||ex.make`;`ex.fnumber<=2.2`→`bigAperture`;`ex.focal>=85`→长焦 / `<=24`→广角。无 EXIF 各字段为空串 / false,函数照常返回。
+- **生成 `suggestCaptions()`**:取 `exifClues(state.exif)` + `state.toneAdj`(冷暖 `temp` / 明暗 `intensity` 仅作语气微调);按线索拼 4 类句式池(时段词 / 季节词 / 情绪词 / 光线词 / 焦段词交叉组合,如「秋日暮色」「暮色 · 浅焦」「温柔的光」)+ 6 条**通用兜底**(无任何 EXIF 时也能出货);`aiPick` 随机取、Set 去重、返回前 3,故**再点一次换一批**。`aiNowDate()` 兜底当天日期类候选。
+- **渲染 `renderCaptions()`**:`suggestCaptions()` → 清空 `#captionList` → 每个候选建一个 `<button class="cap-chip">` append;chip click → `textInput.value=候选` + `setMode('manual')` + `draw()` + toast「填好啦,可以再改」。接线:`(function(){ var cb=$("captionBtn"); if(cb) cb.addEventListener("click", renderCaptions); })();`(挨着既有 `textInput` input 监听)。
+- **3.0 AI 接入位**:`window.Yinji.ai.register({id:"caption",label:"文案灵感(端上)",onDevice:true,run:function(){return suggestCaptions();}})` —— `ai.list()` 由 `["smartColor"]` 变 `["smartColor","caption"]`;run 全程本地、读 `state.exif`/`state.toneAdj` 派生信息、不联网、不写盘。`getContext()` 增只读字段 `hasExif` + `clue` 派生的 `timeOfDay/season/device/lens`(经 `var clue=exifClues(state.exif)`),延续 6.11 / 6.16 铁律——**不含照片像素、不含原始 GPS**(只给"傍晚 / 秋 / 某机型"这类粗粒度标签,不可还原原图或定位)。
+- **隐私自查**:A3 读的全是已在端上的 EXIF 元信息(用户选图时本就解析出来),不新增任何权限 / 上传 / 下载;断网完全可用;定位诚实为"灵感模板"而非"AI 写作"(真正的自然语言生成是 B1 联网版,默认关)。
+- 自检:`node --check`=SYNTAX_OK、grep 无 `http(s)://` / CDN / 外链字体;版本 → v3.0.0-beta.7,`sw.js` cache → `yinji-v28-2026-06-05-v3.0.0-beta.7`。浏览器预览(注入带 EXIF 的 `state` + 触发):`window.Yinji.ai.list()` = `["smartColor","caption"]`;`#captionBtn` 经 `getComputedStyle` 实测以 `--accent`(#C2632D)描边渲染;`.click()` 后 `#captionList` 渲出 chip;点 chip 后 `#textInput.value` 被填、`setMode('manual')` 生效、`draw()` 重绘;`getContext()` 含新增 `hasExif/timeOfDay/season/device/lens` 字段且无像素 / GPS;另跑 node 规则单测 11 组场景(各季节 / 时段 / 无 EXIF 兜底)全过;console 零报错。(该环境 `preview_screenshot` 仍超时,改用 eval 读 DOM / 计算样式 / 调用真实函数验证。)
+
+## 6.23 v3.0.0-beta.8 实现要点（编辑器「水印 / 调色」分页 + 函数体注释清理 + UI 简洁化）
+
+> 6.5 冲刺三项 🔴。① **调色 / 水印分离**——编辑器顶部加「水印 / 调色」标签,点哪个只露出哪组控件;**纯 UI 拆分,成图始终同时带水印 + 调色**(导出管线零改动)。② **去函数体注释**——regex-aware tokenizer 删 inline `<script>` 内 448 条解释性注释、留 45 条结构横幅,代码骨架逐字节不变。③ **UI 简洁化**——分页即主要瘦身,当前标签 `--accent` 点亮。南心确认设计 = **编辑器内切换标签**(非独立页 / 非两次导出)。
+
+- **设计契约(关键)**:分页只切 DOM 显隐,**不碰渲染**。`getSize()` 单点注入的调色离屏画布 + 水印绘制管线全不变,故无论停哪个标签,「保存图片」导出的 `#canvas` 都同时含水印 + 调色(浏览器实测切标签前后同像素 `[107,107,107]` 不变)。**像 iPhone 相册编辑分页:工具分屏,导出仍是一张完整图。**
+- **state**:加 `state.editTab:"watermark"`(默认);**不入 `yinji.settings.v1` 持久**——每张新照片 / 每次进编辑器都复位回「水印」。
+- **DOM**(`.panel` 内):顶部 `#editTabs`(`.seg.edit-tabs`,`button[data-tab=watermark|color]` ×2)→ `#watermarkPane.edit-pane`(原 `#styleSeg` + 模式切换 `#seg` + `#manualField` + `#autoField`)+ `#colorPane.edit-pane.hidden`(原滤镜 / 调色盘整块 `#toneBlock`)→ 两页**共用**底部 `.actions`(保存图片 / 换一张)。即把原顺排两大块各包一个 pane,标签决定显隐。
+- **JS**:`setEditTab(tab)`——归一化(非 `color` 即 `watermark`)→ 写 `state.editTab` → 标签 `.on` 类切换 → 两 pane `classList.toggle("hidden",…)`;标签行 `Array.prototype.forEach.call(...querySelectorAll("button"))` 绑 click→`setEditTab(data-tab)`。两处入口(照片加载成功 `setMode(...)` 后、拼图确认 `resetCollageDecos()` 后)各调 `setEditTab("watermark")`。
+- **注释清理**:一次性 `tools/strip-comments.js`(跑完即删)逐字符走 CODE / 单 / 双 / 模板 / 正则 / 行 / 块注释状态机,`prevSig` 判正则上下文(`/` 前是 `[A-Za-z0-9_$)\]}.]` 则除号)、正则内 `[...]` charClass 置位防误判——**只删注释,字符串 / 模板 / 正则字面量一律不碰**。整行注释删(含该行)、正文 `^[-=]{4,}` 的**结构横幅保留**(导航目录)、行尾注释删后 rtrim;共删 **448** 留 **45**。CSS `/* */` 与 HTML `<!-- -->` 不在「函数体内」范围、刻意不动。验证:`tools/verify-strip.js` 对 strip 前后各产「codeOnly 骨架」(剥**全部**注释 + 空白)**逐字节相同(各 112293 字符)**→ 证只动注释 + 空白、代码零改。临时工具(strip / verify / _removed-comments.txt / .bak)收尾全删。
+- **UI 简洁化**:`.edit-tabs button.on{color:var(--accent)}`(当前标签点亮,区别于下方同为 `.seg` 的「手动 / 自动」)、`.edit-tabs{margin-bottom:2px}`、`.edit-pane{margin-top:11px}`、`.edit-pane.hidden{display:none}`、`#colorPane .tone-block{margin-top:0}`。**项目无全局 `.hidden`**,`.edit-pane.hidden` 为 scoped(同 `.field.hidden` / `.collage-deco-edit.hidden`)。
+- **⚠️ 设置模块零改动**:本版只动注释 + 分页 DOM 包裹 + 几行 CSS,**未删任何设置 / 功能**;grep 命中 52 处设置相关标识、DOM 六大分区(外观 / 打开照片时 / 自动信息 / 照片与导出 / 数据与隐私 / 关于)在位。
+- 自检:抽 inline `<script>`(仍 1 块、141344 字符)过 `new Function()`=SYNTAX_OK;grep `(src|href)=http(s) / @import / url(http / cdn / googleapis / unpkg / jsdelivr / fonts.google` 全 0(散落的 `beta.2/3/5/6` 字符串是模板注释里的历史版本号引用,`APP_VERSION` 单一真源已是 beta.8)。版本 → v3.0.0-beta.8,`sw.js` cache → `yinji-v29-2026-06-05-v3.0.0-beta.8`。浏览器预览(unregister SW + clear caches + cache-buster 强刷):`#appVer`=v3.0.0-beta.8、`#editTabs` 两标签 `watermark(on)/color(off)`、`#watermarkPane` 显 / `#colorPane` 隐、切标签互换 pane、停「调色」加黑白滤镜烤进画布、**切标签不改成图(同像素一致)**、当前标签计算色 `rgb(194,99,45)`=`--accent`、`ai.list()`=`["smartColor","caption"]`、console 零报错。(该环境 `preview_screenshot` 仍超时,改用 `preview_eval` 读 DOM / 计算样式 / 采样。)
+
 ## 6.6 PWA 文件
 
 - `manifest.webmanifest`:App 名字、图标、起始 URL、主题色

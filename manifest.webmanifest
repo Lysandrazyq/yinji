@@ -10,6 +10,14 @@
   "theme_color": "#F4F0E8",
   "lang": "zh-CN",
   "categories": ["photo", "utilities"],
+  "share_target": {
+    "action": "./share-target",
+    "method": "POST",
+    "enctype": "multipart/form-data",
+    "params": {
+      "files": [{ "name": "photo", "accept": ["image/*"] }]
+    }
+  },
   "icons": [
     { "src": "icons/icon.svg",       "sizes": "any",     "type": "image/svg+xml", "purpose": "any" },
     { "src": "icons/icon-mask.svg",  "sizes": "any",     "type": "image/svg+xml", "purpose": "maskable" }

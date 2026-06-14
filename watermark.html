@@ -39,9 +39,29 @@
     --glass-blur:blur(44px) saturate(180%) brightness(1.05);
     --glass-blur-sm:blur(30px) saturate(170%) brightness(1.04);
     --glass-highlight:inset 0 1px 0 rgba(255,255,255,0.55), inset 0 -1px 0 rgba(28,24,20,0.04);
-    --ease:cubic-bezier(.2,.8,.2,1);
+    /* HIG 标准缓动(系统默认 ease-in-out)·参考 developer.apple.com/design/human-interface-guidelines/motion */
+    --ease:cubic-bezier(.42,0,.58,1);
     /* 弹性缓动:入场/按压略带回弹,手感更"弹"(v3.0.0-beta.2) */
     --spring:cubic-bezier(.34,1.5,.56,1);
+    /* HIG 字阶(SF Pro 同源度量)·正文 17 是 iOS 系统基准 */
+    --fs-body:17px; --fs-callout:16px; --fs-subhead:15px; --fs-footnote:13px; --fs-caption:12px;
+    /* HIG 最小触控目标 44×44pt(硬性规范) */
+    --touch:44px;
+  }
+
+  /* 液态玻璃强度可调 (v3.9.0):关 / 轻 / 标准 / 强。标准 = :root 默认值;轻、强 覆盖模糊 + 饱和 + 高光鳞边。
+     所有主玻璃面(面板 / 弹层 / 芯片…)都读这两个变量,所以改这里整套 UI 一起变。强档更接近 iOS 26/27 Liquid Glass(更透、更亮的高光鳞边)。 */
+  body[data-glass-level="light"]{
+    --glass-blur:blur(16px) saturate(130%) brightness(1.02);
+    --glass-blur-sm:blur(10px) saturate(125%) brightness(1.01);
+    --glass-highlight:inset 0 1px 0 rgba(255,255,255,0.40);
+    --glass-border:rgba(255,255,255,0.22);
+  }
+  body[data-glass-level="strong"]{
+    --glass-blur:blur(64px) saturate(210%) brightness(1.07);
+    --glass-blur-sm:blur(42px) saturate(195%) brightness(1.05);
+    --glass-highlight:inset 0 1.5px 0 rgba(255,255,255,0.72), inset 0 -1px 0 rgba(28,24,20,0.05);
+    --glass-border:rgba(255,255,255,0.46);
   }
 
   /* "Glass off" mode — disables backdrop-filter for performance / preference.
@@ -60,6 +80,32 @@
     -webkit-backdrop-filter:none!important;
     backdrop-filter:none!important;
   }
+  /* ====== Liquid Glass 交互动效 (v3.20.0) ====== */
+  /* 设计原则：玻璃是材质,不是叠加层。反馈来自材质本身的形变,不是额外特效。*/
+
+  /* 按压：材质微微内凹 (scale 收缩) + 边缘高光增强 + 模糊略微加深 */
+  button:active,.btn:active,.seg button:active,.drawer-item:active,
+  .filter-rand:active,.flt-act:active,.tweak-toggle:active,.cap-spark:active{
+    transform:scale(.965);
+    transition:transform .18s var(--spring);
+  }
+
+  /* 玻璃面板按压：边缘鳞边高光短暂增亮,模拟按压时玻璃弯曲导致的折射变化 */
+  .panel:active{
+    box-shadow:inset 0 1.5px 0 rgba(255,255,255,.7),inset 0 -1px 0 rgba(28,24,20,.06);
+    transition:box-shadow .2s ease;
+  }
+  .sheet:active{
+    box-shadow:inset 0 1.5px 0 rgba(255,255,255,.72),0 -12px 40px rgba(0,0,0,.16);
+    transition:box-shadow .2s ease;
+  }
+
+  /* 芯片/分段控件按压：玻璃模糊短暂加深,像是手指把玻璃"压下去"了 */
+  .seg button:active,.tone-seg button:active{
+    -webkit-backdrop-filter:var(--glass-blur) brightness(.96);
+    backdrop-filter:var(--glass-blur) brightness(.96);
+    transition:-webkit-backdrop-filter .15s ease,backdrop-filter .15s ease;
+  }
   /* solid background overrides for elements with hardcoded rgba */
   body[data-glass="off"] .seg{background:var(--bg);}
   body[data-glass="off"] .seg button.on{background:var(--surface);}
@@ -73,7 +119,8 @@
   body[data-glass="off"] .template-item{background:var(--surface);border-color:var(--line);}
   body[data-glass="off"] .template-item.current{background:var(--accent-soft);}
   body[data-glass="off"] .search-input,
-  body[data-glass="off"] input[type=text]{background:var(--surface);border-color:var(--line);}
+  body[data-glass="off"] input[type=text],
+  body[data-glass="off"] textarea{background:var(--surface);border-color:var(--line);}
   body[data-glass="off"] .chip{background:var(--bg);border-color:var(--line);}
   body[data-glass="off"] .custom-row{background:var(--surface);border-color:var(--line);}
   body[data-glass="off"] .btn-new-tpl{background:var(--accent-soft);}
@@ -114,9 +161,11 @@
   body[data-theme="dark"] .seg button.on{background:rgba(255,255,255,.16);box-shadow:0 2px 10px rgba(0,0,0,.30), inset 0 1px 1px rgba(255,255,255,.12);}
   body[data-theme="dark"] .seg button.new-tpl-btn{background:rgba(255,255,255,.05);}
   body[data-theme="dark"] input[type=text],
+  body[data-theme="dark"] textarea,
   body[data-theme="dark"] .search-input,
   body[data-theme="dark"] .share-text{background:rgba(255,255,255,.06);border-color:rgba(255,255,255,.12);color:var(--ink);box-shadow:inset 0 1px 1px rgba(255,255,255,.05);}
   body[data-theme="dark"] input[type=text]:focus,
+  body[data-theme="dark"] textarea:focus,
   body[data-theme="dark"] .search-input:focus{background:rgba(255,255,255,.10);border-color:var(--accent);box-shadow:0 0 0 3px rgba(224,138,76,.18), inset 0 1px 1px rgba(255,255,255,.06);}
   body[data-theme="dark"] input::placeholder,
   body[data-theme="dark"] textarea::placeholder{color:rgba(241,235,225,.34);}
@@ -170,6 +219,10 @@
       radial-gradient(100% 60% at 50% 112%, rgba(194,99,45,.06), transparent 60%);
     background-attachment:fixed;
     min-height:100vh;
+    /* HIG 正文度量:17px / 1.47059 行高 / -0.022em 字距(iOS 系统正文基准) */
+    font-size:var(--fs-body);
+    line-height:1.47059;
+    letter-spacing:-0.022em;
     padding:0 env(safe-area-inset-right) calc(env(safe-area-inset-bottom) + 20px) env(safe-area-inset-left);
     -webkit-font-smoothing:antialiased;
     -moz-osx-font-smoothing:grayscale;
@@ -327,6 +380,7 @@
     border:1px solid rgba(255,255,255,.5);
     box-shadow:inset 0 1px 1px rgba(255,255,255,.4);
     overflow-x:auto;scrollbar-width:none;
+    touch-action:pan-y; /* 水平滑动留给芯片拖拽切换 */
   }
   .seg::-webkit-scrollbar{display:none;}
   .seg button{
@@ -506,7 +560,7 @@
   .field{margin-top:11px;}
   .field.hidden{display:none;}
   label.lbl{display:block;font-size:12.5px;color:var(--ink-soft);margin:0 0 8px 2px;letter-spacing:.02em;}
-  input[type=text]{
+  input[type=text], textarea{
     width:100%;border:1px solid rgba(255,255,255,.6);border-radius:13px;padding:11px 14px;
     font-family:var(--font);font-size:16px;color:var(--ink);
     background:rgba(255,255,255,.45);
@@ -515,7 +569,8 @@
     outline:none;transition:border-color .25s var(--ease), background .25s var(--ease), box-shadow .25s var(--ease);
     box-shadow:inset 0 1px 1px rgba(255,255,255,.45);
   }
-  input[type=text]:focus{
+  textarea{resize:none;line-height:1.35;min-height:44px;display:block;box-sizing:border-box;}
+  input[type=text]:focus, textarea:focus{
     border-color:var(--accent);
     background:rgba(255,255,255,.85);
     box-shadow:0 0 0 3px rgba(194,99,45,.10), inset 0 1px 1px rgba(255,255,255,.6);
@@ -542,6 +597,9 @@
   }
 
   .actions{display:flex;gap:10px;margin-top:14px;}
+  .btn-batch{width:100%;margin-top:8px;}
+  .batch-bar{height:8px;border-radius:6px;background:rgba(127,127,127,.18);overflow:hidden;margin:14px 0 4px;}
+  .batch-bar-fill{height:100%;width:0;border-radius:6px;background:var(--accent);transition:width .25s var(--ease);}
   .btn{
     border:none;border-radius:14px;padding:13px 0;font-family:var(--font);
     font-size:15.5px;font-weight:600;cursor:pointer;transition:transform .16s var(--spring), opacity .15s;
@@ -600,6 +658,54 @@
   .qual-seg{margin-top:16px;}
   .qual-note{margin:9px 4px 0;font-size:12px;color:var(--ink-soft);text-align:center;line-height:1.5;min-height:18px;}
   .btn-album{display:block;width:100%;margin-top:14px;flex:none;font-size:16.5px;padding:16px 0;}
+  /* -- drawer (v3.15.0) -- */
+  .drawer-overlay{justify-content:flex-end;}
+  .drawer-overlay.show .drawer-panel{transform:translateX(0);}
+  .drawer-panel{
+    width:min(92vw,380px);height:100%;max-height:100vh;
+    background:rgba(252,248,242,.94);
+    -webkit-backdrop-filter:blur(44px) saturate(180%);
+    backdrop-filter:blur(44px) saturate(180%);
+    border-left:1px solid rgba(255,255,255,.65);
+    box-shadow:-8px 0 40px rgba(0,0,0,.18),inset 1px 0 1px rgba(255,255,255,.55);
+    display:flex;flex-direction:column;
+    transform:translateX(100%);transition:transform .3s var(--ease);
+    overflow:hidden;
+  }
+  .drawer-head{display:flex;align-items:center;justify-content:space-between;padding:18px 18px 10px;}
+  .drawer-head h3{margin:0;font-size:17px;font-weight:650;}
+  .drawer-head .btn-close{width:32px;height:32px;border-radius:50%;border:none;background:rgba(0,0,0,.06);font-size:20px;line-height:32px;text-align:center;cursor:pointer;color:var(--ink);}
+  .drawer-tabs{display:flex;gap:6px;padding:0 18px 10px;}
+  .drawer-tabs button{flex:1;padding:8px 0;border-radius:20px;border:1px solid var(--line);background:transparent;font-size:14px;font-weight:550;color:var(--ink-soft);cursor:pointer;transition:.15s;}
+  .drawer-tabs button.on{background:var(--accent);color:#fff;border-color:var(--accent);}
+  .drawer-search{display:block;width:calc(100% - 36px);margin:0 18px 12px;padding:9px 14px;border-radius:20px;border:1px solid var(--line);font-size:14px;background:rgba(0,0,0,.03);outline:none;color:var(--ink);}
+  .drawer-search:focus{border-color:var(--accent);background:rgba(0,0,0,.01);}
+  .drawer-grid{flex:1;overflow-y:auto;padding:4px 14px 24px;display:flex;flex-wrap:wrap;gap:6px;align-content:flex-start;}
+  .drawer-item{border:none;border-radius:16px;padding:6px 10px;font-size:13px;cursor:pointer;background:rgba(0,0,0,.04);color:var(--ink);white-space:nowrap;display:flex;align-items:center;gap:6px;transition:.12s;line-height:1.4;}
+  .drawer-item:active{transform:scale(.96);}
+  .drawer-item .swatch{width:16px;height:16px;border-radius:5px;flex:none;box-shadow:inset 0 0 0 1px rgba(0,0,0,.2);}
+  /* -- tools dropdown (v3.19.0) -- */
+  .tools-drop{position:relative;}
+  .tools-menu{position:absolute;right:0;top:100%;z-index:40;background:rgba(252,248,242,.97);-webkit-backdrop-filter:blur(30px);backdrop-filter:blur(30px);border-radius:16px;box-shadow:0 8px 30px rgba(0,0,0,.18);padding:6px;min-width:120px;display:flex;flex-direction:column;gap:2px;}
+  .tools-menu.hidden{display:none;}
+  .tools-menu button{display:flex;align-items:center;gap:6px;padding:8px 12px;border:none;border-radius:10px;background:none;font-size:13px;color:var(--ink);cursor:pointer;white-space:nowrap;}
+  .tools-menu button:active{background:rgba(0,0,0,.06);}
+  /* -- crop (v3.17.0) -- */
+  .crop-overlay{position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:55;display:none;align-items:center;justify-content:center;flex-direction:column;}
+  .crop-overlay.show{display:flex;}
+  .crop-canvas-wrap{position:relative;max-width:92vw;max-height:60vh;overflow:hidden;border-radius:12px;}
+  .crop-canvas-wrap canvas{display:block;max-width:100%;max-height:60vh;}
+  .crop-presets{display:flex;gap:8px;margin:14px 0;flex-wrap:wrap;justify-content:center;}
+  .crop-presets button{padding:8px 16px;border-radius:20px;border:1px solid rgba(255,255,255,.3);background:transparent;color:#fff;font-size:13px;cursor:pointer;}
+  .crop-presets button.on{background:var(--accent);border-color:var(--accent);}
+  .crop-actions{display:flex;gap:10px;}
+  .crop-actions button{padding:10px 24px;border-radius:22px;font-size:15px;font-weight:600;cursor:pointer;}
+  .crop-apply{background:var(--accent);color:#fff;border:none;}
+  .crop-cancel{background:rgba(255,255,255,.15);color:#fff;border:1px solid rgba(255,255,255,.25);}
+  /* -- batch preview (v3.17.0) -- */
+  .batch-preview{display:flex;gap:6px;overflow-x:auto;padding:8px 0;margin-bottom:8px;}
+  .batch-preview img{width:52px;height:52px;object-fit:cover;border-radius:8px;flex:none;border:2px solid transparent;}
+  .batch-preview img.sel{border-color:var(--accent);}
 
   /* Search sheet */
   .search-input{
@@ -798,7 +904,7 @@
   /* setting-row inside a section: no top divider, tighter */
   .set-sec .setting-row{border-top:none;margin-top:10px;padding:4px;}
   /* autoFields checkbox grid */
-  .set-grid{display:flex;flex-wrap:wrap;gap:8px;}
+  .set-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;}
   .set-check{
     display:flex;align-items:center;gap:8px;
     font-size:14px;color:var(--ink);cursor:pointer;
@@ -806,7 +912,6 @@
     -webkit-backdrop-filter:var(--glass-blur-sm);backdrop-filter:var(--glass-blur-sm);
     border:1px solid var(--glass-border);
     border-radius:11px;padding:10px 13px;
-    flex:1 0 27%;min-width:90px;
     box-shadow:var(--glass-highlight);
   }
   .set-check input{width:17px;height:17px;accent-color:var(--accent);margin:0;flex-shrink:0;}
@@ -871,6 +976,330 @@
     flex:0 0 auto;border:none;background:transparent;cursor:pointer;
     color:var(--ink-soft);font-size:20px;line-height:1;padding:4px 8px;border-radius:10px;
   }
+
+  /* ============ HIG 合规层 (v3.21.0) — 按 Apple 官方 Human Interface Guidelines ============ */
+  /* 1) 最小触控目标 44×44pt(HIG·Layout 硬性规范):所有可点控件 */
+  .btn, .seg button, .tone-seg button, .filter-rand, .flt-act, .cap-spark,
+  .icon-btn, .update-bar .ub-btn, .accent-sw, .switch{
+    min-height:var(--touch);
+  }
+  .icon-btn{width:var(--touch);height:var(--touch);border-radius:14px;}
+  .filter-rand{min-width:var(--touch);}
+  input[type=text], textarea, select{min-height:var(--touch);}
+  /* 2) 弹层抓手(HIG·Sheets:resizable sheet 顶部 grabber) */
+  .sheet::before{
+    content:'';display:block;width:36px;height:5px;border-radius:2.5px;
+    background:rgba(60,56,48,.22);margin:0 auto 12px;
+  }
+  body[data-theme="dark"] .sheet::before{background:rgba(255,255,255,.28);}
+  /* 3) 键盘焦点可见(HIG·Accessibility):焦点环用主题色 */
+  button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visible{
+    outline:2px solid var(--accent);outline-offset:2px;
+  }
+  /* 4) SF 风格内联图标的统一度量 */
+  .sfi{width:20px;height:20px;display:block;margin:auto;stroke:currentColor;fill:none;
+    stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;}
+
+  /* ============================================================
+     v4.0.0 — Apple HIG 全面对齐层 (2026-06-13)
+     参照 developer.apple.com/design/human-interface-guidelines
+     纯 CSS 升级，不改任何 HTML / JS
+     覆盖范围：导航栏 · 分段控件 · 弹层 · 设置面板 · 按钮 · 输入框
+     ============================================================ */
+
+  /* === 0. 系统色补充 === */
+  :root{
+    --sys-green:#34C759;
+    --sys-separator:rgba(60,40,10,0.12);
+    --sys-fill:rgba(120,120,128,0.12);
+  }
+
+  /* === 1. 导航栏 (HIG: Navigation Bars)
+     44pt 高 · 半透明材质 · 随滚动保持可见 === */
+  header{
+    position:sticky;
+    top:0;
+    z-index:100;
+    /* 向两侧延伸突破 .wrap 内边距，实现全宽效果 */
+    margin:0 -18px;
+    padding:calc(env(safe-area-inset-top,0px) + 10px) 16px 10px;
+    min-height:calc(env(safe-area-inset-top,0px) + 44px);
+    background:rgba(239,234,224,0.85);
+    -webkit-backdrop-filter:saturate(180%) blur(20px) brightness(1.02);
+    backdrop-filter:saturate(180%) blur(20px) brightness(1.02);
+    border-bottom:0.5px solid rgba(60,40,10,0.14);
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    animation:none;
+  }
+  body[data-theme="dark"] header{
+    background:rgba(22,19,15,0.88);
+    border-bottom-color:rgba(255,255,255,0.10);
+  }
+  /* 标题区：行内排列，精简 */
+  .brand{
+    flex-direction:row;
+    align-items:baseline;
+    gap:6px;
+  }
+  .brand .name{font-size:17px;font-weight:600;letter-spacing:-0.022em;}
+  /* 把版本号缩成 caption 尺寸，放在名称右侧 */
+  .brand .tag{
+    font-family:var(--font);
+    font-size:11px;
+    letter-spacing:0;
+    text-transform:none;
+    color:var(--ink-soft);
+    opacity:0.7;
+    margin-top:0;
+  }
+  /* 导航栏里的工具按钮缩到 34×34（次要动作用稍小图标，HIG 允许） */
+  header .icon-btn{width:36px;height:36px;border-radius:11px;}
+  header .icon-btn svg{width:18px;height:18px;}
+
+  /* === 2. 分段控件 (HIG: Segmented Controls)
+     iOS 13+ 精准款：圆角轨道 + 白色浮片 + 阴影 === */
+  /* 主分段控件（主题 / 文字模式 / 画质等功能选择器）*/
+  .seg{
+    background:rgba(120,120,128,0.12);
+    -webkit-backdrop-filter:none;
+    backdrop-filter:none;
+    border-radius:9px;
+    border:none;
+    padding:2px;
+    gap:0;
+    box-shadow:none;
+  }
+  .seg button{
+    border-radius:7px;
+    font-size:13px;
+    font-weight:500;
+    padding:7px 10px;
+    color:rgba(60,40,10,0.55);
+    min-height:32px;
+    flex:1;
+  }
+  body[data-theme="dark"] .seg{background:rgba(255,255,255,0.10);}
+  body[data-theme="dark"] .seg button{color:rgba(241,235,225,0.55);}
+  .seg button.on{
+    background:#fff;
+    color:var(--ink);
+    font-weight:600;
+    box-shadow:0 1px 3px rgba(0,0,0,0.14),0 1px 2px rgba(0,0,0,0.08);
+    -webkit-backdrop-filter:none;
+    backdrop-filter:none;
+  }
+  body[data-theme="dark"] .seg button.on{background:rgba(255,255,255,0.22);}
+  /* 水印 / 滤镜 chips 用的 tone-seg 保留原液态玻璃风格 */
+  .tone-seg{
+    background:rgba(239,234,224,0.55)!important;
+    -webkit-backdrop-filter:blur(14px)!important;
+    backdrop-filter:blur(14px)!important;
+    border:1px solid rgba(255,255,255,0.5)!important;
+    box-shadow:inset 0 1px 1px rgba(255,255,255,0.4)!important;
+    border-radius:14px!important;
+    padding:4px!important;
+    gap:4px!important;
+  }
+  .tone-seg button{
+    border-radius:11px;
+    font-size:14px;
+    font-weight:500;
+    color:var(--ink-soft);
+    padding:9px 13px;
+    min-height:auto;
+  }
+  .tone-seg button.on{
+    background:rgba(255,255,255,0.85);
+    color:var(--ink);
+    box-shadow:0 2px 10px rgba(28,24,20,0.08),inset 0 1px 1px rgba(255,255,255,0.9);
+  }
+  /* 编辑器标签栏按钮 */
+  .edit-tabs button{font-size:14px;font-weight:600;}
+  .edit-tabs button.on{color:var(--accent);}
+
+  /* === 3. 按钮 (HIG: Buttons)
+     Filled · Tinted · 圆角 = 高度的 37% 约等于 14px === */
+  .btn{
+    border-radius:14px;
+    padding:15px 0;
+    font-size:17px;
+    font-weight:600;
+    letter-spacing:-0.022em;
+  }
+  .btn-primary{
+    background:var(--accent);
+    color:#fff;
+    box-shadow:0 4px 16px rgba(194,99,45,0.30),inset 0 1px 0 rgba(255,255,255,0.22);
+  }
+  /* Tinted 按钮：accent 浅底 + accent 文字 */
+  .btn-ghost{
+    color:var(--accent);
+    background:var(--accent-soft);
+    border:none;
+    -webkit-backdrop-filter:none;
+    backdrop-filter:none;
+    box-shadow:none;
+  }
+  body[data-theme="dark"] .btn-ghost{
+    background:rgba(224,138,76,0.15);
+    border:none;
+  }
+  /* btn-warn 沿用系统红 */
+  .btn-ghost.btn-warn{color:#FF3B30;background:rgba(255,59,48,0.10);}
+  body[data-theme="dark"] .btn-ghost.btn-warn{color:#FF6961;background:rgba(255,59,48,0.15);}
+
+  /* === 4. 底部弹层 (HIG: Sheets)
+     顶圆角 16px · 抓手 · 内容区留安全区高度 === */
+  .sheet{
+    border-radius:16px 16px 0 0;
+    padding:0 20px calc(env(safe-area-inset-bottom,0px) + 28px);
+  }
+  /* 抓手（HIG: Grabber）*/
+  .sheet::before{
+    content:'';
+    display:block;
+    width:36px;height:5px;
+    border-radius:3px;
+    background:rgba(60,40,10,0.18);
+    margin:10px auto 18px;
+  }
+  body[data-theme="dark"] .sheet::before{background:rgba(255,255,255,0.24);}
+  .sheet h3{font-size:17px;font-weight:600;text-align:center;margin:0 0 4px;}
+  .sheet .sub{font-size:13px;color:var(--ink-soft);text-align:center;margin:0 0 16px;line-height:1.5;}
+
+  /* === 5. 设置面板 (HIG: Settings)
+     iOS Settings.app 风格：圆角玻璃卡片 + 节标题 + 分隔线 === */
+  .settings-sheet{
+    padding-top:0;
+    -webkit-overflow-scrolling:touch;
+  }
+  /* 设置页面标题 */
+  .settings-sheet > .sheet h3{
+    padding:6px 0 0;
+  }
+  /* 每个 section → 玻璃卡片 */
+  .set-sec{
+    background:rgba(255,255,255,0.62);
+    -webkit-backdrop-filter:blur(20px) saturate(160%);
+    backdrop-filter:blur(20px) saturate(160%);
+    border-radius:12px;
+    border:1px solid rgba(255,255,255,0.55);
+    overflow:hidden;
+    margin-top:22px;
+    padding:0;
+  }
+  .set-sec:first-of-type{margin-top:8px;}
+  body[data-theme="dark"] .set-sec{
+    background:rgba(40,35,28,0.72);
+    border-color:rgba(255,255,255,0.10);
+  }
+  /* section 标题行 */
+  .set-sec > h4{
+    font-size:13px;
+    font-weight:600;
+    color:var(--ink);
+    letter-spacing:0.01em;
+    text-transform:none;
+    margin:0;
+    padding:12px 16px 10px;
+    border-bottom:0.5px solid var(--sys-separator);
+  }
+  /* section 内标签（小灰字，如「默认打开水印」）*/
+  .set-sec .set-lbl{
+    font-size:12.5px;
+    font-weight:400;
+    color:var(--ink-soft);
+    margin:0;
+    padding:10px 16px 4px;
+  }
+  /* section 内的分段控件 */
+  .set-sec .seg{
+    margin:6px 16px 12px;
+  }
+  /* iOS 列表单元格（toggle 行）*/
+  .set-sec .setting-row{
+    min-height:44px;
+    display:flex;
+    align-items:center;
+    padding:6px 16px;
+    border-top:0.5px solid var(--sys-separator);
+    margin-top:0;
+  }
+  .set-sec .setting-row + .setting-row{
+    border-top:0.5px solid var(--sys-separator);
+  }
+  .set-sec .setting-lbl{font-size:16px;font-weight:400;color:var(--ink);}
+  /* 色板行 */
+  .set-sec .accent-swatches{
+    padding:4px 16px 14px;
+  }
+  /* 自动信息 checkbox 格 */
+  .set-sec .set-grid{
+    padding:8px 12px 12px;
+    gap:8px;
+  }
+  /* 操作按钮区 */
+  .set-sec .set-actions{
+    padding:10px 16px 14px;
+    gap:10px;
+  }
+  .set-sec .set-actions .btn{padding:13px 0;font-size:15px;}
+  /* privacy note */
+  .set-sec .privacy-note{padding:0 16px 14px;}
+  /* AI fields */
+  .set-sec .ai-fields{padding:6px 0 14px;}
+  .set-sec .ai-fields .field{padding:0 16px;margin-top:12px;}
+  .set-sec .ai-fields .field:first-child{margin-top:4px;}
+  .set-sec .ai-fields label.lbl{margin-left:0;}
+  /* 固定文字输入 */
+  .set-sec #fixedTextWrap{padding:0 16px 12px;margin-top:0;}
+  /* 关于 section */
+  .set-sec .about-ver{padding:10px 16px;text-align:center;font-size:15px;margin:0;}
+  .set-sec .about-ver:first-of-type{padding-top:14px;}
+  /* 下拉框 */
+  .set-sec .set-select{margin:4px 16px 10px;width:calc(100% - 32px);}
+
+  /* === 6. iOS-精准开关 (HIG: Toggles) === */
+  /* 全局 min-height:var(--touch) 规则会把 switch 拉高到 44px；此处重置回设计高度 */
+  .switch{min-height:0;height:28px;}
+  /* 开 → 系统绿 #34C759（iOS HIG 默认 toggle 颜色） */
+  .switch input:checked + .slider{background:var(--sys-green);}
+  .switch .slider{background:rgba(120,120,128,0.32);}
+  body[data-theme="dark"] .switch .slider{background:rgba(255,255,255,0.18);}
+  /* 主题色圆点：min-height:44px 会把 30px 圆变成椭圆；重置为正圆 */
+  .accent-sw{min-height:0;height:30px;}
+
+  /* === 7. 输入框 (HIG: Text Fields) === */
+  input[type=text], textarea{
+    border-radius:10px;
+    padding:12px 14px;
+    background:rgba(255,255,255,0.60);
+    border-color:rgba(255,255,255,0.65);
+  }
+  input[type=text]:focus, textarea:focus{
+    background:rgba(255,255,255,0.92);
+    border-color:var(--accent);
+    box-shadow:0 0 0 3px rgba(194,99,45,0.12),inset 0 1px 1px rgba(255,255,255,0.6);
+  }
+
+  /* === 8. 圆角精修 (HIG: Rounded Rectangles) === */
+  .panel{border-radius:20px;}
+  .canvas-stage{border-radius:22px;padding:14px;}
+  .drop{border-radius:22px;}
+  .icon-btn{border-radius:12px;}
+  .nodata{border-radius:12px;}
+  .chip{border-radius:10px;}
+  .cap-chip{border-radius:10px;}
+  .flt-act{border-radius:10px;}
+  .filter-rand{border-radius:9px;}
+
+  /* === 9. 拍照按钮区域细节 === */
+  .drop h2{font-size:17px;font-weight:600;}
+  .drop p{font-size:14px;}
+  .drop .ring{width:60px;height:60px;border-radius:18px;}
+  .drop .ring svg{width:28px;height:28px;}
 </style>
 </head>
 <body>
@@ -931,10 +1360,31 @@
           <button data-tab="color" type="button">滤镜</button>
           <button data-tab="sticker" type="button">贴纸</button>
         </div>
-        <button class="filter-rand" id="filterRandBtn" type="button">🎲 随机一套</button>
+        <button class="filter-rand" id="filterRandBtn" type="button" aria-label="随机一套"><svg class="sfi" viewBox="0 0 24 24"><path d="M16 3h5v5"/><path d="M4 20L21 3"/><path d="M16 21h5v-5"/><path d="M15 15l6 6"/><path d="M4 4l5 5"/></svg></button>
+        <button class="filter-rand" id="drawerBtn" type="button" aria-label="浏览全部"><svg class="sfi" viewBox="0 0 24 24"><path d="M8 6h13M8 12h13M8 18h13"/><path d="M3.5 6h.01M3.5 12h.01M3.5 18h.01"/></svg></button>
+        <div class="tools-drop" id="toolsDrop">
+          <button class="filter-rand" id="toolsToggle" type="button" aria-label="工具"><svg class="sfi" viewBox="0 0 24 24"><path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3"/><path d="M1.5 14h5M9.5 8h5M17.5 16h5"/></svg></button>
+          <div class="tools-menu hidden" id="toolsMenu">
+            <!-- undo disabled: <button id="undoBtn" type="button">撤销</button> -->
+            <button id="rotateLeftBtn" type="button"><svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 5 4 10 9 15"/><path d="M4 10h12a5 5 0 0 1 0 10h-1"/></svg> 左转</button>
+            <button id="rotateRightBtn" type="button"><svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 5 20 10 15 15"/><path d="M20 10H8a5 5 0 0 0 0 10h1"/></svg> 右转</button>
+            <button id="flipBtn" type="button"><svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="8 3 3 8 8 13"/><line x1="3" y1="8" x2="21" y2="8"/><polyline points="16 21 21 16 16 11"/></svg> 翻转</button>
+            <button id="cropBtn" type="button">✂️ 裁剪</button>
+          </div>
+        </div>
       </div>
 
       <div class="edit-pane" id="watermarkPane">
+        <div class="tone-block" id="packBlock">
+          <div class="tone-head"><span class="tone-label">我的风格</span></div>
+          <div class="seg tone-seg" id="packSeg"><!-- 风格 chips rendered by renderPackChips() --></div>
+          <div class="filter-actions" id="packActions">
+            <button class="flt-act" id="savePackBtn" type="button">＋ 存为当前风格</button>
+            <button class="flt-act" id="importPackBtn" type="button">导入风格</button>
+            <button class="flt-act hidden" id="sharePackBtn" type="button">分享</button>
+            <button class="flt-act hidden" id="delPackBtn" type="button">删除</button>
+          </div>
+        </div>
         <div class="tone-block" id="styleBlock">
           <div class="tone-head"><span class="tone-label">水印</span></div>
           <button class="cap-spark" id="sceneRecBtn" type="button">✨ 帮我选样式</button>
@@ -957,7 +1407,7 @@
 
         <div class="field" id="manualField">
           <label class="lbl">水印文字</label>
-          <input type="text" id="textInput" placeholder="输入想显示的文字" maxlength="40">
+          <textarea id="textInput" placeholder="输入想显示的文字（按回车换行，最多 3 行）" maxlength="60" rows="1"></textarea>
           <button class="cap-spark" id="captionBtn" type="button">✨ 来点灵感</button>
           <button class="cap-spark cap-spark-ai hidden" id="captionAiBtn" type="button">🌐 联网 AI 灵感</button>
           <div class="cap-list" id="captionList" aria-live="polite"></div>
@@ -967,6 +1417,23 @@
           <label class="lbl">从照片读取到的拍摄信息</label>
           <div id="autoBody"></div>
           <input type="text" id="locationInput" class="hidden" placeholder="地点（可手填，如 上海·外滩，留空则用照片里的坐标）" maxlength="30" autocomplete="off">
+        </div>
+
+        <div class="tone-block" id="tweakBlock" style="margin-top:12px;">
+          <button class="tweak-toggle" id="tweakToggle" type="button" style="font-family:var(--font);font-size:12.5px;color:var(--ink-soft);letter-spacing:.02em;cursor:pointer;background:none;border:none;padding:0;">高级微调 ▸</button>
+          <div id="tweakBody" class="hidden" style="margin-top:8px;">
+            <label class="lbl">栏高 <span id="tweakBarVal">100%</span></label>
+            <input type="range" id="tweakBarRng" min="50" max="200" value="100" step="5" style="width:100%;accent-color:var(--accent);">
+            <label class="lbl" style="margin-top:8px;">字号 <span id="tweakFontVal">100%</span></label>
+            <input type="range" id="tweakFontRng" min="50" max="200" value="100" step="5" style="width:100%;accent-color:var(--accent);">
+            <button class="flt-act" id="tweakReset" type="button" style="margin-top:8px;">恢复默认</button>
+            <div class="lbl" style="margin-top:8px;">水印位置</div>
+            <div class="seg" id="wmPosSeg" style="margin-top:4px;">
+              <button data-wmpos="bottom" class="on">底部</button>
+              <button data-wmpos="top">顶部</button>
+              <button data-wmpos="center">居中</button>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -987,6 +1454,7 @@
           </div>
           <div class="tone-dial hidden" id="tonePanel">
             <button class="dial-smart" id="smartColorBtn" type="button">✨ 帮我配色</button>
+            <button class="dial-smart" id="aiStyleBtn" type="button" style="margin-top:4px;">🤖 一句话生成样式</button>
             <div class="dial-pad" id="tonePad" role="slider" aria-label="色调微调盘:左右调冷暖,上下调绿与品红" tabindex="0">
               <div class="dial-knob" id="toneKnob"></div>
             </div>
@@ -1038,6 +1506,29 @@
         <button class="btn btn-primary" id="saveBtn">保存图片</button>
         <button class="btn btn-ghost" id="resetBtn">换一张</button>
       </div>
+      <div class="tone-block" id="batchPackBlock" style="margin-top:8px;">
+        <div class="lbl">批量套用风格</div>
+        <div class="seg tone-seg" id="batchPackSeg">
+          <button data-batch-pack="" class="on">当前效果</button>
+        </div>
+      </div>
+      <button class="btn btn-ghost btn-batch" id="batchBtn" type="button">把这套效果批量加到多张照片</button>
+      <input type="file" id="batchInput" accept="image/*" multiple class="hidden">
+    </div>
+  </div>
+</div>
+
+<!-- Batch progress sheet -->
+<div class="overlay" id="batchOverlay">
+  <div class="sheet">
+    <h3 id="batchTitle">批量加水印</h3>
+    <p class="sub" id="batchSub">正在处理…</p>
+    <div class="batch-bar"><div class="batch-bar-fill" id="batchBarFill"></div></div>
+    <div class="row" id="batchActions">
+      <button class="btn btn-primary" id="batchSaveEach" style="display:none;">📱 逐张保存到相册</button>
+      <button class="btn btn-ghost" id="batchSaveZip" style="display:none;">📦 打包下载 zip</button>
+      <button class="btn btn-ghost" id="batchShareAll" style="display:none;">📤 分享全部</button>
+      <button class="btn btn-ghost" id="batchClose">关闭</button>
     </div>
   </div>
 </div>
@@ -1131,6 +1622,38 @@
   </div>
 </div>
 
+<!-- Crop overlay (v3.17.0) -->
+<div class="crop-overlay" id="cropOverlay">
+  <div class="crop-canvas-wrap"><canvas id="cropCanvas"></canvas></div>
+  <div class="crop-presets" id="cropPresets">
+    <button data-crop="free" class="on">自由</button>
+    <button data-crop="1:1">1:1</button>
+    <button data-crop="4:5">4:5</button>
+    <button data-crop="16:9">16:9</button>
+    <button data-crop="3:2">3:2</button>
+  </div>
+  <div class="crop-actions">
+    <button class="crop-cancel" id="cropCancel">取消</button>
+    <button class="crop-apply" id="cropApply">裁剪 ✓</button>
+  </div>
+</div>
+
+<!-- Drawer: browse all watermarks & filters (v3.15.0) -->
+<div class="overlay drawer-overlay" id="drawerOverlay">
+  <div class="drawer-panel">
+    <div class="drawer-head">
+      <h3>全部款式</h3>
+      <button class="btn-close" id="drawerClose">&times;</button>
+    </div>
+    <div class="drawer-tabs">
+      <button class="on" data-drawer-tab="watermark" id="drawerTabWM">水印</button>
+      <button data-drawer-tab="filter" id="drawerTabFL">滤镜</button>
+    </div>
+    <input type="text" class="drawer-search" id="drawerSearch" placeholder="搜名字…" autocomplete="off">
+    <div class="drawer-grid" id="drawerGrid"></div>
+  </div>
+</div>
+
 <!-- Settings sheet (v2.9.0) -->
 <div class="overlay" id="settingsOverlay">
   <div class="sheet settings-sheet">
@@ -1157,14 +1680,12 @@
           <input type="color" id="accentColorInput" value="#C2632D">
         </label>
       </div>
-      <div class="setting-row">
-        <div class="setting-text">
-          <div class="setting-lbl">液态玻璃</div>
-        </div>
-        <label class="switch">
-          <input type="checkbox" id="glassToggle">
-          <span class="slider"></span>
-        </label>
+      <div class="set-lbl">液态玻璃</div>
+      <div class="seg" id="glassSeg" role="group" aria-label="液态玻璃">
+        <button data-g="off" type="button">关</button>
+        <button data-g="light" type="button">轻</button>
+        <button data-g="standard" type="button">标准</button>
+        <button data-g="strong" type="button">强</button>
       </div>
     </div>
 
@@ -1273,9 +1794,11 @@
       <div class="privacy-note">默认关着。打开后，去「水印 → 手动输入」点「🌐 联网 AI 灵感」才会用。只把时间 / 季节 / 色调 / 设备这些文字发给你填的 AI，绝不发照片。钥匙只存在你这台手机上。有些 AI 服务商不允许网页直接连（CORS），连不上时会自动给你端上的灵感。</div>
     </div>
 
+
     <div class="set-sec">
       <h4>关于</h4>
       <div class="about-ver">印迹 · 照片水印 &nbsp;<b id="aboutVer">v3.0.0-beta.6</b></div>
+      <div class="about-ver" style="margin-top:6px;font-size:12px;color:var(--ink-dim,#8A8A8E)">by <a href="https://lysandrazyq.github.io/lumitrace/" target="_blank" rel="noopener" style="color:inherit;text-decoration:underline;text-underline-offset:2px">Lumitrace Studio</a></div>
       <div class="set-actions">
         <button class="btn btn-ghost" id="replayOnboardBtn">重看新手引导</button>
       </div>
@@ -1315,17 +1838,25 @@
   "use strict";
 
   // ---------- version (single source of truth; bump on every release) ----------
-  var APP_VERSION = "v3.3.0";
+  var APP_VERSION = "v4.1.0";
 
   // ---------- 访问统计(百度统计 · 异步加载 / 不阻塞渲染 / 不发照片) ----------
   // 站点 ID 是在百度统计「新增网站」后拿到的公开标识(写在每个访客的页面里、非密钥)。
   // 换统计站点改这里即可;留空 = 完全不统计。后台在 tongji.baidu.com 登录查看。
-  var ANALYTICS_BAIDU_ID = "0efa02b688603a4b1765cdbfc502de6e";
+  var ANALYTICS_BAIDU_ID = "f488ac0d27fb6dbe03580f6375784d1e";
 
   // ---------- state ----------
   var state = { bitmap:null, exif:null, exifApp1:null, mode:"manual", editTab:"watermark", style:"classic", exportQuality:"standard", tone:"none",
     toneAdj:{ temp:0, tint:0, sat:0, intensity:100 },
-    filterId:null, stickers:[], locationText:"" };
+    filterId:null, stickers:[], locationText:"",
+    wmTweak:{ barScale:100, fontScale:100 } };
+
+  // ---------- text fine-tuning (bar height / font scale) ----------
+  var WMTWEAK_KEY = "yinji.wmTweak.v1";
+  function loadWmTweak(){ var s=PLATFORM.getStorage(); if(!s) return; try{ var raw=s.getItem(WMTWEAK_KEY); if(raw){ var o=JSON.parse(raw); if(o && typeof o==="object"){ state.wmTweak={ barScale:o.barScale||100, fontScale:o.fontScale||100 }; } } }catch(e){} }
+  function saveWmTweak(){ var s=PLATFORM.getStorage(); if(!s) return; try{ s.setItem(WMTWEAK_KEY, JSON.stringify(state.wmTweak)); }catch(e){} }
+  function tweakBarH(base){ var s=state.wmTweak; return Math.round(base * (s&&s.barScale?s.barScale:100) / 100); }
+  function tweakFont(base){ var s=state.wmTweak; return Math.round(base * (s&&s.fontScale?s.fontScale:100) / 100); }
 
   // ---------- remember last choices (style / text-mode / export quality) ----------
   var PREFS_KEY = "yinji.prefs.v1";
@@ -1431,7 +1962,29 @@
     oatCream:  { bg:"#F4EEDF", text:"#80714F", soft:"#B5A684", accent:"#C9B68A" },
     seaSalt:   { bg:"#EDF2F3", text:"#445A62", soft:"#97A8AE", accent:"#8AAAB4" },
     peach:     { bg:"#F8E7DC", text:"#B05F45", soft:"#D3A290", accent:"#E0936F" },
-    greenGrape:{ bg:"#F0F1D6", text:"#727A22", soft:"#B2B778", accent:"#B0BC44" }
+    greenGrape:{ bg:"#F0F1D6", text:"#727A22", soft:"#B2B778", accent:"#B0BC44" },
+    skyBlue:   { bg:"#E3EDF6", text:"#39668A", soft:"#8AA6BC", accent:"#5B9BC9" },
+    lavender:  { bg:"#ECE9F4", text:"#5E5378", soft:"#A99FBC", accent:"#9580B8" },
+    clayRose:  { bg:"#F4E6E0", text:"#A6604F", soft:"#CC9C90", accent:"#C77860" },
+    fogMist:   { bg:"#EDEEF2", text:"#5A6070", soft:"#9BA0AD", accent:"#808CA0" },
+    coralReef: { bg:"#FDF0EB", text:"#C4684A", soft:"#E0A090", accent:"#E87A55" },
+    sageGreen: { bg:"#E9ECE2", text:"#5A6740", soft:"#9DA882", accent:"#8C9E62" },
+    creamWhite:  { bg:"#F9F6F0", text:"#6B6050", soft:"#B5AB98", accent:"#C9B896" },
+    sakuraPink:  { bg:"#FEF0F3", text:"#B85D70", soft:"#D3A0AC", accent:"#E88CA0" },
+    mintFrost:   { bg:"#EDF6EE", text:"#508060", soft:"#98BBA2", accent:"#6EB880" },
+    lilacHaze:   { bg:"#F2EEF8", text:"#706888", soft:"#ABA0C0", accent:"#9888C0" },
+    vanilla:     { bg:"#FDF8EC", text:"#9A8048", soft:"#C8B888", accent:"#D4B860" },
+    roseDust:    { bg:"#F8EEF2", text:"#A86078", soft:"#C898A8", accent:"#D88098" },
+    oliveSprig:  { bg:"#F2F4E8", text:"#788840", soft:"#B0B888", accent:"#98B058" },
+    babyBlue:    { bg:"#EDF4FA", text:"#587898", soft:"#98B0C8", accent:"#6898C8" },
+    sandDune:    { bg:"#F8F2E8", text:"#A88858", soft:"#C8B898", accent:"#D4A868" },
+    coralBlush:  { bg:"#FDEFE8", text:"#D08060", soft:"#E8B098", accent:"#F09870" },
+    honeyGold:   { bg:"#FDF6E8", text:"#B08840", soft:"#D4B878", accent:"#E0A848" },
+    sageMist:    { bg:"#EDEFE8", text:"#688058", soft:"#A0B898", accent:"#78A868" },
+    orchid:      { bg:"#F6EEF4", text:"#A86890", soft:"#C8A0B8", accent:"#D888B8" },
+    creamSoda:   { bg:"#F8F8F0", text:"#889060", soft:"#B8C098", accent:"#A8C070" },
+    seaGlass:    { bg:"#ECF2F0", text:"#609088", soft:"#98B8B0", accent:"#68B0A8" },
+    powderBlue:  { bg:"#EEF2F8", text:"#6078A0", soft:"#98A8C8", accent:"#7088C0" },
   };
   var BRAND = {
     fuji:  { bg:"#16241D", accent:"#4FA877", text:"#7FCBA0", soft:"#6E8E7C" },
@@ -1443,7 +1996,32 @@
     kodak: { bg:"#1C1408", accent:"#E8A12A", text:"#F0C268", soft:"#A98A52" },
     wineRed:    { bg:"#1E1014", accent:"#A23B4C", text:"#CC6E7E", soft:"#8C6A70" },
     darkTeal:   { bg:"#0E1A1C", accent:"#2E8C92", text:"#6BBEC4", soft:"#6E8A8C" },
-    plumPurple: { bg:"#17101E", accent:"#7E4F9C", text:"#AE86C8", soft:"#857A92" }
+    plumPurple: { bg:"#17101E", accent:"#7E4F9C", text:"#AE86C8", soft:"#857A92" },
+    espresso:   { bg:"#1F1611", accent:"#C8956A", text:"#E8C8A4", soft:"#9C8770" },
+    oliveDark:  { bg:"#191B12", accent:"#9AA458", text:"#CBD08A", soft:"#8C9070" },
+    dustyRose:  { bg:"#1E141A", accent:"#C77E92", text:"#E6B3C0", soft:"#9C7E88" },
+    onyxBlack:  { bg:"#121114", accent:"#C8C0D0", text:"#E0DAE8", soft:"#968EA0" },
+    rustCopper: { bg:"#1C120D", accent:"#D4783C", text:"#F0B080", soft:"#A07858" },
+    navyGold:   { bg:"#0D141E", accent:"#D4A840", text:"#F0D078", soft:"#8C7A50" },
+    midnight:   { bg:"#0B1220", accent:"#6888C0", text:"#A0B8E8", soft:"#7888A0" },
+    burgundy:   { bg:"#1A0E12", accent:"#C86A78", text:"#E8A0A8", soft:"#987880" },
+    forest:     { bg:"#0E1610", accent:"#78A868", text:"#B0D0A0", soft:"#809878" },
+    steel:      { bg:"#0E161E", accent:"#70A0C0", text:"#A8C8E0", soft:"#7890A0" },
+    amethyst:   { bg:"#110E1A", accent:"#A880C8", text:"#D0B8E8", soft:"#9088A8" },
+    charcoal:   { bg:"#18181A", accent:"#B0B8C0", text:"#D8DCE0", soft:"#9098A0" },
+    mahogany:   { bg:"#1A0E08", accent:"#D08058", text:"#F0B088", soft:"#A08068" },
+    damson:     { bg:"#160E18", accent:"#C878A0", text:"#E8A8C8", soft:"#987890" },
+    bronzeAge:  { bg:"#1A1208", accent:"#D4A868", text:"#F0D098", soft:"#A89868" },
+    slateRock:  { bg:"#14181C", accent:"#98A8B8", text:"#C8D8E0", soft:"#8090A0" },
+    darkMoss:   { bg:"#12140C", accent:"#98B868", text:"#C8D898", soft:"#889868" },
+    garnet:     { bg:"#1A0E10", accent:"#D06068", text:"#F09898", soft:"#A07878" },
+    inkwell:    { bg:"#0C121E", accent:"#98A8D0", text:"#C8D0F0", soft:"#8890A8" },
+    truffle:    { bg:"#14100E", accent:"#C8A080", text:"#E8D0B8", soft:"#988878" },
+    pinecone:   { bg:"#14120A", accent:"#B89858", text:"#D8C088", soft:"#989060" },
+    abyss:      { bg:"#0A141E", accent:"#60A8C8", text:"#98D0E8", soft:"#6890A8" },
+    cinder:     { bg:"#1A1818", accent:"#C88058", text:"#E8B090", soft:"#988880" },
+    elderberry: { bg:"#100E16", accent:"#B878C8", text:"#D8A8E8", soft:"#9888A8" },
+    raven:      { bg:"#0E0E12", accent:"#B0B8D0", text:"#D8DCE8", soft:"#889098" }
   };
 
   // ---------- platform interface ----------
@@ -1531,14 +2109,61 @@
     {id:"greenGrape",    name:"青提",         desc:"清新青提黄绿调,明亮浅底栏 + 细线,鲜活有活力。", tags:["青提","黄绿","柚子","清新","鲜活","季节","grape","活力"]},
     {id:"wineRed",       name:"酒红",         desc:"深酒红暗底栏 + 胭脂细条 + 红字,微醺复古质感。", tags:["酒红","胭脂","深色","复古","暗","wine","微醺","氛围"]},
     {id:"darkTeal",      name:"黛青",         desc:"深黛青暗底栏 + 孔雀蓝细条 + 青字,沉静电影感。", tags:["黛青","孔雀蓝","petrol","深色","电影","暗","teal","沉静"]},
-    {id:"plumPurple",    name:"绛紫",         desc:"深绛紫暗底栏 + 紫罗兰细条 + 紫字,神秘高级感。", tags:["绛紫","紫罗兰","深色","高级","神秘","暗","plum","氛围"]}
+    {id:"plumPurple",    name:"绛紫",         desc:"深绛紫暗底栏 + 紫罗兰细条 + 紫字,神秘高级感。", tags:["绛紫","紫罗兰","深色","高级","神秘","暗","plum","氛围"]},
+    {id:"skyBlue",       name:"晴空",         desc:"明亮晴空蓝调,清透浅底栏 + 细线,夏日天空 / 海边最清爽。", tags:["晴空","天蓝","蓝","清透","夏","季节","sky","清爽"]},
+    {id:"lavender",      name:"香芋",         desc:"柔和香芋薰衣草紫调,温柔浅底栏 + 细线,文艺梦幻。", tags:["香芋","薰衣草","紫","柔","梦幻","季节","lavender","文艺"]},
+    {id:"clayRose",      name:"陶玫",         desc:"暖陶土玫瑰调,温润浅底栏 + 细线,复古暖意耐看。", tags:["陶玫","陶土","玫","暖","复古","季节","clay","柔"]},
+    {id:"espresso",      name:"摩卡",         desc:"浓咖深底栏 + 焦糖细条 + 奶咖字,温醇咖啡馆质感。", tags:["摩卡","咖啡","焦糖","棕","暖","深色","espresso","氛围"]},
+    {id:"oliveDark",     name:"苔墨",         desc:"橄榄苔绿暗底栏 + 苔绿细条 + 浅苔字,自然沉静复古。", tags:["苔墨","橄榄","苔绿","绿","深色","自然","olive","沉静"]},
+    {id:"dustyRose",     name:"暗玫",         desc:"深暗底栏 + 烟玫细条 + 玫粉字,柔媚复古氛围感。", tags:["暗玫","烟玫","玫粉","粉","深色","柔媚","rose","氛围"]},
+    {id:"fogMist",       name:"晨雾",         desc:"薄雾灰紫浅底栏 + 细线,清晨朦胧清冷氛围。", tags:["晨雾","灰紫","雾","清冷","朦胧","季节","mist","氛围"]},
+    {id:"coralReef",     name:"珊瑚",         desc:"暖珊瑚橘粉浅底栏 + 细线,元气温暖热带海洋感。", tags:["珊瑚","橘粉","暖","元气","热带","季节","coral","活力"]},
+    {id:"sageGreen",     name:"鼠尾草",       desc:"柔和鼠尾草灰绿浅底栏 + 细线,草本静谧自然。", tags:["鼠尾草","灰绿","绿","静谧","自然","季节","sage","文艺"]},
+    {id:"onyxBlack",     name:"曜石",         desc:"纯正曜石黑底栏 + 银紫细条 + 银字,极简高级暗色。", tags:["曜石","黑","银紫","极简","高级","深色","onyx","暗"]},
+    {id:"rustCopper",    name:"赤锈",         desc:"赤铜锈暖橘暗底栏 + 铜锈细条 + 暖铜字,工业废墟质感。", tags:["赤锈","铜锈","橘","暖","工业","深色","rust","氛围"]},
+    {id:"navyGold",      name:"海军金",       desc:"深海藏蓝底栏 + 金箔细条 + 金字,海军风高级感。", tags:["海军","藏蓝","金","航海","深色","navy","高级","氛围"]},
+    {id:"creamWhite",    name:"奶白",         desc:"温润奶白浅底栏 + 细线,最百搭的中性柔白。", tags:["奶白","白","中性","百搭","极简","季节","cream","干净"]},
+    {id:"sakuraPink",    name:"樱粉",         desc:"樱花粉调,柔和甜美的浅底栏 + 细线,少女感。", tags:["樱粉","粉","樱花","甜美","季节","sakura","可爱"]},
+        {id:"mintFrost",     name:"薄荷霜",       desc:"沁凉薄荷绿浅底栏,清爽通透。", tags:["薄荷","绿","清透","夏","凉","季节","mint","清新"]},
+    {id:"lilacHaze",     name:"薰衣雾",       desc:"淡紫薰衣草雾调,温柔梦幻的浅底栏 + 细线。", tags:["薰衣草","紫","雾","梦幻","柔","季节","lilac","文艺"]},
+            {id:"vanilla",       name:"香草",         desc:"奶油香草暖调,温润可口的浅底栏。", tags:["香草","奶油","暖","温润","甜","季节","vanilla"]},
+        {id:"roseDust",      name:"蔷薇尘",       desc:"低饱和蔷薇粉调,复古柔美的浅底栏。", tags:["蔷薇","粉","复古","柔美","季节","rose","文艺"]},
+    {id:"oliveSprig",    name:"橄榄枝",       desc:"橄榄嫩绿浅底栏,自然清新草本调。", tags:["橄榄","绿","自然","草本","季节","olive","清新"]},
+    {id:"babyBlue",      name:"婴儿蓝",       desc:"柔柔婴儿蓝,干净纯真的浅底栏。", tags:["婴儿蓝","蓝","干净","纯真","柔","季节","baby"]},
+    {id:"sandDune",      name:"沙丘",         desc:"暖调沙漠沙色浅底栏,沉稳大地色。", tags:["沙丘","沙","驼","暖","大地","季节","sand","沉静"]},
+            {id:"coralBlush",    name:"珊瑚晕",       desc:"暖珊瑚橘粉晕染浅底栏,元气少女感。", tags:["珊瑚","橘","粉","暖","元气","季节","coral"]},
+        {id:"honeyGold",     name:"蜂蜜金",       desc:"蜂蜜金黄暖调浅底栏,甜暖而不过腻。", tags:["蜂蜜","金","暖","甜","季节","honey","温润"]},
+    {id:"sageMist",      name:"鼠尾雾",       desc:"鼠尾草灰绿雾调浅底栏,草本静谧自然。", tags:["鼠尾","灰绿","雾","静谧","自然","季节","sage"]},
+    {id:"orchid",        name:"兰花紫",       desc:"淡雅兰花紫浅底栏 + 细线,柔美有气质。", tags:["兰花","紫","雅","柔美","气质","季节","orchid"]},
+    {id:"creamSoda",     name:"苏打奶",       desc:"奶油苏打黄绿调,清爽微甜的浅底栏。", tags:["苏打","奶","黄绿","清爽","微甜","季节","soda"]},
+        {id:"seaGlass",      name:"海玻璃",       desc:"海水冲刷过的毛玻璃青调,清透有质感。", tags:["海玻璃","青","毛玻璃","清透","质感","季节","seaGlass"]},
+    {id:"powderBlue",    name:"粉蓝",         desc:"婴儿粉蓝浅底栏,柔软治愈的天空色。", tags:["粉蓝","蓝","软","治愈","天空","季节","powder"]},
+                {id:"midnight",      name:"午夜蓝",       desc:"午夜深蓝底栏 + 亮蓝细条 + 蓝字,深夜静谧。", tags:["午夜","蓝","深色","静谧","night","midnight","暗"]},
+    {id:"burgundy",      name:"勃艮第",       desc:"勃艮第酒红暗底栏 + 玫金细条 + 粉金,优雅奢华。", tags:["勃艮第","酒红","玫金","优雅","奢华","深色","burgundy"]},
+    {id:"forest",        name:"森绿",         desc:"暗森林绿底栏 + 翠绿细条 + 浅绿字,自然沉静。", tags:["森林","绿","翠","自然","沉静","深色","forest"]},
+    {id:"steel",         name:"钢青",         desc:"钢青暗底栏 + 天蓝细条 + 青字,冷冽金属质感。", tags:["钢青","蓝","冷","金属","深色","steel","工业"]},
+        {id:"amethyst",      name:"紫晶",         desc:"深紫晶暗底栏 + 亮紫细条 + 淡紫字,神秘高贵。", tags:["紫晶","紫","亮紫","神秘","高贵","深色","amethyst"]},
+    {id:"charcoal",      name:"炭灰",         desc:"炭灰暗底栏 + 银灰细条 + 浅灰字,极简冷淡。", tags:["炭灰","灰","银","极简","冷淡","深色","charcoal"]},
+    {id:"mahogany",      name:"红木",         desc:"红木暖棕暗底栏 + 铜橙细条 + 暖橙字,古典温润。", tags:["红木","棕","铜","暖","古典","深色","mahogany"]},
+        {id:"damson",        name:"乌梅",         desc:"乌梅深紫暗底栏 + 玫粉细条 + 粉字,妩媚神秘。", tags:["乌梅","紫","玫粉","妩媚","神秘","深色","damson"]},
+    {id:"bronzeAge",     name:"青铜",         desc:"青铜暖棕暗底栏 + 古铜细条 + 暖金字,复古金属质感。", tags:["青铜","棕","金","复古","金属","深色","bronze"]},
+    {id:"slateRock",     name:"板岩",         desc:"板岩青灰底栏 + 雾蓝细条 + 银字,沉稳岩石质感。", tags:["板岩","青灰","蓝","沉稳","岩石","深色","slate"]},
+    {id:"darkMoss",      name:"暗苔",         desc:"暗苔绿深底栏 + 亮苔细条 + 浅苔字,幽静自然。", tags:["暗苔","绿","苔","幽静","自然","深色","moss"]},
+    {id:"garnet",        name:"石榴红",       desc:"石榴深红暗底栏 + 亮红细条 + 淡红字,浓烈高贵。", tags:["石榴","红","亮","浓烈","高贵","深色","garnet"]},
+    {id:"inkwell",       name:"墨池",         desc:"蓝墨深底栏 + 亮蓝紫细条 + 淡紫字,深邃知性。", tags:["墨池","蓝紫","亮","深邃","知性","深色","ink"]},
+    {id:"truffle",       name:"松露",         desc:"黑松露暖棕底栏 + 金棕细条 + 奶油字,奢华温润。", tags:["松露","棕","金","奢华","温润","深色","truffle"]},
+        {id:"pinecone",      name:"松果",         desc:"松果深棕底栏 + 暖金细条 + 奶油字,秋日森林感。", tags:["松果","棕","金","秋","森林","深色","pine"]},
+    {id:"abyss",         name:"深渊蓝",       desc:"深海深渊蓝底栏 + 亮青细条 + 青字,极致深邃。", tags:["深渊","蓝","青","深邃","海","深色","abyss"]},
+    {id:"cinder",        name:"余烬",         desc:"余烬暖灰暗底栏 + 铜橘细条 + 暖橘字,火灭之后。", tags:["余烬","灰","铜","暖","灰烬","深色","cinder","氛围"]},
+    {id:"elderberry",    name:"接骨木",       desc:"接骨木深紫底栏 + 亮紫罗兰细条 + 淡紫字,中古神秘。", tags:["接骨木","紫","罗兰","中古","神秘","深色","elder"]},
+        {id:"raven",         name:"鸦羽",         desc:"鸦羽黑底栏 + 银蓝细条 + 银字,锐利冷峻。", tags:["鸦羽","黑","银蓝","锐利","冷峻","深色","raven"]}
   ];
 
   var CAT_IDS = {
     base:     ["classic","polaroid","polaroidPlus","minimalFrame","magazineLight","minimalCorner"],
-    dark:     ["darkBar","cinema","magazine","hasselblad","nightBlue","wineRed","darkTeal","plumPurple"],
+    dark:     ["darkBar","cinema","magazine","hasselblad","nightBlue","wineRed","darkTeal","plumPurple","espresso","oliveDark","dustyRose","onyxBlack","rustCopper","navyGold","midnight","burgundy","forest","steel","amethyst","charcoal","mahogany","damson","bronzeAge","slateRock","darkMoss","garnet","inkwell","truffle","pinecone","abyss","cinder","elderberry","raven"],
     color:    ["leica","filmStrip","checkIn","bigDate","morandi"],
-    season:   ["springCherry","summerSea","autumnMaple","winterSnow","solarTerm","mistBlue","duskMountain","daiPurple","matchaGreen","milkTea","lotusPink","oatCream","seaSalt","peach","greenGrape"],
+    season:   ["springCherry","summerSea","autumnMaple","winterSnow","solarTerm","mistBlue","duskMountain","daiPurple","matchaGreen","milkTea","lotusPink","oatCream","seaSalt","peach","greenGrape","skyBlue","lavender","clayRose","fogMist","coralReef","sageGreen","creamWhite","sakuraPink","mintFrost","lilacHaze","vanilla","roseDust","oliveSprig","babyBlue","sandDune","coralBlush","honeyGold","sageMist","orchid","creamSoda","seaGlass","powderBlue",],
     brand:    ["fujiFilm","sonyAlpha","nikonGold","canonRed","silverMono","kodakGold"],
     glass:    ["glassBar","glassCard","glassFrame"],
     festival: ["festivalRed","birthday","anniversary","graduation","midAutumn"]
@@ -1582,11 +2207,14 @@
 
   function applyDefaultText(){
     var st=ensureSettings();
-    if(st.defaultText==="blank"){ textInput.value=""; return; }
-    if(st.defaultText==="fixed"){ textInput.value = st.fixedText || ""; return; }
-    var d=new Date();
-    var p=function(n){return (n<10?"0":"")+n;};
-    textInput.value = d.getFullYear()+"."+p(d.getMonth()+1)+"."+p(d.getDate());
+    if(st.defaultText==="blank"){ textInput.value=""; }
+    else if(st.defaultText==="fixed"){ textInput.value = st.fixedText || ""; }
+    else {
+      var d=new Date();
+      var p=function(n){return (n<10?"0":"")+n;};
+      textInput.value = d.getFullYear()+"."+p(d.getMonth()+1)+"."+p(d.getDate());
+    }
+    if(typeof autoGrowText==="function") autoGrowText();
   }
   applyDefaultText();
 
@@ -2900,6 +3528,7 @@
       b.type = "button"; b.className = "cap-chip"; b.textContent = txt;
       b.addEventListener("click", function(){
         textInput.value = txt;
+        if(typeof autoGrowText==="function") autoGrowText();
         if(state.mode!=="manual") setMode("manual"); else draw();
         toast("已填入「" + txt + "」,可继续改字 ✎");
       });
@@ -3067,6 +3696,60 @@
   }
   if(captionAiBtn) captionAiBtn.addEventListener("click", aiCaptionOnline);
 
+  // ============ v3.18.0 一句话生成样式 ============
+  function aiStyleGen(){
+    if(!aiOnlineReady()){
+      toast("联网 AI 还没填好(地址/模型/钥匙)。先在设置里配好 AI"); return false;
+    }
+    var desc=(window.prompt("描述你想要的风格，比如：\n\n复古胶片暖调 · 清新日系冷色 · 高级灰极简白\n小红书少女粉 · 赛博朋克霓虹 · 黑白电影感\n\n用你自己的话说就行 ✨")||"").trim();
+    if(!desc) return false;
+    if(!_aiConsentSession){
+      var line=aiContextLine();
+      var ok=window.confirm("要把这些信息发给你填的 AI? \n\n你的描述: "+desc+"\n照片信息: "+(line||"无")+"\n\n只发文字,绝不发照片。");
+      if(!ok) return false;
+      _aiConsentSession=true;
+    }
+    // Build available styles list for AI context
+    var styleList=TEMPLATES.map(function(t){ return t.id+":"+t.name; }).join(",");
+    var filterList=TONE_LIST.filter(function(f){ return f.id!=="none"; }).map(function(f){ return f.id+":"+f.name; }).join(",");
+    var st=ensureSettings();
+    var sys="你是照片水印 App「印迹」的风格助手。用户描述想要的风格,你从可用选项中推荐最匹配的水印样式+滤镜+调色参数。\n\n可用水印: "+styleList+"\n可用滤镜: "+filterList+"\n调色参数范围: temp(-100~100冷暖), tint(-100~100绿品), sat(-100~100饱和), intensity(0~100强度)\n\n返回纯JSON,不要markdown,不要解释:\n{\"style\":\"水印id\",\"tone\":\"滤镜id\",\"temp\":冷暖值,\"tint\":绿品值,\"sat\":饱和值,\"intensity\":强度值,\"reason\":\"一句话说明为什么这样选\"}";
+    var usr="照片: "+(aiContextLine()||"普通照片")+"。我想要: "+desc;
+    var ctrl=typeof AbortController!=="undefined"?new AbortController():null;
+    var timer=ctrl?setTimeout(function(){try{ctrl.abort();}catch(e){}},20000):0;
+    toast("AI 正在搭配风格… ✨");
+    fetch(aiEndpoint(st.aiBase),{
+      method:"POST",
+      headers:{"Content-Type":"application/json","Authorization":"Bearer "+st.aiKey},
+      body:JSON.stringify({model:st.aiModel,messages:[{role:"system",content:sys},{role:"user",content:usr}],temperature:0.7,max_tokens:300}),
+      signal:ctrl?ctrl.signal:undefined
+    }).then(function(r){ if(!r.ok) throw new Error("HTTP "+r.status); return r.json(); })
+    .then(function(d){
+      if(timer) clearTimeout(timer);
+      var txt=d&&d.choices&&d.choices[0]&&d.choices[0].message&&d.choices[0].message.content;
+      var json=null;
+      try{
+        var jStart=txt.indexOf("{"),jEnd=txt.lastIndexOf("}")+1;
+        if(jStart>=0&&jEnd>jStart) json=JSON.parse(txt.substring(jStart,jEnd));
+      }catch(e){}
+      if(!json||!json.style){ toast("AI 没返回有效结果,换种说法再试"); return; }
+      // Apply style
+      if(TEMPLATES.some(function(t){return t.id===json.style;}) || findCustomTemplate(json.style)){
+        state.style=json.style;
+        if(TONE_PARAMS[json.tone]) state.tone=json.tone; else state.tone="none";
+        state.toneAdj={temp:clampNum(json.temp,-100,100,0),tint:clampNum(json.tint,-100,100,0),sat:clampNum(json.sat,-100,100,0),intensity:clampNum(json.intensity,0,100,100)};
+        state.filterId=null;
+        syncTonePad();markFilterActive();updateFilterActions();
+        if(state.bitmap) draw(); savePrefs();
+        toast("AI 帮你搭好了: "+(json.reason||json.style));
+      } else { toast("AI 推荐的水印不存在,换种描述再试"); }
+    }).catch(function(err){
+      if(timer) clearTimeout(timer);
+      toast("连不上你的 AI,检查网络或服务商设置");
+    });
+    return true;
+  }
+
   // ---------- 调色盘 (v2.13.0): 2D 拖动盘 + 强度/饱和滑杆 ----------
   var _toneRaf = 0;
   function scheduleToneDraw(){
@@ -3166,7 +3849,42 @@
       });
     }
     if(smartColorBtn){ smartColorBtn.addEventListener("click", smartColor); }
+    var aiStyleBtn=$("aiStyleBtn"); if(aiStyleBtn) aiStyleBtn.addEventListener("click", function(){ aiStyleGen(); });
     syncTonePad();
+
+    // ====== 芯片栏拖拽切换 (v3.20.0) ======
+    function makeChipsDraggable(container, getChipId, activate){
+      if(!container) return;
+      var dragging=false, lastId=null;
+      function chipAt(ex,ey){
+        var chips=container.querySelectorAll("button");
+        for(var i=0;i<chips.length;i++){
+          var r=chips[i].getBoundingClientRect();
+          if(ex>=r.left&&ex<=r.right&&ey>=r.top&&ey<=r.bottom) return chips[i];
+        }
+        return null;
+      }
+      container.addEventListener("pointerdown",function(e){
+        dragging=true; lastId=null;
+        var chip=chipAt(e.clientX,e.clientY);
+        if(chip){ var id=getChipId(chip); if(id){ activate(chip,id); lastId=id; } }
+      });
+      container.addEventListener("pointermove",function(e){
+        if(!dragging) return;
+        var chip=chipAt(e.clientX,e.clientY);
+        if(chip){ var id=getChipId(chip); if(id&&id!==lastId){ activate(chip,id); lastId=id; } }
+      });
+      document.addEventListener("pointerup",function(){ dragging=false; });
+    }
+    makeChipsDraggable($("styleSeg"),function(c){return c.getAttribute("data-style");},function(c,id){setStyle(id);renderStyleChips();});
+    makeChipsDraggable($("toneSeg"),function(c){return c.getAttribute("data-fid");},function(c,id){
+      if(c.getAttribute("data-fkind")==="custom") applyCustomFilter(id);
+      else setTone(id); markFilterActive(); updateFilterActions();
+    });
+    makeChipsDraggable($("drawerGrid"),function(c){return c.getAttribute("data-wm")||c.getAttribute("data-fl");},function(c,id){
+      if(c.getAttribute("data-wm")){ setStyle(id); renderStyleChips(); closeDrawer(); }
+      else if(c.getAttribute("data-fl")&&TONE_PARAMS[id]){ state.tone=id;state.toneAdj={temp:0,tint:0,sat:0,intensity:100};state.filterId=null;syncTonePad();markFilterActive();updateFilterActions();draw();savePrefs();closeDrawer(); }
+    });
   }
 
   // ================= mode switching =================
@@ -3186,6 +3904,7 @@
     });
     manualField.classList.toggle("hidden", mode!=="manual");
     autoField.classList.toggle("hidden", mode!=="auto");
+    if(mode==="manual" && typeof autoGrowText==="function") autoGrowText();
     draw();
   }
 
@@ -3231,7 +3950,14 @@
   }
   function escapeHtml(s){ return String(s).replace(/[&<>"]/g,function(m){return({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[m]);}); }
 
-  textInput.addEventListener("input", function(){ if(state.mode==="manual") draw(); });
+  // 多行水印输入框随内容自动增高(最多约 3 行)
+  function autoGrowText(){
+    if(!textInput) return;
+    textInput.style.height="auto";
+    var sh=textInput.scrollHeight;
+    if(sh>0) textInput.style.height=Math.min(sh, 104)+"px";
+  }
+  textInput.addEventListener("input", function(){ autoGrowText(); if(state.mode==="manual") draw(); });
   if(locationInput) locationInput.addEventListener("input", function(){ state.locationText = locationInput.value; if(state.mode==="auto" && state.bitmap) draw(); });
   (function(){ var cb=$("captionBtn"); if(cb) cb.addEventListener("click", renderCaptions); })();
   (function(){ var sb=$("sceneRecBtn"); if(sb) sb.addEventListener("click", aiScene); })();
@@ -3245,6 +3971,7 @@
     {id:"fujiGreen", name:"富士", cat:"film"},
     {id:"slide",     name:"反转片", cat:"film"},
     {id:"oldPhoto",  name:"旧时光", cat:"film"},
+    {id:"expired",   name:"过期卷", cat:"film"},
     {id:"bw",     name:"黑白",   cat:"bw"},
     {id:"bwHigh", name:"高反差", cat:"bw"},
     {id:"bwSoft", name:"柔黑白", cat:"bw"},
@@ -3255,24 +3982,90 @@
     {id:"goldenHour", name:"落日", cat:"warm"},
     {id:"honey",      name:"蜜糖", cat:"warm"},
     {id:"terracotta", name:"赤陶", cat:"warm"},
+    {id:"amber",      name:"琥珀", cat:"warm"},
     {id:"cool",     name:"冷调", cat:"cool"},
     {id:"deepBlue", name:"冷蓝", cat:"cool"},
     {id:"cyanLime", name:"青柠", cat:"cool"},
     {id:"nordic",   name:"北欧", cat:"cool"},
     {id:"teal",     name:"蓝青", cat:"cool"},
+    {id:"iceBlue",  name:"冰蓝", cat:"cool"},
     {id:"fresh", name:"清新", cat:"fresh"},
     {id:"japan", name:"日系", cat:"fresh"},
     {id:"cream", name:"奶油", cat:"fresh"},
     {id:"sakura",name:"樱花", cat:"fresh"},
     {id:"mint",  name:"薄荷", cat:"fresh"},
+    {id:"clearDay", name:"通透", cat:"fresh"},
     {id:"gray",      name:"高级灰", cat:"mood"},
     {id:"vivid",     name:"鲜艳",   cat:"mood"},
     {id:"cinematic", name:"电影感", cat:"mood"},
     {id:"hkRetro",   name:"港风",   cat:"mood"},
     {id:"morandi",   name:"莫兰迪", cat:"mood"},
-    {id:"dreamy",    name:"梦幻",   cat:"mood"}
+    {id:"dreamy",    name:"梦幻",   cat:"mood"},
+    {id:"noir",      name:"暗夜",   cat:"mood"},
+    {id:"velvet",    name:"丝绒",   cat:"mood"},
+        {id:"warmBW",       name:"暖黑", cat:"bw"},
+    {id:"caramel",      name:"焦糖", cat:"warm"},
+    {id:"frost",        name:"霜冻", cat:"cool"},
+    {id:"morningDew",   name:"晨露", cat:"fresh"},
+    {id:"vintageWine",  name:"陈酿", cat:"mood"},
+    {id:"vintageWarm", name:"暖旧", cat:"film"},
+    {id:"crossProcess",name:"正片负冲", cat:"film"},
+        {id:"lomo",        name:"LOMO", cat:"film"},
+    {id:"agfaVintage", name:"爱克发", cat:"film"},
+    {id:"cinemaScope", name:"宽银幕", cat:"film"},
+    {id:"technicolor", name:"特艺彩", cat:"film"},
+    {id:"provia",      name:"普罗维亚", cat:"film"},
+    {id:"bwGreen",     name:"绿调黑白", cat:"bw"},
+    {id:"bwRed",       name:"红调黑白", cat:"bw"},
+        {id:"bwPlatinum",  name:"铂金黑白", cat:"bw"},
+    {id:"bwCopper",    name:"铜调黑白", cat:"bw"},
+    {id:"bwSilver",    name:"银盐黑白", cat:"bw"},
+    {id:"sunset",      name:"晚霞", cat:"warm"},
+        {id:"toast",       name:"烤吐司", cat:"warm"},
+    {id:"ginger",      name:"姜黄", cat:"warm"},
+    {id:"cinnamon",    name:"肉桂", cat:"warm"},
+        {id:"maple",       name:"枫糖", cat:"warm"},
+    {id:"ember",       name:"余烬暖", cat:"warm"},
+    {id:"glacier",     name:"冰川", cat:"cool"},
+        {id:"steelMist",   name:"钢雾", cat:"cool"},
+    {id:"oceanDeep",   name:"深海蓝", cat:"cool"},
+    {id:"duskBlue",    name:"暮蓝", cat:"cool"},
+        {id:"aquamarine",  name:"海蓝宝", cat:"cool"},
+    {id:"moonLight",   name:"月光", cat:"cool"},
+    {id:"meadow",      name:"草甸", cat:"fresh"},
+    {id:"springAir",   name:"春风", cat:"fresh"},
+    {id:"citrus",      name:"柑橘", cat:"fresh"},
+    {id:"seafoam",     name:"海沫绿", cat:"fresh"},
+    {id:"limeZest",    name:"青柠皮", cat:"fresh"},
+    {id:"pearDew",     name:"梨露", cat:"fresh"},
+    {id:"cottonCandy", name:"棉花糖", cat:"fresh"},
+    {id:"morningLight",name:"晨光", cat:"fresh"},
+    {id:"noirFilm",    name:"黑色电影", cat:"mood"},
+    {id:"vintageSepia",name:"怀旧棕", cat:"mood"},
+    {id:"neonPop",     name:"霓虹", cat:"mood"},
+    {id:"cyberpunk",   name:"赛博朋克", cat:"mood"},
+    {id:"foggyMorning",name:"晨雾白", cat:"mood"},
+    {id:"desertDusk",  name:"大漠黄昏", cat:"mood"},
+    {id:"rainCity",    name:"雨城", cat:"mood"},
+    {id:"forestWalk",  name:"林间漫步", cat:"mood"},
+    {id:"polaroidVibe",name:"拍立得调", cat:"mood"},
+    {id:"ochre",       name:"赭石", cat:"mood"},
+    {id:"twilightHour",name:"黄昏时分", cat:"mood"},
+    {id:"porcelain",   name:"青瓷", cat:"mood"},
+    {id:"peachSoda",   name:"蜜桃汽水", cat:"fresh"},
+    {id:"oolongTea",   name:"乌龙", cat:"warm"},
+    {id:"roseQuartz",  name:"粉晶", cat:"fresh"},
+    {id:"steelBlue",   name:"钢蓝", cat:"cool"},
+    {id:"mapleSyrup",  name:"枫糖", cat:"warm"},
+    {id:"inkWash",     name:"水墨", cat:"bw"}
   ];
   var TONE_PARAMS = {
+    peachSoda:    { sat:1.12, con:0.97, bri:1.06, temp:14,  tint:-3, lift:12 },
+    oolongTea:    { sat:0.92, con:1.04, bri:1.01, temp:18,  tint:6,  lift:10 },
+    roseQuartz:   { sat:1.04, con:0.95, bri:1.07, temp:10,  tint:-5, lift:16 },
+    steelBlue:    { sat:0.96, con:1.09, bri:0.99, temp:-22, tint:-4, lift:6  },
+    mapleSyrup:   { sat:1.14, con:1.06, bri:1.00, temp:28,  tint:7,  lift:4  },
+    inkWash:      { sat:0,    con:1.12, bri:1.01, temp:0,   tint:2,  lift:8  },
     film:       { sat:0.82, con:0.92, bri:1.03, temp:12,  tint:-4, lift:16 },
     kodak:      { sat:0.98, con:0.96, bri:1.03, temp:16,  tint:3,  lift:12 },
     fade:       { sat:0.70, con:0.86, bri:1.05, temp:6,   tint:-2, lift:30 },
@@ -3304,7 +4097,62 @@
     cinematic:  { sat:0.92, con:1.14, bri:0.99, temp:-5,  tint:-3, lift:8  },
     hkRetro:    { sat:1.06, con:1.10, bri:0.99, temp:-8,  tint:5,  lift:6  },
     morandi:    { sat:0.60, con:0.97, bri:1.03, temp:4,   tint:1,  lift:16 },
-    dreamy:     { sat:1.04, con:0.90, bri:1.05, temp:6,   tint:0,  lift:26 }
+    dreamy:     { sat:1.04, con:0.90, bri:1.05, temp:6,   tint:0,  lift:26 },
+    expired:    { sat:0.86, con:0.93, bri:1.04, temp:6,   tint:11, lift:20 },
+    amber:      { sat:1.10, con:1.08, bri:1.00, temp:24,  tint:8,  lift:0  },
+    iceBlue:    { sat:0.96, con:1.04, bri:1.05, temp:-18, tint:-3, lift:14 },
+    clearDay:   { sat:1.08, con:1.02, bri:1.07, temp:0,   tint:2,  lift:6  },
+    noir:       { sat:0.50, con:1.16, bri:0.96, temp:-4,  tint:-2, lift:4  },
+    velvet:     { sat:1.00, con:1.06, bri:0.98, temp:8,   tint:4,  lift:8  },
+    warmBW:      { sat:0,    con:1.12, bri:1.02, temp:12,  tint:3,  lift:8  },
+    caramel:     { sat:1.12, con:1.04, bri:1.02, temp:28,  tint:5,  lift:6  },
+    frost:       { sat:0.88, con:1.06, bri:1.06, temp:-24, tint:-4, lift:18 },
+    morningDew:  { sat:1.06, con:0.96, bri:1.07, temp:2,   tint:6,  lift:10 },
+    vintageWine: { sat:0.88, con:1.10, bri:0.98, temp:10,  tint:2,  lift:12 },
+    vintageWarm:  { sat:0.78, con:0.90, bri:1.04, temp:16,  tint:4,  lift:18 },
+    crossProcess: { sat:1.24, con:1.14, bri:0.98, temp:6,   tint:10, lift:4  },
+    lomo:         { sat:1.26, con:1.18, bri:0.96, temp:8,   tint:6,  lift:2  },
+    agfaVintage:  { sat:0.96, con:0.94, bri:1.04, temp:14,  tint:-3, lift:16 },
+    cinemaScope:  { sat:0.90, con:1.12, bri:0.98, temp:-4,  tint:-2, lift:6  },
+    technicolor:  { sat:1.30, con:1.10, bri:1.00, temp:6,   tint:0,  lift:4  },
+    provia:       { sat:1.10, con:1.02, bri:1.02, temp:0,   tint:2,  lift:4  },
+    bwGreen:      { sat:0,    con:1.10, bri:1.00, temp:-2,  tint:8,  lift:4  },
+    bwRed:        { sat:0,    con:1.14, bri:0.98, temp:8,   tint:0,  lift:2  },
+    bwPlatinum:   { sat:0,    con:0.92, bri:1.06, temp:4,   tint:0,  lift:24 },
+    bwCopper:     { sat:0,    con:1.06, bri:1.02, temp:16,  tint:6,  lift:12 },
+    bwSilver:     { sat:0,    con:1.00, bri:1.04, temp:-6,  tint:-2, lift:16 },
+    sunset:       { sat:1.22, con:1.08, bri:1.00, temp:30,  tint:6,  lift:2  },
+    toast:        { sat:1.06, con:1.02, bri:1.03, temp:22,  tint:4,  lift:8  },
+    ginger:       { sat:1.12, con:1.06, bri:1.00, temp:26,  tint:6,  lift:4  },
+    cinnamon:     { sat:1.10, con:1.04, bri:1.02, temp:20,  tint:5,  lift:6  },
+    maple:        { sat:1.14, con:1.03, bri:1.02, temp:18,  tint:4,  lift:4  },
+    ember:        { sat:0.94, con:1.08, bri:0.98, temp:20,  tint:6,  lift:2  },
+    glacier:      { sat:0.92, con:1.08, bri:1.04, temp:-24, tint:-4, lift:14 },
+    steelMist:    { sat:0.80, con:1.04, bri:1.02, temp:-14, tint:-2, lift:10 },
+    oceanDeep:    { sat:1.08, con:1.12, bri:0.97, temp:-20, tint:4,  lift:0  },
+    duskBlue:     { sat:0.98, con:1.10, bri:0.99, temp:-18, tint:-3, lift:6  },
+    aquamarine:   { sat:1.12, con:1.04, bri:1.03, temp:-14, tint:6,  lift:8  },
+    moonLight:    { sat:0.70, con:1.02, bri:1.06, temp:-10, tint:-2, lift:22 },
+    meadow:       { sat:1.12, con:0.98, bri:1.06, temp:2,   tint:8,  lift:10 },
+    springAir:    { sat:1.06, con:0.96, bri:1.08, temp:4,   tint:4,  lift:14 },
+    citrus:       { sat:1.14, con:1.02, bri:1.06, temp:6,   tint:8,  lift:6  },
+    seafoam:      { sat:1.04, con:0.98, bri:1.06, temp:-4,  tint:8,  lift:12 },
+    limeZest:     { sat:1.16, con:1.04, bri:1.05, temp:0,   tint:10, lift:4  },
+    pearDew:      { sat:1.08, con:0.96, bri:1.08, temp:2,   tint:6,  lift:16 },
+    cottonCandy:  { sat:1.02, con:0.92, bri:1.07, temp:8,   tint:-4, lift:20 },
+    morningLight: { sat:1.06, con:0.98, bri:1.07, temp:6,   tint:2,  lift:8  },
+    noirFilm:     { sat:0.48, con:1.18, bri:0.94, temp:-6,  tint:-2, lift:0  },
+    vintageSepia: { sat:0.72, con:0.92, bri:1.04, temp:18,  tint:6,  lift:24 },
+    neonPop:      { sat:1.28, con:1.12, bri:1.02, temp:-4,  tint:8,  lift:2  },
+    cyberpunk:    { sat:1.20, con:1.16, bri:0.95, temp:-10, tint:6,  lift:0  },
+    foggyMorning: { sat:0.56, con:0.90, bri:1.06, temp:-2,  tint:0,  lift:28 },
+    desertDusk:   { sat:0.96, con:1.10, bri:0.97, temp:22,  tint:8,  lift:4  },
+    rainCity:     { sat:0.68, con:1.06, bri:1.00, temp:-8,  tint:-2, lift:12 },
+    forestWalk:   { sat:1.02, con:1.08, bri:0.99, temp:-4,  tint:8,  lift:6  },
+    polaroidVibe: { sat:0.94, con:0.90, bri:1.05, temp:10,  tint:0,  lift:24 },
+    ochre:        { sat:0.90, con:1.08, bri:0.98, temp:16,  tint:6,  lift:6  },
+    twilightHour: { sat:0.88, con:1.06, bri:0.97, temp:14,  tint:6,  lift:0  },
+    porcelain:    { sat:0.62, con:0.96, bri:1.05, temp:2,   tint:0,  lift:18 }
   };
   var FILTER_CATEGORIES = [
     {key:"all",   label:"全部"},
@@ -3340,6 +4188,92 @@
     for(var i=0;i<customFilters.length;i++) if(customFilters[i].id===id) return customFilters[i];
     return null;
   }
+
+  // ---------- 我的风格(风格包 v3.6.0):把当前 水印 + 滤镜 + 调色 + 主题色 存成一套,一键套用。纯本地 localStorage ----------
+  var STYLEPACKS_KEY = "yinji.stylePacks.v1";
+  var stylePacks = [];
+  var packSel = null;
+  function isValidPack(p){ return p && typeof p.id==="string" && typeof p.name==="string" && typeof p.style==="string"; }
+  function loadStylePacks(){
+    var s=PLATFORM.getStorage(); if(!s) return;
+    try{ var raw=s.getItem(STYLEPACKS_KEY); if(raw){ var arr=JSON.parse(raw); if(arr && arr.length){ stylePacks = arr.filter(isValidPack); } } }catch(e){}
+  }
+  function persistStylePacks(){
+    var s=PLATFORM.getStorage(); if(!s) return;
+    try{ s.setItem(STYLEPACKS_KEY, JSON.stringify(stylePacks)); }catch(e){}
+  }
+  function captureStylePack(){
+    var a = state.toneAdj || {};
+    return {
+      style: state.style,
+      tone: state.tone || "none",
+      toneAdj: { temp:clampNum(a.temp,-100,100,0), tint:clampNum(a.tint,-100,100,0), sat:clampNum(a.sat,-100,100,0), intensity:clampNum(a.intensity,0,100,100) },
+      filterId: state.filterId || null,
+      accent: (ensureSettings().accent || "default")
+    };
+  }
+  function applyStylePack(p){
+    if(!p) return;
+    // 1) 水印样式(内置 / 自定义都按 id 套;不带 recall,避免被"按样式记忆"覆盖本套配色)
+    setStyle(p.style);
+    // 2) 滤镜 / 调色(镜像 recallStyleColor 的恢复逻辑)
+    state.tone = (p.tone==="none" || (TONE_PARAMS && TONE_PARAMS[p.tone])) ? p.tone : "none";
+    var a = p.toneAdj || {};
+    state.toneAdj = { temp:clampNum(a.temp,-100,100,0), tint:clampNum(a.tint,-100,100,0), sat:clampNum(a.sat,-100,100,0), intensity:clampNum(a.intensity,0,100,100) };
+    state.filterId = (p.filterId && findCustomFilter(p.filterId)) ? p.filterId : null;
+    syncTonePad(); markFilterActive(); updateFilterActions();
+    // 3) 主题色(App 点缀色)
+    if(p.accent){ ensureSettings().accent = p.accent; saveSettings(); applyAccent(); if(typeof syncSettingsUI==="function") syncSettingsUI(); }
+    draw(); savePrefs();
+  }
+  function updatePackActions(){
+    var sel = !!(packSel && stylePacks.some(function(p){ return p.id===packSel; }));
+    var del=$("delPackBtn"); if(del) del.classList.toggle("hidden", !sel);
+    var shr=$("sharePackBtn"); if(shr) shr.classList.toggle("hidden", !sel);
+  }
+  function renderPackChips(){
+    var seg = $("packSeg"); if(!seg) return;
+    seg.innerHTML = stylePacks.map(function(p){
+      return '<button data-pack="'+escapeHtml(p.id)+'"'+(p.id===packSel?' class="on"':'')+'>'+escapeHtml(p.name)+'</button>';
+    }).join("");
+    Array.prototype.forEach.call(seg.querySelectorAll("button[data-pack]"), function(b){
+      b.addEventListener("click", function(){
+        var id=b.getAttribute("data-pack"), p=null;
+        for(var i=0;i<stylePacks.length;i++) if(stylePacks[i].id===id){ p=stylePacks[i]; break; }
+        if(!p) return;
+        packSel = id;
+        applyStylePack(p);
+        renderPackChips();
+        toast("已套用风格「"+p.name+"」✨");
+      });
+    });
+    updatePackActions();
+    renderBatchPackChips(); // v3.13.0：同步刷新批量选择器
+  }
+  function saveCurrentAsPack(){
+    var name = (window.prompt("给这套风格起个名字（如：小红书风 / 旅行暖调）", "我的风格 "+(stylePacks.length+1)) || "").trim();
+    if(!name) return;
+    if(name.length>20) name = name.slice(0,20);
+    var p = captureStylePack();
+    p.id = "pack_" + Date.now().toString(36) + Math.floor(Math.random()*1e4).toString(36);
+    p.name = name;
+    stylePacks.push(p); persistStylePacks();
+    packSel = p.id;
+    renderPackChips();
+    toast("已存为风格「"+name+"」,下次一键套用 ✨");
+  }
+  function deleteSelectedPack(){
+    if(!packSel) return;
+    var idx=-1; for(var i=0;i<stylePacks.length;i++) if(stylePacks[i].id===packSel){ idx=i; break; }
+    if(idx<0) return;
+    var nm = stylePacks[idx].name;
+    if(!window.confirm("删除风格「"+nm+"」？")) return;
+    stylePacks.splice(idx,1); persistStylePacks();
+    packSel = null;
+    renderPackChips();
+    toast("已删除风格「"+nm+"」");
+  }
+
   var _gradeCache = { sig:null, w:0, h:0, src:null, canvas:null };
   function invalidateGrade(){ _gradeCache = { sig:null, w:0, h:0, src:null, canvas:null }; }
 
@@ -3473,16 +4407,131 @@
     greenGrape:     function(){ drawSeasonStyle(SEASON.greenGrape); },
     wineRed:        function(){ drawBrandStyle(BRAND.wineRed); },
     darkTeal:       function(){ drawBrandStyle(BRAND.darkTeal); },
-    plumPurple:     function(){ drawBrandStyle(BRAND.plumPurple); }
+    plumPurple:     function(){ drawBrandStyle(BRAND.plumPurple); },
+    skyBlue:        function(){ drawSeasonStyle(SEASON.skyBlue); },
+    lavender:       function(){ drawSeasonStyle(SEASON.lavender); },
+    clayRose:       function(){ drawSeasonStyle(SEASON.clayRose); },
+    espresso:       function(){ drawBrandStyle(BRAND.espresso); },
+    oliveDark:      function(){ drawBrandStyle(BRAND.oliveDark); },
+    dustyRose:      function(){ drawBrandStyle(BRAND.dustyRose); },
+    fogMist:        function(){ drawSeasonStyle(SEASON.fogMist); },
+    coralReef:      function(){ drawSeasonStyle(SEASON.coralReef); },
+    sageGreen:      function(){ drawSeasonStyle(SEASON.sageGreen); },
+    onyxBlack:      function(){ drawBrandStyle(BRAND.onyxBlack); },
+    rustCopper:     function(){ drawBrandStyle(BRAND.rustCopper); },
+    navyGold:       function(){ drawBrandStyle(BRAND.navyGold); },
+    creamWhite:     function(){ drawSeasonStyle(SEASON.creamWhite); },
+    sakuraPink:     function(){ drawSeasonStyle(SEASON.sakuraPink); },
+    mintFrost:      function(){ drawSeasonStyle(SEASON.mintFrost); },
+    lilacHaze:      function(){ drawSeasonStyle(SEASON.lilacHaze); },
+    vanilla:        function(){ drawSeasonStyle(SEASON.vanilla); },
+    roseDust:       function(){ drawSeasonStyle(SEASON.roseDust); },
+    oliveSprig:     function(){ drawSeasonStyle(SEASON.oliveSprig); },
+    babyBlue:       function(){ drawSeasonStyle(SEASON.babyBlue); },
+    sandDune:       function(){ drawSeasonStyle(SEASON.sandDune); },
+    coralBlush:     function(){ drawSeasonStyle(SEASON.coralBlush); },
+    honeyGold:      function(){ drawSeasonStyle(SEASON.honeyGold); },
+    sageMist:       function(){ drawSeasonStyle(SEASON.sageMist); },
+    orchid:         function(){ drawSeasonStyle(SEASON.orchid); },
+    creamSoda:      function(){ drawSeasonStyle(SEASON.creamSoda); },
+    seaGlass:       function(){ drawSeasonStyle(SEASON.seaGlass); },
+    powderBlue:     function(){ drawSeasonStyle(SEASON.powderBlue); },
+    midnight:       function(){ drawBrandStyle(BRAND.midnight); },
+    burgundy:       function(){ drawBrandStyle(BRAND.burgundy); },
+    forest:         function(){ drawBrandStyle(BRAND.forest); },
+    steel:          function(){ drawBrandStyle(BRAND.steel); },
+    amethyst:       function(){ drawBrandStyle(BRAND.amethyst); },
+    charcoal:       function(){ drawBrandStyle(BRAND.charcoal); },
+    mahogany:       function(){ drawBrandStyle(BRAND.mahogany); },
+    damson:         function(){ drawBrandStyle(BRAND.damson); },
+    bronzeAge:      function(){ drawBrandStyle(BRAND.bronzeAge); },
+    slateRock:      function(){ drawBrandStyle(BRAND.slateRock); },
+    darkMoss:       function(){ drawBrandStyle(BRAND.darkMoss); },
+    garnet:         function(){ drawBrandStyle(BRAND.garnet); },
+    inkwell:        function(){ drawBrandStyle(BRAND.inkwell); },
+    truffle:        function(){ drawBrandStyle(BRAND.truffle); },
+    pinecone:       function(){ drawBrandStyle(BRAND.pinecone); },
+    abyss:          function(){ drawBrandStyle(BRAND.abyss); },
+    cinder:         function(){ drawBrandStyle(BRAND.cinder); },
+    elderberry:     function(){ drawBrandStyle(BRAND.elderberry); },
+    raven:          function(){ drawBrandStyle(BRAND.raven); }
   };
 
   function draw(){
     if(!state.bitmap) return;
-    var custom = findCustomTemplate(state.style);
+    var custom=findCustomTemplate(state.style);
     if(custom){ drawCustom(custom); }
-    else { var fn = DRAW_DISPATCH[state.style] || drawClassic; fn(); }
+    else { var fn=DRAW_DISPATCH[state.style]||drawClassic; fn(); }
     if(typeof drawStickerLayer==="function") drawStickerLayer();
   }
+
+  // ============ v3.17.0 工具条: 撤销 + 旋转 + 翻转 + 不透明度 + 位置 ============
+  // -- 撤销 --
+  var undoStack=[], UNDO_MAX=30;
+  function pushUndo(){
+    var a=state.toneAdj||{};
+    undoStack.push({style:state.style,tone:state.tone,toneAdj:{temp:a.temp||0,tint:a.tint||0,sat:a.sat||0,intensity:a.intensity||100},filterId:state.filterId,accent:ensureSettings().accent,bitmap:null});
+    if(undoStack.length>UNDO_MAX) undoStack.shift();
+  }
+  function undo(){
+    if(!undoStack.length){ toast("没有可撤销的操作"); return; }
+    var prev=undoStack.pop();
+    if(prev.bitmap){ state.bitmap=prev.bitmap; }
+    setStyle(prev.style); // without recall — we restore tone manually
+    state.tone=prev.tone; state.toneAdj=prev.toneAdj; state.filterId=prev.filterId;
+    syncTonePad(); markFilterActive(); updateFilterActions();
+    ensureSettings().accent=prev.accent; saveSettings(); applyAccent();
+    if(typeof syncSettingsUI==="function") syncSettingsUI();
+    draw(); savePrefs();
+    toast("已撤销 ↩️");
+  }
+  // v3.19: undo disabled (bugs), hooks removed
+  // var _origSetStyle=setStyle; setStyle=function(style,recall){ pushUndo(); _origSetStyle(style,recall); };
+  // var _origSetTone=setTone; setTone=function(t){ pushUndo(); _origSetTone(t); };
+  // var _origApplyCustomFilter=applyCustomFilter; applyCustomFilter=function(id){ pushUndo(); _origApplyCustomFilter(id); };
+  // var _tonePadDirty=false;
+
+  // -- 旋转 --
+  function rotateBitmap(deg){
+    if(!state.bitmap) return;
+    pushUndo();
+    var bmp=state.bitmap, w=bmp.width||bmp.naturalWidth||0, h=bmp.height||bmp.naturalHeight||0;
+    if(!w||!h) return;
+    var cv=document.createElement("canvas");
+    if(deg===90||deg===270){ cv.width=h; cv.height=w; }
+    else { cv.width=w; cv.height=h; }
+    var cx=cv.getContext("2d");
+    cx.translate(cv.width/2,cv.height/2);
+    cx.rotate(deg*Math.PI/180);
+    cx.drawImage(bmp,-w/2,-h/2,w,h);
+    if(bmp.close) try{bmp.close()}catch(e){}
+    state.bitmap=cv; invalidateGrade(); draw();
+    toast(deg===90?"右转 90°":"左转 90°");
+  }
+  function flipBitmap(){
+    if(!state.bitmap) return;
+    pushUndo();
+    var bmp=state.bitmap, w=bmp.width||bmp.naturalWidth||0, h=bmp.height||bmp.naturalHeight||0;
+    if(!w||!h) return;
+    var cv=document.createElement("canvas"); cv.width=w; cv.height=h;
+    var cx=cv.getContext("2d"); cx.translate(w,0); cx.scale(-1,1);
+    cx.drawImage(bmp,0,0,w,h);
+    if(bmp.close) try{bmp.close()}catch(e){}
+    state.bitmap=cv; invalidateGrade(); draw();
+    toast("水平翻转 ↔️");
+  }
+
+  // -- 水印不透明度 --
+  if(!state.wmOpacity) state.wmOpacity=100;
+  var WMOP_KEY="yinji.wmOpacity.v1";
+  function loadWmOpacity(){ try{ var v=parseFloat(localStorage.getItem(WMOP_KEY)); if(!isNaN(v)&&v>=10&&v<=100) state.wmOpacity=v; }catch(e){} }
+  function saveWmOpacity(){ try{ localStorage.setItem(WMOP_KEY,state.wmOpacity); }catch(e){} }
+
+  // -- 水印位置 --
+  if(!state.wmPosition) state.wmPosition="bottom"; // bottom | top | center
+  var WMPOS_KEY="yinji.wmPosition.v1";
+  function loadWmPosition(){ try{ var v=localStorage.getItem(WMPOS_KEY); if(v==="top"||v==="center") state.wmPosition=v; }catch(e){} }
+  function saveWmPosition(){ try{ localStorage.setItem(WMPOS_KEY,state.wmPosition); }catch(e){} }
 
   function drawOriginalOnly(){
     var s=getSize(); if(!s) return;
@@ -3509,7 +4558,7 @@
   function drawClassic(){
     var s=getSize(); if(!s) return;
     var w=s.w, h=s.h;
-    var barH=Math.max(64, Math.round(w*0.12));
+    var barH=tweakBarH(Math.max(64, Math.round(w*0.12)));
     canvas.width=w; canvas.height=h+barH;
 
     ctx.fillStyle="#FFFFFF";
@@ -3526,7 +4575,7 @@
   function drawLeica(){
     var s=getSize(); if(!s) return;
     var w=s.w, h=s.h;
-    var barH=Math.max(72, Math.round(w*0.14));
+    var barH=tweakBarH(Math.max(72, Math.round(w*0.14)));
     canvas.width=w; canvas.height=h+barH;
 
     ctx.fillStyle="#FFFFFF";
@@ -3600,8 +4649,9 @@
 
     var title, caption;
     if(state.mode==="manual"){
-      title = ((textInput.value||"").trim() || "MOMENT").toUpperCase();
-      caption = "";
+      var mlsT=mlLines(textInput.value, 4);
+      title = (mlsT[0] || "MOMENT").toUpperCase();
+      caption = mlsT.slice(1).join("  ·  ");
     } else {
       var info=buildInfo(state.exif);
       title = (info.device || "MOMENT").toUpperCase();
@@ -3669,7 +4719,7 @@
   function drawDarkBar(){
     var s=getSize(); if(!s) return;
     var w=s.w, h=s.h;
-    var barH=Math.max(64, Math.round(w*0.12));
+    var barH=tweakBarH(Math.max(64, Math.round(w*0.12)));
     canvas.width=w; canvas.height=h+barH;
     ctx.fillStyle=COLORS.darkBg;
     ctx.fillRect(0,0,canvas.width,canvas.height);
@@ -3698,25 +4748,29 @@
     canvas.width=w; canvas.height=h;
     ctx.drawImage(s.bmp,0,0,w,h);
 
-    var text;
+    var lines;
     if(state.mode==="manual"){
-      text=(textInput.value||"").trim() || "2026.05.28";
+      lines=mlLines(textInput.value, 3);
+      if(!lines.length) lines=["2026.05.28"];
     } else {
       var info=buildInfo(state.exif);
-      text = info.date || "无拍摄信息";
+      lines=[ info.date || "无拍摄信息" ];
     }
+    var n=lines.length;
     var pad=Math.round(w*0.035);
     var px=Math.max(14, Math.round(w*0.022));
     ctx.font="500 "+px+'px '+FONT;
-    // 自动黑 / 白:看右下角文字落点处照片的明暗,亮底用深字 + 浅光晕、暗底用白字 + 深阴影,保证可读
-    var luma=bgLumaAt(w*0.42, h-pad-px*1.6, w-pad-w*0.42, px*1.7);
+    var lineH=px*1.4;
+    // 自动黑 / 白:看右下角整块文字落点处照片的明暗,亮底用深字 + 浅光晕、暗底用白字 + 深阴影,保证可读
+    var blockTop=Math.max(0, h-pad-(n-1)*lineH-px*1.5);
+    var luma=bgLumaAt(w*0.40, blockTop, w-pad-w*0.40, (n-1)*lineH+px*1.7);
     var darkText = luma>145;
     ctx.fillStyle = darkText ? "rgba(26,22,18,.96)" : "rgba(255,255,255,.96)";
     ctx.shadowColor = darkText ? "rgba(255,255,255,.55)" : "rgba(0,0,0,.6)";
     ctx.shadowBlur=Math.max(4, Math.round(w*0.008));
     ctx.shadowOffsetY=darkText?0:1;
     ctx.textAlign="right"; ctx.textBaseline="bottom";
-    ctx.fillText(text, w-pad, h-pad);
+    for(var li=0;li<n;li++) ctx.fillText(lines[li], w-pad, h-pad-(n-1-li)*lineH);
     ctx.shadowColor="transparent"; ctx.shadowBlur=0; ctx.shadowOffsetY=0;
   }
 
@@ -3790,7 +4844,7 @@
   function drawCheckIn(){
     var s=getSize(); if(!s) return;
     var w=s.w, h=s.h;
-    var barH=Math.max(80, Math.round(w*0.13));
+    var barH=tweakBarH(Math.max(80, Math.round(w*0.13)));
     canvas.width=w; canvas.height=h+barH;
     ctx.fillStyle=COLORS.paperWhite;
     ctx.fillRect(0,0,canvas.width,canvas.height);
@@ -3810,7 +4864,7 @@
 
     var text;
     if(state.mode==="manual"){
-      text=(textInput.value||"").trim() || "我的足迹";
+      text=mlFlat(textInput.value, "  ·  ") || "我的足迹";
     } else {
       var info=buildInfo(state.exif);
       var parts=[];
@@ -3858,7 +4912,7 @@
 
     var year, fullDate;
     if(state.mode==="manual"){
-      var t = (textInput.value||"").trim();
+      var t = mlFlat(textInput.value, " ");
       var ym = t.match(/(\d{4})/);
       year = ym ? ym[1] : String(new Date().getFullYear());
       fullDate = t || year;
@@ -3887,7 +4941,7 @@
   function drawHasselblad(){
     var s=getSize(); if(!s) return;
     var w=s.w, h=s.h;
-    var barH=Math.max(72, Math.round(w*0.13));
+    var barH=tweakBarH(Math.max(72, Math.round(w*0.13)));
     canvas.width=w; canvas.height=h+barH;
     ctx.fillStyle=COLORS.hasselbladDark;
     ctx.fillRect(0,0,canvas.width,canvas.height);
@@ -3920,7 +4974,7 @@
 
     var text;
     if(state.mode==="manual"){
-      text=(textInput.value||"").trim() || "2026.05.28";
+      text=mlFlat(textInput.value, " ") || "2026.05.28";
     } else {
       var info=buildInfo(state.exif);
       text = info.date || info.device || "";
@@ -3950,8 +5004,9 @@
 
     var title, caption;
     if(state.mode==="manual"){
-      title = ((textInput.value||"").trim() || "MOMENT").toUpperCase();
-      caption = "";
+      var mlsT=mlLines(textInput.value, 4);
+      title = (mlsT[0] || "MOMENT").toUpperCase();
+      caption = mlsT.slice(1).join("  ·  ");
     } else {
       var info=buildInfo(state.exif);
       title = (info.device || "MOMENT").toUpperCase();
@@ -3992,19 +5047,22 @@
   function drawSeasonStyle(pal){
     var s=getSize(); if(!s) return;
     var w=s.w, h=s.h;
-    var barH=Math.max(72, Math.round(w*0.13));
+    var barH=tweakBarH(Math.max(72, Math.round(w*0.13)));
+    var pos=state.wmPosition||"bottom";
+    var photoY=pos==="top"?barH:0;
+    var barY=pos==="top"?0:h;
     canvas.width=w; canvas.height=h+barH;
     ctx.fillStyle=pal.bg;
     ctx.fillRect(0,0,canvas.width,canvas.height);
-    ctx.drawImage(s.bmp,0,0,w,h);
+    ctx.drawImage(s.bmp,0,photoY,w,h);
 
     var pad=Math.round(w*0.06);
-    var lineY=h+Math.round(barH*0.24);
+    var lineY=barY+Math.round(barH*0.24);
     ctx.strokeStyle=pal.accent;
     ctx.lineWidth=Math.max(2, Math.round(w*0.0028));
     ctx.beginPath(); ctx.moveTo(pad, lineY+0.5); ctx.lineTo(w-pad, lineY+0.5); ctx.stroke();
 
-    drawText(0, lineY, w, barH-(lineY-h), {
+    drawText(0, lineY, w, barH-(lineY-barY), {
       text: pal.text,
       textSoft: pal.soft,
       autoDivider: pal.accent
@@ -4014,17 +5072,20 @@
   function drawBrandStyle(pal){
     var s=getSize(); if(!s) return;
     var w=s.w, h=s.h;
-    var barH=Math.max(72, Math.round(w*0.13));
+    var barH=tweakBarH(Math.max(72, Math.round(w*0.13)));
+    var pos=state.wmPosition||"bottom";
+    var photoY=pos==="top"?barH:0;
+    var barY=pos==="top"?0:h;
     canvas.width=w; canvas.height=h+barH;
     ctx.fillStyle=pal.bg;
     ctx.fillRect(0,0,canvas.width,canvas.height);
-    ctx.drawImage(s.bmp,0,0,w,h);
+    ctx.drawImage(s.bmp,0,photoY,w,h);
 
     var accentH=Math.max(4, Math.round(barH*0.08));
     ctx.fillStyle=pal.accent;
-    ctx.fillRect(0, h, w, accentH);
+    ctx.fillRect(0, barY, w, accentH);
 
-    drawText(0, h+accentH, w, barH-accentH, {
+    drawText(0, barY+accentH, w, barH-accentH, {
       text: pal.text,
       textSoft: pal.soft,
       autoDivider: pal.accent
@@ -4064,7 +5125,7 @@
     canvas.width=w; canvas.height=h;
     ctx.drawImage(s.bmp,0,0,w,h);
 
-    var barH=Math.max(72, Math.round(h*0.15));
+    var barH=tweakBarH(Math.max(72, Math.round(h*0.15)));
     var barTop=h-barH;
 
     frostRect(0, barTop, w, barH);
@@ -4124,7 +5185,7 @@
     ctx.drawImage(s.bmp,0,0,w,h);
 
     var m=Math.max(22, Math.round(Math.min(w,h)*0.052));
-    var barH=Math.max(76, Math.round(h*0.14));
+    var barH=tweakBarH(Math.max(76, Math.round(h*0.14)));
     if(barH > Math.round(h*0.4)) barH=Math.round(h*0.4);
     var midH=h-m-barH;
     if(midH < 0) midH=0;
@@ -4181,7 +5242,7 @@
   function drawBirthday(){
     var s=getSize(); if(!s) return;
     var w=s.w, h=s.h;
-    var barH=Math.max(84, Math.round(w*0.15));
+    var barH=tweakBarH(Math.max(84, Math.round(w*0.15)));
     canvas.width=w; canvas.height=h+barH;
     ctx.fillStyle="#FFF6F0";
     ctx.fillRect(0,0,canvas.width,canvas.height);
@@ -4221,7 +5282,7 @@
   function drawAnniversary(){
     var s=getSize(); if(!s) return;
     var w=s.w, h=s.h;
-    var barH=Math.max(80, Math.round(w*0.14));
+    var barH=tweakBarH(Math.max(80, Math.round(w*0.14)));
     canvas.width=w; canvas.height=h+barH;
     ctx.fillStyle=COLORS.paperWhite;
     ctx.fillRect(0,0,canvas.width,canvas.height);
@@ -4249,7 +5310,7 @@
   function drawCustomBar(tpl){
     var s=getSize(); if(!s) return;
     var w=s.w, h=s.h;
-    var barH = Math.max(64, Math.round(w * (tpl.barRatio || 0.12)));
+    var barH = tweakBarH(Math.max(64, Math.round(w * (tpl.barRatio || 0.12))));
     canvas.width=w; canvas.height=h+barH;
     ctx.fillStyle = tpl.bg || COLORS.paperWhite;
     ctx.fillRect(0,0,canvas.width,canvas.height);
@@ -4318,7 +5379,7 @@
       ctx.fillRect(0, h-accentH, w, accentH);
     }
 
-    var barH = Math.max(60, Math.round(h*0.16));
+    var barH = tweakBarH(Math.max(60, Math.round(h*0.16)));
     drawText(0, h-barH, w, barH, {
       text: tpl.text || "#FFFFFF",
       textSoft: tpl.textSoft || "rgba(255,255,255,.78)",
@@ -4346,17 +5407,40 @@
     else drawAutoText(ox, oy, w, barH, opts);
   }
 
+  // 把多行文字拆成数组:按换行切分、去掉空白行、最多保留 maxLines 行
+  function mlLines(raw, maxLines){
+    var arr=String(raw==null?"":raw).split(/\r?\n/), out=[];
+    for(var i=0;i<arr.length;i++){
+      var t=arr[i].replace(/\s+$/,"").replace(/^\s+/,"");
+      if(t) out.push(t);
+      if(out.length>=(maxLines||3)) break;
+    }
+    return out;
+  }
+  // 把多行折成一行(给只适合单行的款用,如日期/地点),换行替换为分隔符
+  function mlFlat(raw, sep){
+    return mlLines(raw, 3).join(sep||" ");
+  }
+
   function drawManualText(ox, oy, w, barH, opts){
     opts = opts || {};
     var color = opts.text || COLORS.ink;
     var weight = opts.weight || "500";
-    var text=(textInput.value||"").trim() || "输入想显示的文字";
-    var pad=Math.round(w*0.06);
-    var px=fitFont(text, w-pad*2, Math.round(barH*0.34), weight);
-    ctx.fillStyle = color;
+    var lines = mlLines(textInput.value, 3);
+    if(!lines.length) lines=["输入想显示的文字"];
+    var n=lines.length;
+    var pad=Math.round(w*0.06), maxW=w-pad*2;
+    // 目标字号:单行沿用原大小;多行按可用高度均分,留行距
+    var targetPx = Math.min(Math.round(barH*0.34), Math.round(barH*0.82/n/1.2));
+    var px=Math.max(9, tweakFont(targetPx));
     ctx.font=weight+" "+px+'px '+FONT;
+    function widest(){ var mx=0; for(var i=0;i<n;i++){ var ww=ctx.measureText(lines[i]).width; if(ww>mx) mx=ww; } return mx; }
+    while(widest()>maxW && px>9){ px-=1; ctx.font=weight+" "+px+'px '+FONT; }
+    var lineH=px*1.2, total=lineH*n;
+    ctx.fillStyle=color;
     ctx.textAlign="center"; ctx.textBaseline="middle";
-    ctx.fillText(text, ox+w/2, oy+barH/2+barH*0.02);
+    var cy=oy+barH/2+barH*0.02, startY=cy-total/2+lineH/2;
+    for(var i=0;i<n;i++) ctx.fillText(lines[i], ox+w/2, startY+i*lineH);
   }
 
   function drawAutoText(ox, oy, w, barH, opts){
@@ -4373,14 +5457,14 @@
 
     var leftRight=pad;
     if(info.device){
-      var dpx=Math.round(barH*0.30);
+      var dpx=tweakFont(Math.round(barH*0.30));
       ctx.font="600 "+dpx+'px '+FONT;
       ctx.fillStyle=textColor; ctx.textAlign="left";
       var devY = info.date ? (cy - barH*0.16) : cy;
       ctx.fillText(info.device, ox+pad, devY);
       leftRight = Math.max(leftRight, pad+ctx.measureText(info.device).width);
       if(info.date){
-        var tpx=Math.round(barH*0.20);
+        var tpx=tweakFont(Math.round(barH*0.20));
         ctx.font="500 "+tpx+'px '+FONT;
         ctx.fillStyle=textSoft;
         ctx.fillText(info.date, ox+pad, cy + barH*0.19);
@@ -4391,7 +5475,7 @@
     if(info.params){
       var gap=barH*0.42;
       var maxRW=w-pad-(info.device?leftRight+gap:pad);
-      var rpx=fitFont(info.params, maxRW, Math.round(barH*0.26), "500");
+      var rpx=fitFont(info.params, maxRW, tweakFont(Math.round(barH*0.26)), "500");
       ctx.font="500 "+rpx+'px '+FONT;
       ctx.fillStyle=textColor; ctx.textAlign="right"; ctx.textBaseline="middle";
       ctx.fillText(info.params, ox+w-pad, cy);
@@ -4408,7 +5492,7 @@
         }
       }
     } else if(!info.device){
-      ctx.font="500 "+Math.round(barH*0.3)+'px '+FONT;
+      ctx.font="500 "+tweakFont(Math.round(barH*0.3))+'px '+FONT;
       ctx.fillStyle=textSoft; ctx.textAlign="center";
       ctx.fillText("无拍摄信息", ox+w/2, cy);
     }
@@ -4481,6 +5565,333 @@
       return true;
     }catch(e){ return false; }
   }
+
+  // ================= 全部浏览抽屉 (v3.15.0) =================
+  var drawerOverlay=$("drawerOverlay"),drawerGrid=$("drawerGrid"),drawerSearch=$("drawerSearch");
+  var drawerTab="watermark";
+  function openDrawer(){
+    drawerTab="watermark";
+    var wt=$("drawerTabWM"),ft=$("drawerTabFL");
+    if(wt) wt.classList.add("on"); if(ft) ft.classList.remove("on");
+    if(drawerSearch) drawerSearch.value="";
+    renderDrawerGrid();
+    if(drawerOverlay) drawerOverlay.classList.add("show");
+  }
+  function closeDrawer(){ if(drawerOverlay) drawerOverlay.classList.remove("show"); }
+  function renderDrawerGrid(){
+    if(!drawerGrid) return;
+    var q=(drawerSearch&&drawerSearch.value||"").trim().toLowerCase();
+    var html="";
+    if(drawerTab==="watermark"){
+      for(var i=0;i<TEMPLATES.length;i++){
+        var t=TEMPLATES[i];
+        if(q && t.name.indexOf(q)===-1 && t.id.indexOf(q)===-1) continue;
+        var swatch="";
+        if(DRAW_DISPATCH[t.id]){
+          var fn=DRAW_DISPATCH[t.id];
+          // Try to extract palette color for swatch preview
+          var src=fn.toString();
+          var m=src.match(/SEASON\.(\w+)/) || src.match(/BRAND\.(\w+)/);
+          if(m){
+            var pal=m[1];
+            var obj=(src.indexOf("SEASON")!==-1?SEASON:BRAND)[pal];
+            if(obj){ swatch='<span class="swatch" style="background:'+obj.bg+';border-left:4px solid '+obj.accent+';"></span>'; }
+          }
+        }
+        html+='<button class="drawer-item" data-wm="'+escapeHtml(t.id)+'">'+swatch+escapeHtml(t.name)+'</button>';
+      }
+    } else {
+      for(var i=0;i<TONE_LIST.length;i++){
+        var f=TONE_LIST[i];
+        if(f.id==="none") continue;
+        if(q && f.name.indexOf(q)===-1 && f.id.indexOf(q)===-1) continue;
+        var catLabel=(f.cat||"").toUpperCase();
+        html+='<button class="drawer-item" data-fl="'+escapeHtml(f.id)+'"><span style="font-size:11px;opacity:.5;">'+catLabel+'</span>'+escapeHtml(f.name)+'</button>';
+      }
+    }
+    drawerGrid.innerHTML=html||'<p style="text-align:center;color:var(--ink-soft);width:100%;padding:20px;">没找到匹配的</p>';
+
+    // Click handlers
+    Array.prototype.forEach.call(drawerGrid.querySelectorAll(".drawer-item"),function(b){
+      b.addEventListener("click",function(){
+        if(drawerTab==="watermark"){
+          var wm=b.getAttribute("data-wm");
+          if(wm){ setStyle(wm); renderStyleChips(); renderStyleCats(); toast("已选水印「"+(presetName(wm)||wm)+"」"); }
+        } else {
+          var fl=b.getAttribute("data-fl");
+          if(fl && TONE_PARAMS[fl]){
+            state.tone=fl; state.toneAdj={temp:0,tint:0,sat:0,intensity:100}; state.filterId=null;
+            syncTonePad(); markFilterActive(); updateFilterActions();
+            draw(); savePrefs();
+            toast("已选滤镜「"+(TONE_PARAMS[fl]&&fl)+"」");
+          }
+        }
+        closeDrawer();
+      });
+    });
+  }
+
+  if($("drawerBtn")) $("drawerBtn").addEventListener("click",openDrawer);
+  if($("drawerClose")) $("drawerClose").addEventListener("click",closeDrawer);
+  if(drawerOverlay) drawerOverlay.addEventListener("click",function(e){ if(e.target===drawerOverlay) closeDrawer(); });
+  if($("drawerTabWM")) $("drawerTabWM").addEventListener("click",function(){ drawerTab="watermark"; $("drawerTabWM").classList.add("on"); $("drawerTabFL").classList.remove("on"); if(drawerSearch) drawerSearch.value=""; renderDrawerGrid(); });
+  if($("drawerTabFL")) $("drawerTabFL").addEventListener("click",function(){ drawerTab="filter"; $("drawerTabFL").classList.add("on"); $("drawerTabWM").classList.remove("on"); if(drawerSearch) drawerSearch.value=""; renderDrawerGrid(); });
+  if(drawerSearch) drawerSearch.addEventListener("input",function(){ renderDrawerGrid(); });
+
+  // ================= 批量加水印 (v3.8.0) =================
+  // 把当前这套效果(水印样式 + 滤镜 + 主题色 + 贴纸/Logo)批量套到多张照片上,每张读自己的拍摄信息(自动模式时),
+  // 逐张渲染、即时释放(省内存),最后打包成一个零依赖 store-zip 下载。纯端上、照片绝不上传。
+  var BATCH_MAX = 30;
+  var batchBusy = false;
+  var batchOverlay=$("batchOverlay"), batchTitle=$("batchTitle"), batchSub=$("batchSub"),
+      batchBarFill=$("batchBarFill"), batchCloseBtn=$("batchClose"),
+      batchBtn=$("batchBtn"), batchInput=$("batchInput");
+  var batchPackId = null; // v3.13.0：批量时选中风格包 id（null=用当前效果）
+
+  function renderBatchPackChips(){
+    var seg=$("batchPackSeg"); if(!seg) return;
+    var blk=$("batchPackBlock");
+    if(!stylePacks.length){ if(blk) blk.style.display="none"; return; }
+    if(blk) blk.style.display="";
+    var html='<button data-batch-pack=""'+(batchPackId===null?' class="on"':'')+'>当前效果</button>';
+    for(var i=0;i<stylePacks.length;i++){
+      var p=stylePacks[i];
+      html+='<button data-batch-pack="'+escapeHtml(p.id)+'"'+(batchPackId===p.id?' class="on"':'')+'>'+escapeHtml(p.name)+'</button>';
+    }
+    seg.innerHTML=html;
+    Array.prototype.forEach.call(seg.querySelectorAll("button[data-batch-pack]"), function(b){
+      b.addEventListener("click",function(){
+        var v=b.getAttribute("data-batch-pack");
+        batchPackId = v || null;
+        renderBatchPackChips();
+        if(batchPackId){
+          var pk=null; for(var j=0;j<stylePacks.length;j++) if(stylePacks[j].id===batchPackId){ pk=stylePacks[j]; break; }
+          if(pk) toast("批量时将套用风格「"+pk.name+"」✨");
+        } else { toast("批量时将用编辑器当前这套效果"); }
+      });
+    });
+  }
+
+  // -- CRC32(store-zip 需要,纯本地查表) --
+  var _crcTable = null;
+  function crc32(u8){
+    if(!_crcTable){
+      _crcTable = new Uint32Array(256);
+      for(var n=0;n<256;n++){ var c=n; for(var k=0;k<8;k++){ c=(c&1)?(0xEDB88320^(c>>>1)):(c>>>1); } _crcTable[n]=c>>>0; }
+    }
+    var crc=0xFFFFFFFF;
+    for(var i=0;i<u8.length;i++){ crc=_crcTable[(crc^u8[i])&0xFF]^(crc>>>8); }
+    return (crc^0xFFFFFFFF)>>>0;
+  }
+  // -- 零依赖 store-zip(不压缩 method 0):files=[{name(ASCII), data(Uint8Array)}] → Uint8Array --
+  function makeStoreZip(files){
+    function strBytes(s){
+      if(window.TextEncoder) return new TextEncoder().encode(s);
+      var u=unescape(encodeURIComponent(s)), o=new Uint8Array(u.length);
+      for(var i=0;i<u.length;i++) o[i]=u.charCodeAt(i); return o;
+    }
+    function u16(n){ return [n&0xFF,(n>>>8)&0xFF]; }
+    function u32(n){ n=n>>>0; return [n&0xFF,(n>>>8)&0xFF,(n>>>16)&0xFF,(n>>>24)&0xFF]; }
+    var chunks=[], central=[], offset=0, i;
+    for(i=0;i<files.length;i++){
+      var nameB=strBytes(files[i].name), data=files[i].data, crc=crc32(data);
+      var local=[].concat(u32(0x04034b50),u16(20),u16(0),u16(0),u16(0),u16(0),u32(crc),u32(data.length),u32(data.length),u16(nameB.length),u16(0));
+      var localU=new Uint8Array(local);
+      chunks.push(localU,nameB,data);
+      var cen=[].concat(u32(0x02014b50),u16(20),u16(20),u16(0),u16(0),u16(0),u16(0),u32(crc),u32(data.length),u32(data.length),u16(nameB.length),u16(0),u16(0),u16(0),u16(0),u32(0),u32(offset));
+      central.push(new Uint8Array(cen),nameB);
+      offset += localU.length + nameB.length + data.length;
+    }
+    var centralStart=offset, centralSize=0, c;
+    for(c=0;c<central.length;c++) centralSize+=central[c].length;
+    var eocd=new Uint8Array([].concat(u32(0x06054b50),u16(0),u16(0),u16(files.length),u16(files.length),u32(centralSize),u32(centralStart),u16(0)));
+    var all=chunks.concat(central); all.push(eocd);
+    var total=0,a; for(a=0;a<all.length;a++) total+=all[a].length;
+    var out=new Uint8Array(total), pos=0;
+    for(a=0;a<all.length;a++){ out.set(all[a],pos); pos+=all[a].length; }
+    return out;
+  }
+
+  // 渲染一张(复用单张管线:set state.bitmap/exif → draw → 取 JPEG 字节),返回 Promise<Uint8Array>
+  function renderOneForBatch(file){
+    return Promise.resolve().then(function(){
+      return file.arrayBuffer ? file.arrayBuffer() : readBufFallback(file);
+    }).then(function(buf){
+      var ex=null; try{ ex=parseExif(buf); }catch(e){ ex=null; }
+      return loadBitmap(file).then(function(bmp){
+        if(!bmp || !((bmp.width||bmp.naturalWidth)&&(bmp.height||bmp.naturalHeight))) throw new Error("decode");
+        state.bitmap=bmp; state.exif=ex; state.exifApp1=null;
+        invalidateGrade();
+        draw(); // 当前 style + 滤镜 + 主题 + 贴纸;auto 模式读这张自己的 exif
+        var dataUrl;
+        try{ dataUrl=canvas.toDataURL("image/jpeg",0.92); }
+        finally{ if(bmp && bmp.close){ try{ bmp.close(); }catch(e){} } }
+        return { bytes:dataURLToUint8(dataUrl), dataUrl:dataUrl };
+      });
+    });
+  }
+
+  function openBatch(title, sub){
+    if(batchTitle) batchTitle.textContent=title;
+    if(batchSub) batchSub.textContent=sub;
+    if(batchBarFill) batchBarFill.style.width="0%";
+    if(batchOverlay) batchOverlay.classList.add("show");
+  }
+  function setBatchProgress(done, total){
+    if(batchSub) batchSub.textContent="正在处理 "+done+" / "+total+" …（照片只在本机处理，不上传）";
+    if(batchBarFill) batchBarFill.style.width=(total?Math.round(done/total*100):0)+"%";
+  }
+  function setBatchDone(title, msg){
+    if(batchTitle) batchTitle.textContent=title;
+    if(batchSub) batchSub.textContent=msg;
+    if(batchBarFill) batchBarFill.style.width="100%";
+  }
+  function closeBatch(){
+    if(batchOverlay) batchOverlay.classList.remove("show");
+    var zipBtn=$("batchSaveZip"), eachBtn=$("batchSaveEach"), shareBtn=$("batchShareAll");
+    if(zipBtn) zipBtn.style.display="none";
+    if(eachBtn) eachBtn.style.display="none";
+    if(shareBtn) shareBtn.style.display="none";
+    if(batchBarFill) batchBarFill.style.display="";
+    _batchEntries=null;
+  }
+
+  var _batchEntries=null;
+  function batchShareAll(){
+    if(!_batchEntries||!_batchEntries.length){ toast("没有可分享的照片"); return; }
+    if(!navigator.share||!navigator.canShare){ toast("当前浏览器不支持分享功能"); return; }
+    var files=[];
+    var maxShare=Math.min(_batchEntries.length,10); // Web Share API usually limits to ~10 files
+    for(var i=0;i<maxShare;i++){
+      var blob=dataURLToBlob(_batchEntries[i].dataUrl);
+      files.push(new File([blob],_batchEntries[i].name,{type:"image/jpeg"}));
+    }
+    var shareData={files:files};
+    if(!navigator.canShare||navigator.canShare(shareData)){
+      navigator.share(shareData).then(function(){
+        toast("已打开分享面板 ✨"+(maxShare<_batchEntries.length?" (前"+maxShare+"张)":""));
+      }).catch(function(e){
+        if(e&&e.name!=="AbortError") toast("分享失败,请用逐张保存");
+      });
+    } else { toast("当前浏览器不支持一次分享多张,请用逐张保存"); }
+  }
+  if($("batchShareAll")) $("batchShareAll").addEventListener("click", batchShareAll);
+
+  function runBatch(files){
+    if(batchBusy) return;
+    if(!state.bitmap){ toast("先打开一张照片、调好这套效果,再批量套用"); return; }
+    files=(files||[]).filter(function(f){ return f && (/^image\//.test(f.type||"") || /\.(jpe?g|png|heic|heif|webp|avif)$/i.test(f.name||"")); });
+    if(!files.length){ toast("没选到照片"); return; }
+    var truncated=false;
+    if(files.length>BATCH_MAX){ files=files.slice(0,BATCH_MAX); truncated=true; }
+    batchBusy=true;
+    var saved={ bitmap:state.bitmap, exif:state.exif, exifApp1:state.exifApp1 };
+    // v3.13.0：批量套用风格包——保存当前效果、临时换成选中风格包
+    var savedStyle=null;
+    if(batchPackId){
+      var bp=null; for(var j=0;j<stylePacks.length;j++) if(stylePacks[j].id===batchPackId){ bp=stylePacks[j]; break; }
+      if(bp){
+        savedStyle={ style:state.style, tone:state.tone, toneAdj:state.toneAdj&&{temp:state.toneAdj.temp,tint:state.toneAdj.tint,sat:state.toneAdj.sat,intensity:state.toneAdj.intensity}, filterId:state.filterId, accent:ensureSettings().accent };
+        applyStylePack(bp);
+      }
+    }
+    _exportClean=true; // 批量渲染期间不画贴纸选中框
+    var styleName=presetName(state.style)||(findCustomTemplate(state.style)&&findCustomTemplate(state.style).name)||"水印";
+    var packLabel=batchPackId&&bp?" · 风格："+bp.name:"";
+    openBatch("正在批量加水印…", "样式："+styleName+packLabel+" · 共 "+files.length+" 张"+(truncated?"（超过 "+BATCH_MAX+" 张，本次先处理前 "+BATCH_MAX+" 张）":""));
+    showBatchPreview(files);
+    setBatchProgress(0, files.length);
+    var entries=[], idx=0;
+    function pad(n){ return ("00"+n).slice(-3); }
+    function finish(){
+      _exportClean=false;
+      // 还原批量前的效果
+      if(savedStyle){
+        state.style=savedStyle.style; state.tone=savedStyle.tone; state.toneAdj=savedStyle.toneAdj; state.filterId=savedStyle.filterId;
+        ensureSettings().accent=savedStyle.accent; saveSettings(); applyAccent(); if(typeof syncSettingsUI==="function") syncSettingsUI();
+      }
+      state.bitmap=saved.bitmap; state.exif=saved.exif; state.exifApp1=saved.exifApp1;
+      invalidateGrade(); draw();
+      batchBusy=false;
+      if(!entries.length){ setBatchDone("批量未完成", "一张都没成功,换些常见的 JPG / PNG 照片再试。"); return; }
+      setBatchDone("批量完成 ✦", entries.length+" 张处理好了。选一种方式保存：");
+      if(batchBarFill) batchBarFill.style.display="none";
+      _batchEntries=entries;
+      // 显示三个保存按钮
+      var zipBtn=$("batchSaveZip"), eachBtn=$("batchSaveEach"), shareBtn=$("batchShareAll");
+      if(zipBtn){ zipBtn.style.display=""; zipBtn.onclick=function(){
+        try{
+          var zipEntries=entries.map(function(e){ return {name:e.name,data:e.bytes}; });
+          var zip=makeStoreZip(zipEntries);
+          var d=new Date(), p=function(n){return (n<10?"0":"")+n;};
+          var fname="印迹_批量_"+d.getFullYear()+"-"+p(d.getMonth()+1)+"-"+p(d.getDate())+".zip";
+          downloadBlob(new Blob([zip],{type:"application/zip"}), fname);
+          toast("已开始下载 zip，到「文件」App 解压即可");
+        }catch(e){ toast("打包出错，请重试"); }
+      }; }
+      if(eachBtn){ eachBtn.style.display=""; eachBtn.onclick=function(){
+        saveIndividually(entries);
+      }; }
+      if(shareBtn){ shareBtn.style.display=""; shareBtn.onclick=function(){
+        batchShareAll();
+      }; }
+    }
+    function next(){
+      if(idx>=files.length){ finish(); return; }
+      renderOneForBatch(files[idx]).then(function(result){
+        entries.push({ name:"yinji_"+pad(idx+1)+".jpg", bytes:result.bytes, dataUrl:result.dataUrl });
+        idx++; setBatchProgress(idx, files.length); setTimeout(next, 0);
+      }, function(){
+        idx++; setBatchProgress(idx, files.length); setTimeout(next, 0); // 单张失败跳过
+      });
+    }
+    setTimeout(next, 60);
+  }
+
+  var _batchSaveIdx=0, _batchSaveList=null;
+  function saveIndividually(list){
+    if(!list||!list.length) return;
+    _batchSaveIdx=0; _batchSaveList=list;
+    setBatchProgress(0, list.length);
+    if(batchTitle) batchTitle.textContent="逐张保存中…";
+    if(batchSub) batchSub.textContent="正在保存 1 / "+list.length+" …";
+    if(batchBarFill) batchBarFill.style.display="";
+    _saveNextBatch();
+  }
+  function _saveNextBatch(){
+    if(_batchSaveIdx>=_batchSaveList.length){
+      setBatchDone("全部保存完成 ✦", _batchSaveList.length+" 张已逐张保存到相册。");
+      if(batchBarFill) batchBarFill.style.display="";
+      _batchSaveList=null; return;
+    }
+    var e=_batchSaveList[_batchSaveIdx];
+    var blob=dataURLToBlob(e.dataUrl);
+    downloadBlob(blob, e.name);
+    _batchSaveIdx++;
+    if(batchSub) batchSub.textContent="正在保存 "+_batchSaveIdx+" / "+_batchSaveList.length+" …";
+    setBatchProgress(_batchSaveIdx, _batchSaveList.length);
+    setTimeout(_saveNextBatch, 600); // 600ms 间隔避免浏览器拦截
+  }
+  function dataURLToBlob(dataUrl){
+    var parts=dataUrl.split(",");
+    var mime=parts[0].match(/:(.*?);/)[1];
+    var bytes=atob(parts[1]);
+    var u8=new Uint8Array(bytes.length);
+    for(var i=0;i<bytes.length;i++) u8[i]=bytes.charCodeAt(i);
+    return new Blob([u8],{type:mime});
+  }
+
+  if(batchBtn) batchBtn.addEventListener("click", function(){
+    if(batchBusy){ return; }
+    if(!state.bitmap){ toast("先打开一张照片、调好这套效果"); return; }
+    if(batchInput){ try{ batchInput.value=""; }catch(e){} batchInput.click(); }
+  });
+  if(batchInput) batchInput.addEventListener("change", function(ev){
+    var fs=ev.target.files?Array.prototype.slice.call(ev.target.files):[];
+    try{ ev.target.value=""; }catch(e){}
+    runBatch(fs);
+  });
+  if(batchCloseBtn) batchCloseBtn.addEventListener("click", closeBatch);
 
   saveBtn.addEventListener("click", function(){
     if(!state.bitmap){ return; }
@@ -4682,6 +6093,29 @@
     catch(e){ b64 = btoa(json); }
     return SHARE_PREFIX + b64;
   }
+  function encodePack(p){
+    var a = p.toneAdj || {};
+    var clean = {
+      name: (p.name||"").toString().slice(0,20),
+      style: p.style,
+      tone: (p.tone==="none" || (TONE_PARAMS && TONE_PARAMS[p.tone])) ? p.tone : "none",
+      toneAdj: {
+        temp:      clampNum(a.temp,      -100, 100, 0),
+        tint:      clampNum(a.tint,      -100, 100, 0),
+        sat:       clampNum(a.sat,       -100, 100, 0),
+        intensity: clampNum(a.intensity,    0, 100, 100)
+      },
+      accent: (isHexColor(p.accent) || p.accent==="default") ? p.accent : "default"
+    };
+    // 若 style 是自定义水印,内嵌它(让对方也拿到这个水印);滤镜的观感已在 tone/toneAdj 里,无需内嵌
+    var ct = findCustomTemplate(p.style);
+    if(ct){ clean.styleTpl = { name:ct.name||"", layout:ct.layout||"bar", bg:ct.bg||"#FFFFFF", text:ct.text||"#1C1814", accent:ct.accent||null }; }
+    var json = JSON.stringify({ v:1, type:"yinji-pack", pack:clean });
+    var b64;
+    try{ b64 = btoa(unescape(encodeURIComponent(json))); }
+    catch(e){ b64 = btoa(json); }
+    return SHARE_PREFIX + b64;
+  }
   function decodeShareRaw(code){
     var s = String(code||"");
     var idx = s.indexOf(SHARE_PREFIX);
@@ -4696,8 +6130,8 @@
 
   var shareKind = "template";
   function openShare(mode, code, kind){
-    shareKind = (kind === "filter") ? "filter" : "template";
-    var noun = (shareKind === "filter") ? "滤镜" : "水印";
+    shareKind = (kind === "filter") ? "filter" : (kind === "pack") ? "pack" : "template";
+    var noun = (shareKind === "filter") ? "滤镜" : (shareKind === "pack") ? "风格" : "水印";
     if(mode === "export"){
       shareTitle.textContent = "分享" + noun;
       shareSub.textContent = "把这段代码复制发给朋友,对方点「导入" + noun + "」粘贴就能用";
@@ -4726,6 +6160,12 @@
     if(!tpl){ toast("找不到这个水印"); return; }
     openShare("export", encodeTemplate(tpl));
   }
+  function sharePack(id){
+    var p = null;
+    for(var i=0;i<stylePacks.length;i++) if(stylePacks[i].id===id){ p=stylePacks[i]; break; }
+    if(!p){ toast("找不到这个风格"); return; }
+    openShare("export", encodePack(p), "pack");
+  }
 
   function copyShareCode(){
     var text = shareText.value || "";
@@ -4752,7 +6192,9 @@
     var raw;
     try{ raw = decodeShareRaw(shareText.value); }
     catch(e){ toast("这段代码看不懂,确认完整复制了吗?"); return; }
-    if(raw && (raw.type === "yinji-filter" || raw.flt)){
+    if(raw && (raw.type === "yinji-pack" || raw.pack)){
+      importPackObj(raw.pack || raw);
+    } else if(raw && (raw.type === "yinji-filter" || raw.flt)){
       importFilterObj(raw.flt || raw);
     } else {
       importTemplateObj((raw && raw.tpl) ? raw.tpl : raw);
@@ -4806,6 +6248,40 @@
     applyCustomFilter(f.id);
     closeShare();
     toast("已导入滤镜「"+name+"」,在「我的」里");
+  }
+  function importPackObj(p){
+    if(!p || typeof p!=="object" || typeof p.style!=="string"){ toast("风格信息不完整,导入失败"); return; }
+    var styleId = p.style;
+    // 内嵌了自定义水印 且本地没有 → 先把这个水印导进来,再让风格指向它
+    if(p.styleTpl && !presetName(styleId) && !findCustomTemplate(styleId)){
+      var t = p.styleTpl;
+      var layout = (t && (t.layout==="bar"||t.layout==="frame"||t.layout==="overlay")) ? t.layout : null;
+      if(layout && isHexColor(t.bg) && isHexColor(t.text)){
+        var nt = {
+          id: "custom_"+Date.now().toString(36)+Math.floor(Math.random()*1296).toString(36),
+          name: (typeof t.name==="string" && t.name.trim()) ? t.name.trim().slice(0,14) : "导入的水印",
+          layout: layout, bg: t.bg, text: t.text, accent: isHexColor(t.accent) ? t.accent : null,
+          tags: ["导入"], desc: "自定义 · "+(layout==="bar"?"底栏":layout==="frame"?"四周白边":"满版渐变")
+        };
+        customTemplates.push(nt); persistCustomTemplates(); renderStyleSeg();
+        styleId = nt.id;
+      }
+    }
+    if(!presetName(styleId) && !findCustomTemplate(styleId)) styleId = "classic"; // 兜底:对方没有的水印回落经典
+    var a = p.toneAdj || {};
+    var pack = {
+      id: "pack_" + Date.now().toString(36) + Math.floor(Math.random()*1e4).toString(36),
+      name: (typeof p.name==="string" && p.name.trim()) ? p.name.trim().slice(0,20) : "导入的风格",
+      style: styleId,
+      tone: (p.tone==="none" || (TONE_PARAMS && TONE_PARAMS[p.tone])) ? p.tone : "none",
+      toneAdj: { temp:clampNum(a.temp,-100,100,0), tint:clampNum(a.tint,-100,100,0), sat:clampNum(a.sat,-100,100,0), intensity:clampNum(a.intensity,0,100,100) },
+      filterId: null,
+      accent: (isHexColor(p.accent) || p.accent==="default") ? p.accent : "default"
+    };
+    stylePacks.push(pack); persistStylePacks();
+    packSel = pack.id; renderPackChips();
+    closeShare();
+    toast("已导入风格「"+pack.name+"」,在「我的风格」里点它套用 ✨");
   }
 
   shareCopyBtn.addEventListener("click", copyShareCode);
@@ -4893,7 +6369,14 @@
   loadCustomTemplates();
   loadCustomFilters();
   loadStyleColors();
+  loadStylePacks();
+  loadWmTweak();
   renderStyleSeg();
+  renderPackChips();
+  if($("savePackBtn"))   $("savePackBtn").addEventListener("click", saveCurrentAsPack);
+  if($("delPackBtn"))    $("delPackBtn").addEventListener("click", deleteSelectedPack);
+  if($("importPackBtn")) $("importPackBtn").addEventListener("click", function(){ openShare("import", "", "pack"); });
+  if($("sharePackBtn"))  $("sharePackBtn").addEventListener("click", function(){ if(packSel) sharePack(packSel); });
 
   (function initPrefs(){
     var st=ensureSettings();
@@ -4923,32 +6406,239 @@
   renderFilters();
   bindTonePad();
 
+  // ---- text fine-tuning UI (v3.10.0) ----
+  (function initWmTweak(){
+    var toggle=$("tweakToggle"), body=$("tweakBody"),
+        barRng=$("tweakBarRng"), fontRng=$("tweakFontRng"),
+        barVal=$("tweakBarVal"), fontVal=$("tweakFontVal"),
+        resetBtn=$("tweakReset");
+    if(!toggle||!body||!barRng||!fontRng) return;
+    function syncSliders(){
+      barRng.value=state.wmTweak.barScale;
+      fontRng.value=state.wmTweak.fontScale;
+      barVal.textContent=barRng.value+"%";
+      fontVal.textContent=fontRng.value+"%";
+    }
+    syncSliders();
+    toggle.addEventListener("click", function(){
+      var open=body.classList.toggle("hidden");
+      toggle.textContent="高级微调 "+(open?"▸":"▾");
+    });
+    barRng.addEventListener("input", function(){
+      state.wmTweak.barScale=parseInt(barRng.value)||100;
+      barVal.textContent=barRng.value+"%";
+      saveWmTweak();
+      if(state.bitmap) draw();
+    });
+    fontRng.addEventListener("input", function(){
+      state.wmTweak.fontScale=parseInt(fontRng.value)||100;
+      fontVal.textContent=fontRng.value+"%";
+      saveWmTweak();
+      if(state.bitmap) draw();
+    });
+    resetBtn.addEventListener("click", function(){
+      state.wmTweak={ barScale:100, fontScale:100 };
+      syncSliders();
+      saveWmTweak();
+      if(state.bitmap) draw();
+    });
+  })();
+
+  // ============ v3.17.0 工具栏: 撤销 + 旋转 + 翻转 ============
+  // if($("undoBtn")) $("undoBtn").addEventListener("click", undo); // v3.19: disabled, has bugs
+  if($("rotateLeftBtn")) $("rotateLeftBtn").addEventListener("click", function(){ rotateBitmap(270); });
+  if($("rotateRightBtn")) $("rotateRightBtn").addEventListener("click", function(){ rotateBitmap(90); });
+  if($("flipBtn")) $("flipBtn").addEventListener("click", flipBitmap);
+  // v3.19: tone pad undo hooks disabled
+  // (function(){
+  //   if(!tonePad) return;
+  //   tonePad.addEventListener("pointerdown", function(){ if(!_tonePadDirty){ pushUndo(); _tonePadDirty=true; } });
+  //   ...
+  // })();
+
+  // ============ v3.17.0 水印位置 ============
+  loadWmPosition();
+  if($("wmPosSeg")){
+    Array.prototype.forEach.call($("wmPosSeg").querySelectorAll("button"), function(b){
+      b.addEventListener("click", function(){
+        state.wmPosition=b.getAttribute("data-wmpos")||"bottom";
+        $("wmPosSeg").querySelectorAll("button").forEach(function(x){ x.classList.toggle("on",x===b); });
+        saveWmPosition();
+        if(state.bitmap) draw();
+        toast("水印位置："+(state.wmPosition==="top"?"顶部":state.wmPosition==="center"?"居中":"底部"));
+      });
+    });
+    // Sync UI
+    var posBtns=$("wmPosSeg").querySelectorAll("button");
+    posBtns.forEach(function(b){ b.classList.toggle("on", b.getAttribute("data-wmpos")===state.wmPosition); });
+  }
+
+  // ============ v3.17.0 照片裁剪 ============
+  var cropOverlay=$("cropOverlay"), cropCanvas=$("cropCanvas"), cropCtx=cropCanvas?cropCanvas.getContext("2d"):null;
+  var cropRatio=null, cropBitmap=null;
+  function openCrop(){
+    if(!state.bitmap) return;
+    cropBitmap=state.bitmap; cropRatio=null;
+    if(cropOverlay) cropOverlay.classList.add("show");
+    renderCropPreview();
+  }
+  function closeCrop(){ if(cropOverlay) cropOverlay.classList.remove("show"); cropBitmap=null; }
+  function renderCropPreview(){
+    if(!cropBitmap||!cropCanvas) return;
+    var bmp=cropBitmap, w=bmp.width||bmp.naturalWidth||0, h=bmp.height||bmp.naturalHeight||0;
+    if(!w||!h) return;
+    var maxW=Math.min(window.innerWidth*0.9,600), maxH=window.innerHeight*0.55;
+    var scale=Math.min(maxW/w,maxH/h,1);
+    cropCanvas.width=Math.round(w*scale); cropCanvas.height=Math.round(h*scale);
+    cropCtx.drawImage(bmp,0,0,cropCanvas.width,cropCanvas.height);
+    // Draw crop overlay
+    var cw=cropCanvas.width, ch=cropCanvas.height;
+    var rx,ry,rw,rh;
+    if(cropRatio){
+      var ratio=eval(cropRatio);
+      if(cw/ch>ratio){ rw=Math.round(ch*ratio); rh=ch; rx=Math.round((cw-rw)/2); ry=0; }
+      else{ rh=Math.round(cw/ratio); rw=cw; ry=Math.round((ch-rh)/2); rx=0; }
+    } else { rx=Math.round(cw*0.05); ry=Math.round(ch*0.05); rw=Math.round(cw*0.9); rh=Math.round(ch*0.9); }
+    cropCtx.fillStyle="rgba(0,0,0,.45)";
+    cropCtx.fillRect(0,0,cw,ry); cropCtx.fillRect(0,ry+rh,cw,ch-ry-rh);
+    cropCtx.fillRect(0,ry,rx,rh); cropCtx.fillRect(rx+rw,ry,cw-rx-rw,rh);
+    cropCtx.strokeStyle="#fff"; cropCtx.lineWidth=2;
+    cropCtx.strokeRect(rx,ry,rw,rh);
+  }
+  function applyCrop(){
+    if(!cropBitmap||!cropCanvas) return;
+    pushUndo();
+    var bmp=cropBitmap, w=bmp.width||bmp.naturalWidth||0, h=bmp.height||bmp.naturalHeight||0;
+    var cw=cropCanvas.width, ch=cropCanvas.height;
+    var scale=w/cw; // scale between preview and original
+    var rx,ry,rw,rh;
+    if(cropRatio){
+      var ratio=eval(cropRatio);
+      if(cw/ch>ratio){ rw=Math.round(ch*ratio); rh=ch; rx=Math.round((cw-rw)/2); ry=0; }
+      else{ rh=Math.round(cw/ratio); rw=cw; ry=Math.round((ch-rh)/2); rx=0; }
+    } else { rx=Math.round(cw*0.05); ry=Math.round(ch*0.05); rw=Math.round(cw*0.9); rh=Math.round(ch*0.9); }
+    var sx=Math.round(rx*scale), sy=Math.round(ry*scale), sw=Math.round(rw*scale), sh=Math.round(rh*scale);
+    var cv=document.createElement("canvas"); cv.width=sw; cv.height=sh;
+    cv.getContext("2d").drawImage(bmp,sx,sy,sw,sh,0,0,sw,sh);
+    if(bmp.close) try{bmp.close()}catch(e){}
+    state.bitmap=cv; invalidateGrade(); draw();
+    closeCrop(); toast("裁剪完成 ✂️");
+  }
+  if($("cropApply")) $("cropApply").addEventListener("click", applyCrop);
+  if($("cropCancel")) $("cropCancel").addEventListener("click", closeCrop);
+  if(cropOverlay) cropOverlay.addEventListener("click", function(e){ if(e.target===cropOverlay) closeCrop(); });
+  if($("cropPresets")){
+    Array.prototype.forEach.call($("cropPresets").querySelectorAll("button"), function(b){
+      b.addEventListener("click", function(){
+        var v=b.getAttribute("data-crop");
+        cropRatio=v==="free"?null:v;
+        $("cropPresets").querySelectorAll("button").forEach(function(x){ x.classList.toggle("on",x===b); });
+        renderCropPreview();
+      });
+    });
+  }
+  // Tools dropdown toggle
+  var toolsToggle=$("toolsToggle"), toolsMenu=$("toolsMenu");
+  if(toolsToggle) toolsToggle.addEventListener("click", function(e){ e.stopPropagation(); toolsMenu.classList.toggle("hidden"); });
+  document.addEventListener("click", function(e){ if(toolsMenu&&!toolsMenu.classList.contains("hidden")&&!toolsToggle.contains(e.target)) toolsMenu.classList.add("hidden"); });
+  if($("cropBtn")) $("cropBtn").addEventListener("click", function(){ openCrop(); if(toolsMenu) toolsMenu.classList.add("hidden"); });
+  // All tool buttons close menu on click
+  if(toolsMenu) toolsMenu.addEventListener("click", function(e){ if(e.target.tagName==="BUTTON") toolsMenu.classList.add("hidden"); });
+
+  // ============ v3.17.0 批量预览缩略图 ============
+  var _batchThumbs=[];
+  function showBatchPreview(files){
+    _batchThumbs=[];
+    var container=document.createElement("div"); container.className="batch-preview";
+    for(var i=0;i<Math.min(files.length,30);i++){
+      (function(idx){
+        var reader=new FileReader();
+        reader.onload=function(e){
+          var img=document.createElement("img"); img.src=e.target.result;
+          img.title="第"+(idx+1)+"张";
+          img.addEventListener("click",function(){ img.classList.toggle("sel"); });
+          container.appendChild(img);
+          _batchThumbs.push(img);
+        };
+        reader.readAsDataURL(files[idx]);
+      })(i);
+    }
+    var sheet=document.querySelector("#batchOverlay .sheet");
+    if(sheet){
+      var old=sheet.querySelector(".batch-preview");
+      if(old) old.remove();
+      sheet.insertBefore(container, sheet.querySelector("#batchActions")||sheet.querySelector(".batch-bar"));
+    }
+  }
+
+  // ============ v3.17.0 自定义水印颜色增强 ============
+  // Add color inputs to custom template editor
+  (function enhanceCustomEditor(){
+    var origOpen=openCustomEditor;
+    if(typeof openCustomEditor==="function"){
+      openCustomEditor=function(tpl){
+        origOpen(tpl);
+        // Add color pickers after a short delay for DOM to render
+        setTimeout(function(){
+          var editor=document.querySelector(".custom-editor");
+          if(!editor) return;
+          if(editor.querySelector(".custom-color-row")) return; // already added
+          var row=document.createElement("div");
+          row.className="custom-color-row";
+          row.style.cssText="display:flex;gap:8px;margin-top:8px;align-items:center;";
+          row.innerHTML='<label style=\"font-size:12px;\">底栏色</label><input type=\"color\" class=\"custom-bg-color\" value=\"#ffffff\" style=\"width:32px;height:32px;border:none;border-radius:8px;cursor:pointer;\"><label style=\"font-size:12px;margin-left:4px;\">文字色</label><input type=\"color\" class=\"custom-text-color\" value=\"#000000\" style=\"width:32px;height:32px;border:none;border-radius:8px;cursor:pointer;\">';
+          editor.appendChild(row);
+        },100);
+      };
+    }
+  })();
+
   var verEl = document.getElementById('appVer');
   if(verEl) verEl.textContent = APP_VERSION;
 
   // ================= Liquid glass on/off preference =================
-  var glassToggle = $("glassToggle");
+  // 液态玻璃强度可调 (v3.9.0):关 / 轻 / 标准 / 强。data-glass="off" 走老的纯色路径;其余走 data-glass-level 调强度。
+  var glassSeg = $("glassSeg");
   var GLASS_KEY = "yinji.glass";
-
-  function applyGlass(on){
-    document.body.setAttribute("data-glass", on ? "on" : "off");
-    var s = PLATFORM.getStorage();
-    if(s){ try{ s.setItem(GLASS_KEY, on ? "1" : "0"); }catch(e){} }
+  var GLASS_LEVELS = { off:1, light:1, standard:1, strong:1 };
+  function normGlassLevel(v){
+    if(v==="0") return "off";        // 兼容老存档(关)
+    if(v==="1" || v==null) return "standard"; // 兼容老存档(开)/ 没存过 → 标准
+    return GLASS_LEVELS[v] ? v : "standard";
   }
-
-  (function initGlass(){
-    var saved = null;
+  function glassLabel(lv){ return lv==="off"?"关":lv==="light"?"轻":lv==="strong"?"强":"标准"; }
+  function applyGlass(level){
+    level = normGlassLevel(level);
+    if(level==="off"){
+      document.body.setAttribute("data-glass", "off");
+      document.body.removeAttribute("data-glass-level");
+    } else {
+      document.body.setAttribute("data-glass", "on");
+      document.body.setAttribute("data-glass-level", level);
+    }
     var s = PLATFORM.getStorage();
+    if(s){ try{ s.setItem(GLASS_KEY, level); }catch(e){} }
+    return level;
+  }
+  function syncGlassSeg(level){
+    if(!glassSeg) return;
+    Array.prototype.forEach.call(glassSeg.querySelectorAll("button[data-g]"), function(b){
+      b.classList.toggle("on", b.getAttribute("data-g")===level);
+    });
+  }
+  (function initGlass(){
+    var saved = null, s = PLATFORM.getStorage();
     if(s){ try{ saved = s.getItem(GLASS_KEY); }catch(e){} }
-    var on = saved !== "0";
-    if(glassToggle) glassToggle.checked = on;
-    applyGlass(on);
+    var level = applyGlass(saved);   // saved=null → 标准
+    syncGlassSeg(level);
   })();
-
-  if(glassToggle){
-    glassToggle.addEventListener("change", function(){
-      applyGlass(glassToggle.checked);
-      toast(glassToggle.checked ? "已开启液态玻璃" : "已关闭液态玻璃");
+  if(glassSeg){
+    glassSeg.addEventListener("click", function(e){
+      var b=e.target; while(b && b!==glassSeg && b.tagName!=="BUTTON") b=b.parentNode;
+      if(!b || b===glassSeg) return;
+      var v=b.getAttribute("data-g"); if(v===null) return;
+      var lv=applyGlass(v); syncGlassSeg(lv);
+      toast(lv==="off" ? "已关闭液态玻璃" : ("液态玻璃 · " + glassLabel(lv)));
     });
   }
 
@@ -5073,7 +6763,7 @@
     if(aiModelInput) aiModelInput.value = st.aiModel || "";
     if(aiKeyInput) aiKeyInput.value = st.aiKey || "";
     applyAiOnlineUI();
-    if(glassToggle) glassToggle.checked = document.body.getAttribute("data-glass") !== "off";
+    syncGlassSeg(document.body.getAttribute("data-glass")==="off" ? "off" : (document.body.getAttribute("data-glass-level")||"standard"));
     if(aboutVer) aboutVer.textContent = APP_VERSION;
   }
   function openSettings(){ syncSettingsUI(); settingsOverlay.classList.add("show"); }
@@ -5289,6 +6979,22 @@
           });
         });
       }).catch(function(){  });
+
+      // v3.12.0：PWA 分享目标 — 等 SW 就绪后检测是否从系统分享进入
+      navigator.serviceWorker.ready.then(function(){
+        if(location.search.indexOf('shared=1')===-1) return;
+        history.replaceState(null,'',location.pathname);
+        fetch('./__shared_image').then(function(resp){
+          if(!resp.ok) return;
+          var fname=decodeURIComponent(resp.headers.get('X-Shared-File-Name')||'shared.jpg');
+          return resp.blob().then(function(blob){
+            var file=new File([blob],fname,{type:blob.type||'image/jpeg'});
+            loadFile(file).catch(function(err){
+              setDropMsg("打不开分享的照片",(err&&err.message)||"未知问题");
+            });
+          });
+        }).catch(function(){});
+      });
     });
   }
 

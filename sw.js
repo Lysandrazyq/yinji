@@ -1,6 +1,7 @@
 // 印迹 service worker — minimal offline cache so the PWA still works without network.
 // Bump CACHE name whenever you ship a new watermark.html to force re-cache.
-var CACHE = 'yinji-v44-2026-06-07-v3.3.0';
+var CACHE = 'yinji-v67-2026-06-14-v4.1.0';
+var SHARED_CACHE = 'yinji-shared';
 var PRECACHE = [
   './',
   './watermark.html',
@@ -19,7 +20,7 @@ self.addEventListener('install', function(e){
 self.addEventListener('activate', function(e){
   e.waitUntil(
     caches.keys().then(function(keys){
-      return Promise.all(keys.map(function(k){ if(k!==CACHE) return caches['delete'](k); }));
+      return Promise.all(keys.map(function(k){ if(k!==CACHE && k!==SHARED_CACHE) return caches['delete'](k); }));
     }).then(function(){ return self.clients.claim(); })
   );
 });
@@ -29,11 +30,46 @@ self.addEventListener('message', function(e){
   if(e.data && e.data.type === 'SKIP_WAITING') self.skipWaiting();
 });
 
-// Cache-first for same-origin GETs, network-first fallback.
 self.addEventListener('fetch', function(e){
-  if(e.request.method !== 'GET') return;
   var url = new URL(e.request.url);
   if(url.origin !== self.location.origin) return;
+
+  // v3.12.0：PWA 分享目标 — 接收系统分享过来的照片（POST multipart/form-data）
+  if(e.request.method === 'POST' && url.pathname.endsWith('/share-target')){
+    e.respondWith(
+      e.request.formData().then(function(formData){
+        var file = formData.get('photo');
+        if(!file) return Response.redirect('./watermark.html', 302);
+        return caches.open(SHARED_CACHE).then(function(cache){
+          var headers = new Headers();
+          headers.set('Content-Type', file.type || 'image/jpeg');
+          headers.set('X-Shared-File-Name', encodeURIComponent(file.name || 'shared.jpg'));
+          return cache.put('shared-image', new Response(file, {headers: headers})).then(function(){
+            return Response.redirect('./watermark.html?shared=1', 302);
+          });
+        });
+      }).catch(function(){
+        return Response.redirect('./watermark.html', 302);
+      })
+    );
+    return;
+  }
+
+  // v3.12.0：页面启动后取回 SW 暂存的分享图片（用完即删）
+  if(e.request.method === 'GET' && url.pathname.endsWith('/__shared_image')){
+    e.respondWith(
+      caches.open(SHARED_CACHE).then(function(cache){
+        return cache.match('shared-image').then(function(resp){
+          if(!resp) return new Response('no shared image', {status: 404});
+          cache.delete('shared-image');
+          return resp;
+        });
+      })
+    );
+    return;
+  }
+
+  if(e.request.method !== 'GET') return;
   e.respondWith(
     caches.match(e.request).then(function(hit){
       if(hit) return hit;
