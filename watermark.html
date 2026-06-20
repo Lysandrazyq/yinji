@@ -1838,7 +1838,7 @@
   "use strict";
 
   // ---------- version (single source of truth; bump on every release) ----------
-  var APP_VERSION = "v4.1.0";
+  var APP_VERSION = "v4.2.0";
 
   // ---------- 访问统计(百度统计 · 异步加载 / 不阻塞渲染 / 不发照片) ----------
   // 站点 ID 是在百度统计「新增网站」后拿到的公开标识(写在每个访客的页面里、非密钥)。
@@ -4057,9 +4057,25 @@
     {id:"roseQuartz",  name:"粉晶", cat:"fresh"},
     {id:"steelBlue",   name:"钢蓝", cat:"cool"},
     {id:"mapleSyrup",  name:"枫糖", cat:"warm"},
-    {id:"inkWash",     name:"水墨", cat:"bw"}
+    {id:"inkWash",     name:"水墨", cat:"bw"},
+    {id:"dawnMist",    name:"晨雾", cat:"fresh"},
+    {id:"copperTone",  name:"铜调", cat:"warm"},
+    {id:"pineForest",  name:"松林", cat:"fresh"},
+    {id:"berryTone",   name:"莓果", cat:"warm"},
+    {id:"denimBlue",   name:"牛仔蓝", cat:"cool"},
+    {id:"sunflower",   name:"向日葵", cat:"warm"},
+    {id:"slateGray",   name:"石板灰", cat:"mood"},
+    {id:"infraredBW",  name:"红外黑白", cat:"bw"}
   ];
   var TONE_PARAMS = {
+    dawnMist:     { sat:0.90, con:0.94, bri:1.07, temp:-6,  tint:-3, lift:22 },
+    copperTone:   { sat:1.16, con:1.05, bri:1.00, temp:26,  tint:9,  lift:6  },
+    pineForest:   { sat:1.05, con:1.07, bri:0.99, temp:-10, tint:8,  lift:8  },
+    berryTone:    { sat:1.20, con:1.04, bri:1.01, temp:8,   tint:-6, lift:8  },
+    denimBlue:    { sat:0.94, con:1.08, bri:1.00, temp:-24, tint:-2, lift:10 },
+    sunflower:    { sat:1.24, con:1.02, bri:1.05, temp:20,  tint:2,  lift:6  },
+    slateGray:    { sat:0.66, con:1.06, bri:0.99, temp:-8,  tint:1,  lift:12 },
+    infraredBW:   { sat:0,    con:1.18, bri:1.04, temp:0,   tint:-2, lift:14 },
     peachSoda:    { sat:1.12, con:0.97, bri:1.06, temp:14,  tint:-3, lift:12 },
     oolongTea:    { sat:0.92, con:1.04, bri:1.01, temp:18,  tint:6,  lift:10 },
     roseQuartz:   { sat:1.04, con:0.95, bri:1.07, temp:10,  tint:-5, lift:16 },
