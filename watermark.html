@@ -1838,7 +1838,7 @@
   "use strict";
 
   // ---------- version (single source of truth; bump on every release) ----------
-  var APP_VERSION = "v4.2.0";
+  var APP_VERSION = "v4.3.0";
 
   // ---------- 访问统计(百度统计 · 异步加载 / 不阻塞渲染 / 不发照片) ----------
   // 站点 ID 是在百度统计「新增网站」后拿到的公开标识(写在每个访客的页面里、非密钥)。
@@ -3261,7 +3261,7 @@
       return '<button data-style="'+t.id+'"'+(t.kind==="custom"?' class="custom-tpl"':'')+'>'+escapeHtml(t.name)+'</button>';
     }).join("");
     Array.prototype.forEach.call(styleSeg.querySelectorAll("button[data-style]"), function(b){
-      b.addEventListener("click", function(){ setStyle(b.getAttribute("data-style"), true); });
+      b.addEventListener("click", function(){ var sid=b.getAttribute("data-style"); pushRecent("styles", sid); setStyle(sid, true); });
     });
     markStyleActive();
     updateStyleActions();
@@ -3350,8 +3350,9 @@
     }).join("");
     Array.prototype.forEach.call(toneSeg.querySelectorAll("button[data-fid]"), function(b){
       b.addEventListener("click", function(){
-        if(b.getAttribute("data-fkind")==="custom") applyCustomFilter(b.getAttribute("data-fid"));
-        else setTone(b.getAttribute("data-fid"));
+        var fid=b.getAttribute("data-fid"); pushRecent("filters", fid);
+        if(b.getAttribute("data-fkind")==="custom") applyCustomFilter(fid);
+        else setTone(fid);
       });
     });
     markFilterActive();
@@ -5585,6 +5586,27 @@
   // ================= 全部浏览抽屉 (v3.15.0) =================
   var drawerOverlay=$("drawerOverlay"),drawerGrid=$("drawerGrid"),drawerSearch=$("drawerSearch");
   var drawerTab="watermark";
+
+  // ---------- 最近用过 (v4.3.0)：记下你点过的水印 / 滤镜,在「浏览全部」抽屉顶部快速回看 ----------
+  var RECENTS_KEY="yinji.recents.v1";
+  var recents={styles:[],filters:[]};
+  function loadRecents(){
+    try{ var r=JSON.parse(localStorage.getItem(RECENTS_KEY)||"{}");
+      recents={ styles:Array.isArray(r.styles)?r.styles:[], filters:Array.isArray(r.filters)?r.filters:[] };
+    }catch(e){ recents={styles:[],filters:[]}; }
+  }
+  function saveRecents(){ try{ localStorage.setItem(RECENTS_KEY, JSON.stringify(recents)); }catch(e){} }
+  function pushRecent(kind, id){
+    if(!id || id==="none") return;
+    var arr=recents[kind]; if(!arr) return;
+    var i=arr.indexOf(id); if(i!==-1) arr.splice(i,1);
+    arr.unshift(id); if(arr.length>12) arr.length=12;
+    saveRecents();
+  }
+  function styleNameOf(id){ var n=presetName(id); if(n) return n; var ct=findCustomTemplate(id); return ct?ct.name:null; }
+  function toneNameOf(id){ for(var i=0;i<TONE_LIST.length;i++){ if(TONE_LIST[i].id===id) return TONE_LIST[i].name; } var cf=findCustomFilter(id); return cf?cf.name:null; }
+  loadRecents();
+
   function openDrawer(){
     drawerTab="watermark";
     var wt=$("drawerTabWM"),ft=$("drawerTabFL");
@@ -5598,6 +5620,23 @@
     if(!drawerGrid) return;
     var q=(drawerSearch&&drawerSearch.value||"").trim().toLowerCase();
     var html="";
+    // 最近用过(仅无搜索词时显示)
+    if(!q){
+      var rlbl='<div style="width:100%;font-size:11px;color:var(--ink-soft);font-weight:600;margin:2px 2px 4px;letter-spacing:.04em;">';
+      var rids = (drawerTab==="watermark") ? recents.styles : recents.filters;
+      var rchips="";
+      for(var ri=0; ri<rids.length; ri++){
+        var rid=rids[ri];
+        if(drawerTab==="watermark"){
+          var rnm=styleNameOf(rid);
+          if(rnm) rchips+='<button class="drawer-item" data-wm="'+escapeHtml(rid)+'">'+escapeHtml(rnm)+'</button>';
+        } else {
+          var rfn=toneNameOf(rid);
+          if(rfn) rchips+='<button class="drawer-item" data-fl="'+escapeHtml(rid)+'">'+escapeHtml(rfn)+'</button>';
+        }
+      }
+      if(rchips){ html += rlbl+'最近用过</div>' + rchips + rlbl+'全部</div>'; }
+    }
     if(drawerTab==="watermark"){
       for(var i=0;i<TEMPLATES.length;i++){
         var t=TEMPLATES[i];
@@ -5632,14 +5671,15 @@
       b.addEventListener("click",function(){
         if(drawerTab==="watermark"){
           var wm=b.getAttribute("data-wm");
-          if(wm){ setStyle(wm); renderStyleChips(); renderStyleCats(); toast("已选水印「"+(presetName(wm)||wm)+"」"); }
+          if(wm){ pushRecent("styles", wm); setStyle(wm); renderStyleChips(); renderStyleCats(); toast("已选水印「"+(presetName(wm)||wm)+"」"); }
         } else {
           var fl=b.getAttribute("data-fl");
           if(fl && TONE_PARAMS[fl]){
+            pushRecent("filters", fl);
             state.tone=fl; state.toneAdj={temp:0,tint:0,sat:0,intensity:100}; state.filterId=null;
             syncTonePad(); markFilterActive(); updateFilterActions();
             draw(); savePrefs();
-            toast("已选滤镜「"+(TONE_PARAMS[fl]&&fl)+"」");
+            toast("已选滤镜「"+(toneNameOf(fl)||fl)+"」");
           }
         }
         closeDrawer();
