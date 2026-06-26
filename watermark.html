@@ -1763,7 +1763,7 @@
         <button class="btn btn-ghost btn-warn" id="clearTplBtn">清空我的自定义水印</button>
         <button class="btn btn-ghost btn-warn" id="resetSettingsBtn">恢复默认设置</button>
       </div>
-      <div class="privacy-note">照片只在你的设备本地处理,绝不上传任何服务器。(仅为了解使用人数,本页接入了百度统计,可能使用 cookie、只记录匿名访问量;不涉及你的照片。)</div>
+      <div class="privacy-note">(仅为了解使用人数,本页接入了百度统计,可能使用 cookie、只记录匿名访问量。)</div>
     </div>
 
     <div class="set-sec">
@@ -1816,7 +1816,7 @@
     <div class="onb-card">
       <div class="onb-emoji" id="onbEmoji">👋</div>
       <h3 id="onbTitle">欢迎用印迹</h3>
-      <p id="onbBody">给照片加一条好看的相机水印。所有处理都在你手机本地完成,照片绝不上传,放心用。</p>
+      <p id="onbBody">给照片加一条好看的相机水印。</p>
     </div>
     <div class="onb-dots" id="onbDots"></div>
     <div class="onb-nav">
@@ -1838,7 +1838,7 @@
   "use strict";
 
   // ---------- version (single source of truth; bump on every release) ----------
-  var APP_VERSION = "v4.3.0";
+  var APP_VERSION = "v4.3.1";
 
   // ---------- 访问统计(百度统计 · 异步加载 / 不阻塞渲染 / 不发照片) ----------
   // 站点 ID 是在百度统计「新增网站」后拿到的公开标识(写在每个访客的页面里、非密钥)。
@@ -5794,7 +5794,7 @@
     if(batchOverlay) batchOverlay.classList.add("show");
   }
   function setBatchProgress(done, total){
-    if(batchSub) batchSub.textContent="正在处理 "+done+" / "+total+" …（照片只在本机处理，不上传）";
+    if(batchSub) batchSub.textContent="正在处理 "+done+" / "+total+" …";
     if(batchBarFill) batchBarFill.style.width=(total?Math.round(done/total*100):0)+"%";
   }
   function setBatchDone(title, msg){
@@ -6882,7 +6882,7 @@
   // ================= Onboarding: stepped cards (v2.9.0) =================
   var ONB_KEY = "yinji.onboarded.v1";
   var ONB_STEPS = [
-    { emoji:"👋", title:"欢迎用印迹", body:"给照片加一条好看的相机水印。所有处理都在你手机本地完成,照片绝不上传,放心用。" },
+    { emoji:"👋", title:"欢迎用印迹", body:"给照片加一条好看的相机水印。" },
     { emoji:"🖼️", title:"选照片 · 挑水印", body:"点中间大框选一张照片。在「水印」页按分类挑一款喜欢的,点一下就套用;想自己做,点「＋ 新建我的水印」。" },
     { emoji:"✍️", title:"两种文字,随意切", body:"「手动输入」自己写一句;「自动读取」从照片里读出设备、时间、光圈快门 ISO,排成相机水印。改文字实时预览。" },
     { emoji:"💾", title:"保存 · 分享", body:"点「保存图片」再选「保存到相册」直接进相册;也能一键「复制图片」粘到聊天。右上角齿轮是设置,主题 / 默认行为都能调。" }

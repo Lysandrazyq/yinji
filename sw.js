@@ -1,6 +1,6 @@
 // 印迹 service worker — minimal offline cache so the PWA still works without network.
 // Bump CACHE name whenever you ship a new watermark.html to force re-cache.
-var CACHE = 'yinji-v69-2026-06-20-v4.3.0';
+var CACHE = 'yinji-v70-2026-06-21-v4.3.1';
 var SHARED_CACHE = 'yinji-shared';
 var PRECACHE = [
   './',
